@@ -1,0 +1,2 @@
+%systemd_postun_with_restart mrenv.service mrzcpd.service mrtunnat.service
+/sbin/ldconfig
