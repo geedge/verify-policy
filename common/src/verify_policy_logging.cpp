@@ -47,6 +47,10 @@ void * verify_syslog_init(const char *config)
     }else{
         mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Log module initialization");
     }
+
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "Log level", logging_sc_lid.run_log_level);
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%s", "Log Directory", logging_sc_lid.run_log_path);
+
 	return logging_sc_lid.run_log_handle;
 finish:
 	return NULL;

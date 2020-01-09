@@ -1,7 +1,8 @@
-#cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 project(verify-policy)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+set(CMAKE_SCRIPT_PATH ${PROJECT_SOURCE_DIR}/script)
 include(Version)
 include(Package)
 
@@ -14,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	set (CMAKE_INSTALL_PREFIX "/home/mesasoft/tfe" CACHE PATH "default install path" FORCE )
+	set (CMAKE_INSTALL_PREFIX "/home/tsg/verify-policy" CACHE PATH "default install path" FORCE )
 endif()
 
 # Global compile options
@@ -44,6 +45,7 @@ endif()
 
 add_custom_target("install-program" COMMAND ${CMAKE_COMMAND} ARGS -DCOMPONENT=Program -P cmake_install.cmake)
 add_custom_target("install-profile" COMMAND ${CMAKE_COMMAND} ARGS -DCOMPONENT=Profile -P cmake_install.cmake)
+add_custom_target("tarball" COMMAND sh ${CMAKE_SCRIPT_PATH}/tarball.sh ${TARGET_VERSION} ${TARGET_DESCRIBE})
 
 enable_testing()
 #add_subdirectory(conf)

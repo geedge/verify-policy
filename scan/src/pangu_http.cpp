@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: pangu_http.cpp
-	> Author: 
-	> Mail: 
+	> Author:
+	> Mail:
 	> Created Time: 2019年08月23日 星期五 16时53分25秒
  ************************************************************************/
 #include <assert.h>
@@ -45,7 +45,7 @@ struct pangu_http_ctx
 	stream_para_t sp;
 	size_t hit_cnt;
 	struct Maat_rule_t result[MAX_SCAN_RESULT];
-	size_t n_enforce;	
+	size_t n_enforce;
 	struct Maat_rule_t * enforce_rules;
 	int thread_id;
 };
@@ -169,46 +169,46 @@ char *web_json_table_add(void *pme)
 	cJSON  *execute_obj=NULL, *obj_list=NULL, *category_obj=NULL;
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
-	
+
 	policy_obj=cJSON_CreateObject();
-	cJSON_AddNumberToObject(policy_obj, "code", 200);	
-	cJSON_AddStringToObject(policy_obj, "msg", "");	
+	cJSON_AddNumberToObject(policy_obj, "code", 200);
+	cJSON_AddStringToObject(policy_obj, "msg", "");
 	cJSON_AddNumberToObject(policy_obj, "success", 1);
-	
+
 	data_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
-	/*hitPolicyList **/	
+	/*hitPolicyList **/
 	hit_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
 	if (ctx->hit_cnt >= 1)
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
-			cJSON_AddNumberToObject(hit_obj, "policyId", ctx->result[i].config_id);		
+			cJSON_AddNumberToObject(hit_obj, "policyId", ctx->result[i].config_id);
 			cJSON_AddStringToObject(hit_obj, "policyName", "");
-		}				
+		}
 	}
 	/*executePolicyList **/
 	execute_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(data_obj, "executePolicyList", execute_obj);
-	cJSON_AddNumberToObject(execute_obj, "policyId", ctx->enforce_rules[0].config_id);		
+	cJSON_AddNumberToObject(execute_obj, "policyId", ctx->enforce_rules[0].config_id);
 	cJSON_AddStringToObject(execute_obj, "policyName", "");
 
 	/*objectList**/
 	obj_list = cJSON_CreateObject();
 	cJSON_AddItemToObject(data_obj, "objectList", obj_list);
-	cJSON_AddNumberToObject(obj_list, "objectId", 12);		
+	cJSON_AddNumberToObject(obj_list, "objectId", 12);
 	cJSON_AddStringToObject(obj_list, "objectName", "");
-	cJSON *itemList = cJSON_CreateObject();	
+	cJSON *itemList = cJSON_CreateObject();
 	cJSON_AddItemToObject(obj_list, "itemList", itemList);
-	cJSON_AddNumberToObject(itemList, "itemId", 12);		
+	cJSON_AddNumberToObject(itemList, "itemId", 12);
 	cJSON_AddStringToObject(itemList, "reqParam", "");
-	
+
 	/*categoryList**/
 	category_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(data_obj, "categoryList", category_obj);
-	cJSON_AddNumberToObject(category_obj, "categoryId", 12);		
+	cJSON_AddNumberToObject(category_obj, "categoryId", 12);
 	cJSON_AddStringToObject(category_obj, "reqParam", "");
 
 	policy_payload = cJSON_PrintUnformatted(policy_obj);
@@ -224,7 +224,7 @@ void http_scan(const char * value, enum tfe_http_event events,
 	const char * field_val = NULL;
 	int scan_ret = 0, table_id = 0;
 	size_t hit_cnt = 0;
-	
+
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
 	if (events & EV_HTTP_IP)
@@ -278,7 +278,7 @@ void http_scan(const char * value, enum tfe_http_event events,
 	if ((events & EV_HTTP_REQ_HDR) || (events & EV_HTTP_RESP_HDR))
 	{
 		table_id = events & PXY_CTRL_HTTP_REQ_HDR ? g_pangu_rt->scan_table_id[PXY_CTRL_HTTP_REQ_HDR] : g_pangu_rt->scan_table_id[PXY_CTRL_HTTP_RES_HDR];
-	
+
 		const char * str_field_name = NULL;
 		scan_ret = Maat_set_scan_status(g_pangu_rt->maat, &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
 				   str_field_name, strlen(str_field_name));
@@ -314,7 +314,7 @@ void http_scan(const char * value, enum tfe_http_event events,
 	}
 	return ;
 }
-	
+
 char * verify_policy_str_to_addr()
 {
 	return NULL;
@@ -342,7 +342,9 @@ static Maat_feather_t create_maat_feather(const char * instance_name, const char
 	MESA_load_profile_string_def(profile, section, "json_cfg_file", json_cfg_file, sizeof(json_cfg_file), "");
 
 	MESA_load_profile_string_def(profile, section, "maat_redis_server", redis_server, sizeof(redis_server), "");
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%s", "Maat Redis Ip", redis_server);
 	MESA_load_profile_string_def(profile, section, "maat_redis_port_range", redis_port_range, sizeof(redis_server), "6379");
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%s", "Maat Redis Port", redis_port_range);
 	ret=sscanf(redis_port_range,"%d-%d", &redis_port_begin, &redis_port_end);
 	if(ret==1)
 	{
@@ -460,7 +462,7 @@ void subscribe_id_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA* to, MAAT_PLUGIN_EX_D
 int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 {
 	int ret = -1;
-	
+
 	g_pangu_rt = ALLOC(struct pangu_rt, 1);
 
 	g_pangu_rt->thread_num = verify->nr_work_threads;
@@ -473,14 +475,14 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 	}
 
 	const char * table_name[__SCAN_TABLE_MAX];
-	table_name[PXY_CTRL_IP] = "PXY_CTRL_IP";
-	table_name[PXY_CTRL_HTTP_URL] = "PXY_CTRL_HTTP_URL";
-	table_name[PXY_CTRL_HTTP_FQDN] = "TSG_OBJ_FQDN";
-	table_name[PXY_CTRL_HTTP_REQ_HDR] = "PXY_CTRL_HTTP_REQ_HDR";
-	table_name[PXY_CTRL_HTTP_REQ_BODY] = "TSG_OBJ_CONTENT";
-	table_name[PXY_CTRL_HTTP_RES_HDR] = "PXY_CTRL_HTTP_RES_HDR";
-	table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_OBJ_CONTENT";
-	table_name[PXY_CTRL_SUBSCRIBE_ID] = "PXY_CTRL_SUBSCRIBE_ID";
+	table_name[PXY_CTRL_IP] = "TSG_OBJ_IP_ADDR";
+	table_name[PXY_CTRL_HTTP_URL] = "TSG_FIELD_HTTP_URL";
+	table_name[PXY_CTRL_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
+	table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
+	table_name[PXY_CTRL_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_CONTENT";
+	table_name[PXY_CTRL_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
+	table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_CONTENT";
+	table_name[PXY_CTRL_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[i] = Maat_table_register(g_pangu_rt->maat, table_name[i]);
@@ -490,7 +492,7 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 			goto error_out;
 		}
 	}
-	
+
 	g_pangu_rt->dyn_maat = create_maat_feather("dyn", profile_path, "DYNAMIC_MAAT", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
 	if (!g_pangu_rt->maat)
 	{

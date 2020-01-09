@@ -1,0 +1,12 @@
+[Unit]
+Description=Verify Policy Engine
+After=redis.service
+
+[Service]
+WorkingDirectory=/home/tsg/verify-policy
+ExecStart=/home/tsg/verify-policy/bin/verify-policy
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

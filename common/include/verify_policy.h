@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: verify_policy.h
-	> Author: 
-	> Mail: 
+	> Author:
+	> Mail:
 	> Created Time: 2019年08月23日 星期五 18时06分03秒
  ************************************************************************/
 
@@ -38,7 +38,7 @@ enum http_ev_bit_number
 enum tfe_http_event
 {
 	EV_HTTP_IP = 1ULL << IP_BITNUM,
-	EV_HTTP_URL = 1ULL << URL_BITNUM,		
+	EV_HTTP_URL = 1ULL << URL_BITNUM,
 	EV_HTTP_FQDN = 1ULL << FQDN_BITNUM,
 	EV_HTTP_REQ_HDR = 1ULL << REQ_HDR_BITNUM,
 	EV_HTTP_RESP_HDR = 1ULL << RESP_HDR_BITNUM,
@@ -49,21 +49,21 @@ enum tfe_http_event
 struct verify_proxy_thread
 {
 	int  id;
-	pthread_t pid;        
+	pthread_t pid;
 	evutil_socket_t accept_fd;
-	pthread_attr_t *attr;	
+	pthread_attr_t *attr;
 	struct evhttp *http;
 	struct event_base *base;
-	void * (*routine)(void *);  
+	void * (*routine)(void *);
 };
 
 struct verify_proxy
-{	
-	char name[VERIFY_SYMBOL_MAX];		
+{
+	char name[VERIFY_SYMBOL_MAX];
 	void * logger;
 	unsigned int log_level;
 	unsigned int nr_work_threads;
-	unsigned int listen_port;	
+	unsigned int listen_port;
 	struct verify_proxy_thread *work_threads[TFE_THREAD_MAX];
 };
 

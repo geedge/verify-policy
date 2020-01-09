@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: verify-policy.cpp
-	> Author: 
-	> Mail: 
+	> Author:
+	> Mail:
 	> Created Time: 2019年08月23日 星期五 14时41分17秒
  ************************************************************************/
 
@@ -35,7 +35,7 @@ struct verify_policy_query
 {
 	enum scan_table object_type;
 	int addr_type;
-	
+
 	char *clientIp1;
 	unsigned int clientPort1;
 	char *serverIp1;
@@ -44,17 +44,15 @@ struct verify_policy_query
 	struct keyword_obj keywords[16];
 };
 
-#if 0
-#ifdef VERIFY_POLIC_VERSION
-char *git_version = VERIFY_POLIC_VERSION;
+/* VERSION STRING */
+#ifdef TARGET_GIT_VERSION
+static __attribute__((__used__)) const char * git_ver = TARGET_GIT_VERSION;
 #else
-char *default_version = "1.1.1";
+static __attribute__((__used__)) const char * git_ver = "1.1";
 #endif
-#endif
-const char *default_version = "1.1.1";
 const char * version()
 {
-	return default_version;
+	return git_ver;
 }
 
 extern int pangu_policy_init(struct verify_proxy * verify, const char* profile_path);
@@ -62,7 +60,7 @@ extern int pangu_policy_init(struct verify_proxy * verify, const char* profile_p
 static int verify_policy_init(struct verify_proxy * verify, const char *profile)
 {
     int xret = -1;
-	
+
     xret = MESA_load_profile_uint_nodef(profile, "CONFIG", "thread-nu", &(verify->nr_work_threads));
     if (xret < 0){
         mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Reading the number of running threads failed");
@@ -71,7 +69,8 @@ static int verify_policy_init(struct verify_proxy * verify, const char *profile)
 	if (xret < 0){
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Listen Port invalid");
 	}
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Listen Port %d", verify->listen_port);
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "The Threads", verify->nr_work_threads);
+	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "Libevent Port", verify->listen_port);
     return xret;
 }
 
@@ -86,7 +85,7 @@ enum scan_table verify_type_str2idx(const char *action_str)
 	table_name[PXY_CTRL_HTTP_RES_HDR] = "res_hdr";
 	table_name[PXY_CTRL_HTTP_RES_BODY] = "keywords";
 	table_name[PXY_CTRL_SUBSCRIBE_ID] = "subscribeid";
-	
+
 	size_t i = 0;
 
 	for (i = 0; i < sizeof(table_name) / sizeof(const char *); i++)
@@ -107,9 +106,9 @@ struct verify_policy_query *get_query_from_request(const char *data)
 	{
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "invalid policy parameter");
 		return NULL;
-	}	
+	}
 	struct verify_policy_query *query_ctx = ALLOC(struct verify_policy_query, 1);
-	
+
 	cJSON* item = NULL, *subitem = NULL;
 	item = cJSON_GetObjectItem(data_json,"objectType");
 	if(item && item->type==cJSON_String)
@@ -155,20 +154,20 @@ struct verify_policy_query *get_query_from_request(const char *data)
 			{
 				query_ctx->keywords[i].condition_scope =strdup(item->valuestring);
 				query_ctx->keywords[i].condition_type = verify_type_str2idx(item->valuestring);
-			}			
+			}
 			item = cJSON_GetObjectItem(subitem, "keywords");
 			if(item && item->type==cJSON_String)
 			{
 				query_ctx->keywords[i].keyword =strdup(item->valuestring);
 			}
 			i++;
-		}			
+		}
 	}
 	for (i = 0; i < c_num; i++)
 	{
-		p += snprintf(p, sizeof(buff) - (p - buff), ", conditionScope:%s, keywords:%s", query_ctx->keywords[i].condition_scope, query_ctx->keywords[i].keyword);		
+		p += snprintf(p, sizeof(buff) - (p - buff), ", conditionScope:%s, keywords:%s", query_ctx->keywords[i].condition_scope, query_ctx->keywords[i].keyword);
 	}
-	*p = '\0';	
+	*p = '\0';
 	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "%s", buff);
 	return query_ctx;
 }
@@ -184,7 +183,7 @@ char *verify_policy_scan(struct verify_policy_query *policy_query, int thread_id
 
 		if (key_obj->condition_scope == NULL)
 			key_obj->condition_type = policy_query->object_type;
-		
+
 		switch(key_obj->condition_type)
 		{
 			case PXY_CTRL_IP:
@@ -198,19 +197,19 @@ char *verify_policy_scan(struct verify_policy_query *policy_query, int thread_id
 			case PXY_CTRL_HTTP_FQDN:
 				http_scan(key_obj->keyword, EV_HTTP_FQDN, NULL, 0, ctx);
 				break;
-			case PXY_CTRL_HTTP_REQ_HDR:			
+			case PXY_CTRL_HTTP_REQ_HDR:
 				http_scan(key_obj->keyword, EV_HTTP_REQ_HDR, NULL, 0, ctx);
 				break;
 			case PXY_CTRL_HTTP_RES_HDR:
 				http_scan(key_obj->keyword, EV_HTTP_RESP_HDR, NULL, 0, ctx);
 				break;
-			case PXY_CTRL_HTTP_REQ_BODY:	
+			case PXY_CTRL_HTTP_REQ_BODY:
 			case PXY_CTRL_HTTP_RES_BODY:
 				http_scan(key_obj->keyword, EV_HTTP_CONTENT, NULL, 0, ctx);
 				break;
 			default:
 				break;
-		}	
+		}
 	}
 	policy_payload = web_json_table_add(ctx);
 
@@ -229,7 +228,7 @@ evhttp_socket_send(struct evhttp_request *req, char *sendbuf)
         goto err;
     }
     evhttp_add_header(evhttp_request_get_output_headers(req),
-		              "Content-Type", "text/html");	
+		              "Content-Type", "text/html");
 	evhttp_add_header(evhttp_request_get_output_headers(req), "Connection", "keep-alive");
     evbuffer_add_printf(evb, "%s", sendbuf);
     evhttp_send_reply(req, HTTP_OK, "OK", evb);
@@ -243,12 +242,12 @@ done:
 }
 
 void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
-{	
+{
 	char *policy_payload= NULL;
 	struct evbuffer * evbuf_body = NULL;
-	char *input = NULL; ssize_t inputlen=0;	
+	char *input = NULL; ssize_t inputlen=0;
 	struct verify_policy_query *policy_query = NULL;
-	
+
 	struct verify_proxy_thread *thread_ctx  = (struct verify_proxy_thread *)arg;
 
 	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
@@ -256,7 +255,7 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "FAILED (post type)");
 		goto error;
 	}
-	evbuf_body = evhttp_request_get_input_buffer(evh_req);	
+	evbuf_body = evhttp_request_get_input_buffer(evh_req);
 	if (!evbuf_body || 0==(inputlen = evbuffer_get_length(evbuf_body)) ||!(input = (char *)evbuffer_pullup(evbuf_body,inputlen)))
 	{
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Failed to get post data information.");
@@ -264,11 +263,11 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 	}
  	policy_query = get_query_from_request(input);
 	if (policy_query == NULL)
-	{	
+	{
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Data parsing failed.");
 		goto error;
 	}
-	
+
 	policy_payload = verify_policy_scan(policy_query, thread_ctx->id);
 	if (policy_payload)
 	{
@@ -277,7 +276,7 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 		free(policy_payload);
 	}
 	goto finish;
-		
+
 error:
 	evhttp_send_error(evh_req, HTTP_BADREQUEST, 0);
 finish:
@@ -288,30 +287,30 @@ void * verify_policy_thread(void * arg)
 {
 	struct evhttp_bound_socket *bound = NULL;
 	struct verify_proxy_thread *thread_ctx  = (struct verify_proxy_thread *)arg;
-	
+
     thread_ctx->base = event_base_new();
-	if (! thread_ctx->base) 
+	if (! thread_ctx->base)
 	{
         mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Can'thread_ctx allocate event base");
         goto finish;
     }
     thread_ctx->http = evhttp_new(thread_ctx->base);
-	if (!thread_ctx->http) 
+	if (!thread_ctx->http)
 	{
         mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "couldn'thread_ctx create evhttp. Exiting.");
 		goto error;
 	}
-	
+
 	evhttp_set_cb(thread_ctx->http, "/v1/policy/verification", evhttp_request_cb, thread_ctx);
-	
+
 	bound = evhttp_accept_socket_with_handle(thread_ctx->http, thread_ctx->accept_fd);
-	if (bound != NULL) 
+	if (bound != NULL)
 	{
 		mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Bound(%p) to port %d - Awaiting connections ... ", bound,
 						g_verify_proxy->listen_port);
 	}
 	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Work thread %u is run...", thread_ctx->id);
-	
+
 	event_base_dispatch(thread_ctx->base);
 error:
 	event_base_free(thread_ctx->base);
@@ -466,7 +465,7 @@ int main(int argc, char * argv[])
 		switch (opt)
 		{
 			case 'v':
-				fprintf(stderr, "Tango Frontend Engine, Version: %s\n", version());
+				fprintf(stderr, "Welcome to Verify Policy Engine, Version: %s\n", version());
 				return 0;
 			default:
 				break;
@@ -481,12 +480,12 @@ int main(int argc, char * argv[])
 
 	ret = verify_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at loading profile %s, Exit.", main_profile);
-	
+
 	ret = pangu_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
 
 	ret = pangu_policy_work_thread_run(g_verify_proxy);
-	
+
 	return ret;
 }
 
