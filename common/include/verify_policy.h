@@ -11,7 +11,7 @@
 #include <event2/event.h>
 #include "verify_policy_utils.h"
 
-enum policy_type
+enum tsg_policy_type
 {
     PXY_TABLE_SECURITY,
     PXY_TABLE_MANIPULATION,
@@ -106,8 +106,9 @@ extern struct verify_proxy * g_verify_proxy;
 
 void * pangu_http_ctx_new(unsigned int thread_id);
 
+void pangu_http_ctx_free(void * pme);
 
-void http_scan(const char * value, enum policy_type type, int protocol_field, void *pme, cJSON *data_obj, struct ipaddr *ip_addr);
+void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *data_obj, void *pme);
 
 int security_policy_init(struct verify_proxy * verify, const char* profile_path);
 

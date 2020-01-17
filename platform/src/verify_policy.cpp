@@ -30,31 +30,22 @@
 
 struct verify_proxy * g_verify_proxy = NULL;
 
-struct keyword_obj
+struct policy_table_obj
 {
 	int protocol_field;
-	char *content_type;
-	char *content;
-	char *protocol_field_name;
+
+	char *keyword;
+	char *keyword_scope;
 
 	struct ipaddr *ip_addr;
-
-	int addr_type;
-	int protocol;
-	char *clientIp1;
-	unsigned int clientPort1;
-	char *serverIp1;
-	unsigned int serverPort1;
 
 	char *subscriberid;
 };
 
-struct verify_policy_query
+struct policy_query_list
 {
-	int c_num;
-	enum policy_type type;
-	char *policy_type_name;
-	struct keyword_obj keywords[32];
+	enum tsg_policy_type type;
+	struct policy_table_obj table_obj[32];
 };
 
 /* VERSION STRING */
@@ -87,7 +78,7 @@ static int verify_policy_init(struct verify_proxy * verify, const char *profile)
     return xret;
 }
 
-enum policy_type policy_type_str2idx(const char *action_str)
+enum tsg_policy_type tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[PXY_TABLE_SECURITY] = "tsg_security";
@@ -101,10 +92,11 @@ enum policy_type policy_type_str2idx(const char *action_str)
 		if (0 == strcasecmp(action_str, policy_name[i]))
 			break;
 	}
-	return (enum policy_type)i;
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]   policyType= %s", action_str);
+	return (enum tsg_policy_type)i;
 }
 
-int field_type_str2idx(enum policy_type type, const char *action_str)
+int protoco_field_type_str2idx(enum tsg_policy_type type, const char *action_str, char *buff, char *p)
 {
 	const char * table_name[__SECURITY_TABLE_MAX] ={0};
 
@@ -158,43 +150,9 @@ int field_type_str2idx(enum policy_type type, const char *action_str)
 		if (0 == strcasecmp(action_str, table_name[i]))
 			break;
 	}
+	p += snprintf(p, sizeof(buff) - (p - buff), "protocolField=%s,%d",action_str, (int)i);
 
 	return i;
-}
-
-void verify_policy_query(struct verify_policy_query *policy_query, int thread_id, cJSON *data_obj)
-{
-	int i = 0;
-	char buff[VERIFY_STRING_MAX], *p = NULL;;
-
-	void *ctx = pangu_http_ctx_new(thread_id);
-
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Query policy table is %s", policy_query->policy_type_name);
-	for (i = 0; i < policy_query->c_num; i++)
-	{
-		p = buff;
-		if(0 == strcasecmp(policy_query->keywords[i].content_type, "ip"))
-		{
-			http_scan(policy_query->keywords[i].content, policy_query->type, PXY_CTRL_IP, ctx, data_obj, policy_query->keywords[i].ip_addr);
-		}
-		else if(0 == strcasecmp(policy_query->keywords[i].content_type, "subscriberid"))
-		{
-			p += snprintf(p, sizeof(buff) - (p - buff), "contentType=%s, subscriberid=%s", policy_query->keywords[i].content_type,
-				policy_query->keywords[i].subscriberid);
-			http_scan(policy_query->keywords[i].content, policy_query->type, PXY_CTRL_SUBSCRIBE_ID, ctx, data_obj, NULL);
-		}else
-		{
-			p += snprintf(p, sizeof(buff) - (p - buff), "contentType=%s, protocolField=%s content=%s", policy_query->keywords[i].content_type,
-				policy_query->keywords[i].protocol_field_name, policy_query->keywords[i].content);
-			http_scan(policy_query->keywords[i].content, policy_query->type, policy_query->keywords[i].protocol_field, ctx, data_obj, NULL);
-		}
-		*p = '\0';
-		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "%s", buff);
-	}
-
-	FREE(&ctx);
-
-	return;
 }
 
 struct ipaddr *ip_to_stream_addr(char *clientIp1, unsigned int clientPort1, char *serverIp1, unsigned int serverPort1, int addr_type)
@@ -220,12 +178,16 @@ struct ipaddr *ip_to_stream_addr(char *clientIp1, unsigned int clientPort1, char
 		v6_addr->dest=htons(serverPort1);
 		ip_addr->v6=v6_addr;
 	}
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    contentType = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
+		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+
 	return ip_addr;
 }
 
 cJSON *get_query_from_request(const char *data, int thread_id)
 {
-	int c_num = 0, i = 0;
+	int i = 0;
+	char buff[VERIFY_STRING_MAX], *p = NULL;;
 
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
@@ -233,7 +195,6 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "invalid policy parameter");
 		return NULL;
 	}
-
 	cJSON  *policy_obj=NULL, *data_obj=NULL;
 	policy_obj=cJSON_CreateObject();
 
@@ -248,97 +209,90 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	item = cJSON_GetObjectItem(data_json,"verifyList");
 	if(item && item->type==cJSON_Array)
 	{
-		c_num=cJSON_GetArraySize(item);
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			struct verify_policy_query *query_ctx = ALLOC(struct verify_policy_query, 1);
+			struct policy_query_list *query_list = ALLOC(struct policy_query_list, 1);
 
 			item = cJSON_GetObjectItem(subitem,"policyType");
 			if(item && item->type==cJSON_String)
 			{
-				query_ctx->type = policy_type_str2idx(item->valuestring);
-				query_ctx->policy_type_name = item->valuestring;
+				query_list->type = tsg_policy_type_str2idx(item->valuestring);
 			}
 			item = cJSON_GetObjectItem(subitem,"verifyConditions");
 			if(item && item->type==cJSON_Array)
 			{
-				query_ctx->c_num=c_num=cJSON_GetArraySize(item);
+				void *ctx = pangu_http_ctx_new(thread_id);
+
 				for (subchild = item->child; subchild != NULL; subchild = subchild->next)
 				{
+					p = buff;
 					item = cJSON_GetObjectItem(subchild, "contentType");
 					if(item && item->type==cJSON_String)
 					{
-						query_ctx->keywords[i].content_type = item->valuestring;
+						query_list->table_obj[i].keyword_scope = item->valuestring;
+						p += snprintf(p, sizeof(buff) - (p - buff), "contentType = %s",query_list->table_obj[i].keyword_scope);
 					}
-					if(0 == strcasecmp(query_ctx->keywords[i].content_type, "subscriberid"))
+					if(0 == strcasecmp(query_list->table_obj[i].keyword_scope, "subscriberid"))
 					{
 						item = cJSON_GetObjectItem(subchild,"subscriberid");
 						if(item && item->type==cJSON_String)
 						{
-							query_ctx->keywords[i].subscriberid = item->valuestring;
+							query_list->table_obj[i].subscriberid = item->valuestring;
+							p += snprintf(p, sizeof(buff) - (p - buff), "subscriberid = %s",query_list->table_obj[i].subscriberid);
 						}
+						http_scan(query_list->table_obj[i].keyword, query_list->type, EV_HTTP_SUBSCRIBE_ID, NULL, data_obj, ctx);
+
 						i++;
 						continue;
 					}
-					if(0 == strcasecmp(query_ctx->keywords[i].content_type, "ip"))
+					if(0 == strcasecmp(query_list->table_obj[i].keyword_scope, "ip"))
 					{
 						int addr_type=0, protocol=0;
 						char *clientIp1=NULL,*serverIp1=NULL;
 						unsigned int clientPort1=0,serverPort1=0;
-						item = cJSON_GetObjectItem(subchild,"clientIp");
-						if(item && item->type==cJSON_String)
-						{
-							clientIp1 = item->valuestring;
-						}
-						item = cJSON_GetObjectItem(subchild,"serverIp");
-						if(item && item->type==cJSON_String)
-						{
-							serverIp1 = (item->valuestring);
-						}
-						item = cJSON_GetObjectItem(subchild,"clientPort");
-						if(item && item->type==cJSON_String)
-						{
-							clientPort1 =atoi(item->valuestring);
-						}
-						item = cJSON_GetObjectItem(subchild,"serverPort");
-						if(item && item->type==cJSON_String)
-						{
-							serverPort1 =atoi(item->valuestring);
-						}
-						item = cJSON_GetObjectItem(subchild,"protocol");
-						if(item && item->type==cJSON_Number)
-						{
-							protocol = item->valueint;
-						}
-						item=cJSON_GetObjectItem(subchild,"addrType");
-						if(item && item->type==cJSON_Number)
-						{
-							addr_type = item->valueint;
-						}
 
-						query_ctx->keywords[i].ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+						item = cJSON_GetObjectItem(subchild,"clientIp");
+						if(item && item->type==cJSON_String) clientIp1 = item->valuestring;
+						item = cJSON_GetObjectItem(subchild,"serverIp");
+						if(item && item->type==cJSON_String) serverIp1 = (item->valuestring);
+						item = cJSON_GetObjectItem(subchild,"clientPort");
+						if(item && item->type==cJSON_String) clientPort1 =atoi(item->valuestring);
+						item = cJSON_GetObjectItem(subchild,"serverPort");
+						if(item && item->type==cJSON_String) serverPort1 =atoi(item->valuestring);
+						item = cJSON_GetObjectItem(subchild,"protocol");
+						if(item && item->type==cJSON_Number) protocol = item->valueint;
+						item=cJSON_GetObjectItem(subchild,"addrType");
+						if(item && item->type==cJSON_Number) addr_type = item->valueint;
+						query_list->table_obj[i].ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+
+						http_scan(NULL, query_list->type, PXY_CTRL_IP, query_list->table_obj[i].ip_addr, data_obj, ctx);
+
 						i++;
 						continue;
 					}
 					item = cJSON_GetObjectItem(subchild, "protocolField");
 					if(item && item->type==cJSON_String)
 					{
-						query_ctx->keywords[i].protocol_field = field_type_str2idx(query_ctx->type, item->valuestring);
-						query_ctx->keywords[i].protocol_field_name = item->valuestring;
+						query_list->table_obj[i].protocol_field = protoco_field_type_str2idx(query_list->type, item->valuestring, buff, p);
 					}
 					item = cJSON_GetObjectItem(subchild, "content");
 					if(item && item->type==cJSON_String)
 					{
-						query_ctx->keywords[i].content = item->valuestring;
+						query_list->table_obj[i].keyword = item->valuestring;
+						p += snprintf(p, sizeof(buff) - (p - buff), " content = %s",query_list->table_obj[i].keyword);
 					}
+					mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
+
+					http_scan(query_list->table_obj[i].keyword, query_list->type, query_list->table_obj[i].protocol_field, NULL, data_obj, ctx);
+
 					i++;
+					memset(buff, 0, VERIFY_STRING_MAX);
 				}
+				pangu_http_ctx_free(ctx);
 			}
 
-			verify_policy_query(query_ctx, thread_id, data_obj);
-
 			i=0;
-			FREE(&query_ctx);
+			FREE(&query_list);
 		}
 	}
 	cJSON_Delete(data_json);
@@ -396,27 +350,12 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 	}
 
 	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	printf("%s\n", policy_payload);
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[O]   %s", policy_payload);
 	evhttp_socket_send(evh_req, policy_payload);
 
 	cJSON_Delete(policy_obj);
 	free(policy_payload);
 
-	#if 0
-	if (policy_query == NULL)
-	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Data parsing failed.");
-		goto error;
-	}
-
-	policy_payload = verify_policy_scan(policy_query, thread_ctx->id);
-	if (policy_payload)
-	{
-		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "%s", policy_payload);
-		evhttp_socket_send(evh_req, policy_payload);
-		free(policy_payload);
-	}
-	#endif
 	goto finish;
 
 error:

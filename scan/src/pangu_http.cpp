@@ -74,6 +74,21 @@ void * pangu_http_ctx_new(unsigned int thread_id)
 	return (void *)ctx;
 }
 
+void pangu_http_ctx_free(void * pme)
+{
+	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
+
+	FREE(&ctx->enforce_rules);
+	Maat_clean_status(&(ctx->scan_mid));
+	ctx->scan_mid = NULL;
+
+	if(ctx->sp)
+	{
+		Maat_stream_scan_string_end(&(ctx->sp));
+	}
+	FREE(&ctx);
+}
+
 static int pangu_action_weight[__PG_ACTION_MAX] = {0};
 void __pangu_action_weight_init()  __attribute__((constructor, used));
 void __pangu_action_weight_init()
@@ -218,18 +233,16 @@ char *web_json_table_add(void *pme)
 	return policy_payload;
 }
 
-void http_scan(const char * value, enum policy_type type, int protocol_field, void *pme, cJSON *data_obj, struct ipaddr *ip_addr)
+void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *data_obj, void *pme)
 {
 	int scan_ret = 0, table_id = 0;
-	struct Maat_rule_t result[MAX_SCAN_RESULT];
-	char buff[VERIFY_STRING_MAX], * p = NULL;
 	size_t hit_cnt = 0, i = 0;
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
 	if (protocol_field == PXY_CTRL_IP)
 	{
-		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[type], g_pangu_rt->scan_table_id[type][protocol_field], ip_addr, 0,
+		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], ip_addr, 0,
 				   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if (scan_ret > 0)
 		{
@@ -240,13 +253,13 @@ void http_scan(const char * value, enum policy_type type, int protocol_field, vo
 
 	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || (protocol_field == PXY_CTRL_HTTP_RES_HDR))
 	{
-		table_id = (protocol_field == PXY_CTRL_HTTP_REQ_HDR) ? g_pangu_rt->scan_table_id[type][PXY_CTRL_HTTP_REQ_HDR] : g_pangu_rt->scan_table_id[type][PXY_CTRL_HTTP_RES_HDR];
+		table_id = (protocol_field == PXY_CTRL_HTTP_REQ_HDR) ? g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_REQ_HDR] : g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_RES_HDR];
 
 		const char * str_field_name = NULL;
-		scan_ret = Maat_set_scan_status(g_pangu_rt->maat[type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
+		scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
 				   str_field_name, strlen(str_field_name));
 		assert(scan_ret == 0);
-		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[type], table_id,
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], table_id,
 			CHARSET_UTF8, value, strlen(value),
 			ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if (scan_ret > 0)
@@ -259,8 +272,8 @@ void http_scan(const char * value, enum policy_type type, int protocol_field, vo
 	if ((protocol_field == PXY_CTRL_HTTP_REQ_BODY) || protocol_field == PXY_CTRL_HTTP_RES_BODY)
 	{
 		assert(ctx->sp == NULL);
-		table_id = protocol_field == PXY_CTRL_HTTP_REQ_BODY ? g_pangu_rt->scan_table_id[type][PXY_CTRL_HTTP_REQ_BODY] : g_pangu_rt->scan_table_id[type][PXY_CTRL_HTTP_RES_BODY];
-		ctx->sp = Maat_stream_scan_string_start(g_pangu_rt->maat[type], table_id, ctx->thread_id);
+		table_id = protocol_field == PXY_CTRL_HTTP_REQ_BODY ? g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_REQ_BODY] : g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_RES_BODY];
+		ctx->sp = Maat_stream_scan_string_start(g_pangu_rt->maat[policy_type], table_id, ctx->thread_id);
 		scan_ret = Maat_stream_scan_string(&(ctx->sp), CHARSET_UTF8, (const char *) value, (int) strlen(value),
 				ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid));
 		if (scan_ret > 0)
@@ -272,7 +285,7 @@ void http_scan(const char * value, enum policy_type type, int protocol_field, vo
 		goto decide;
 	}
 
-	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[type], g_pangu_rt->scan_table_id[type][protocol_field],
+	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
 									CHARSET_UTF8, value, strlen(value),
 									ctx->result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
 									&(ctx->scan_mid), ctx->thread_id);
@@ -456,6 +469,7 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 	g_pangu_rt->thread_num = verify->nr_work_threads;
 	g_pangu_rt->local_logger = verify->logger;
 
+#if 1
 	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_MANIPULATION])
 	{
@@ -502,6 +516,7 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Pangu HTTP Dynamic Maat  TSG_DYN_SUBSCRIBER_IP EX data register failed.");
 		goto error_out;
 	}
+#endif
 	ret = 0;
 error_out:
 	return ret;
