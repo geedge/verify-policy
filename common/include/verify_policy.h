@@ -11,7 +11,15 @@
 #include <event2/event.h>
 #include "verify_policy_utils.h"
 
-enum scan_table
+enum policy_type
+{
+    PXY_TABLE_SECURITY,
+    PXY_TABLE_MANIPULATION,
+    PXY_TABLE_DEFENCE,
+    __SCAN_POLICY_MAX
+};
+
+enum manipulate_sacn_table
 {
 	PXY_CTRL_IP,
 	PXY_CTRL_HTTP_URL,
@@ -22,6 +30,33 @@ enum scan_table
 	PXY_CTRL_HTTP_RES_BODY,
 	PXY_CTRL_SUBSCRIBE_ID,
 	__SCAN_TABLE_MAX
+};
+
+enum security_scan_table
+{
+	PXY_SECURITY_IP,
+	PXY_SECURITY_HTTP_URL,
+	PXY_SECURITY_HTTP_FQDN,
+	PXY_SECURITY_HTTP_REQ_HDR,
+	PXY_SECURITY_HTTP_REQ_BODY,
+	PXY_SECURITY_HTTP_RES_HDR,
+	PXY_SECURITY_HTTP_RES_BODY,
+	PXY_SECURITY_SUBSCRIBE_ID,
+    PXY_SECURITY_HTTPS_SNI,
+    PXY_SECURITY_HTTPS_CN,
+    PXY_SECURITY_HTTPS_SAN,
+    PXY_SECURITY_DNS_QNAME,
+    PXY_SECURITY_MAIL_ACCOUNT,
+    PXY_SECURITY_MAIL_FROM,
+    PXY_SECURITY_MAIL_TO,
+    PXY_SECURITY_MAIL_SUBJECT,
+    PXY_SECURITY_MAIL_CONTENT,
+    PXY_SECURITY_MAIL_ATT_NAME,
+    PXY_SECURITY_MAIL_ATT_CONTENT,
+    PXY_SECURITY_FTP_URI,
+    PXY_SECURITY_FTP_CONTENT,
+    PXY_SECURITY_FTP_ACCOUNT,
+	__SECURITY_TABLE_MAX
 };
 
 enum http_ev_bit_number
@@ -71,8 +106,10 @@ extern struct verify_proxy * g_verify_proxy;
 
 void * pangu_http_ctx_new(unsigned int thread_id);
 
-void http_scan(const char * value, enum tfe_http_event events,
-	const unsigned char * body_frag, size_t frag_size, void *pme);
+
+void http_scan(const char * value, enum policy_type type, int protocol_field, void *pme, cJSON *data_obj, struct ipaddr *ip_addr);
+
+int security_policy_init(struct verify_proxy * verify, const char* profile_path);
 
 char *web_json_table_add(void *pme);
 
