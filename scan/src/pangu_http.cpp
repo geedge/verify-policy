@@ -37,6 +37,21 @@ enum pangu_action //Bigger action number is prior.
 	__PG_ACTION_MAX
 };
 
+enum tfe_http_std_field
+{
+	TFE_HTTP_UNKNOWN_FIELD = 0,
+	TFE_HTTP_USER_AGENT,
+	TFE_HTTP_COOKIE,
+	TFE_HTTP_SET_COOKIE,
+	TFE_HTTP_CONT_TYPE,
+};
+
+struct http_field_name
+{
+	const char * field_name;
+	enum tfe_http_std_field field_id;
+};
+
 struct pangu_http_ctx
 {
 	enum pangu_action action;
@@ -177,66 +192,16 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	return prior_action;
 }
 
-char *web_json_table_add(void *pme)
+void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *list_arry, void *pme)
 {
-	char *policy_payload = NULL; size_t i = 0;
-	cJSON  *policy_obj=NULL, *data_obj=NULL, *hit_obj=NULL;
-	cJSON  *execute_obj=NULL, *obj_list=NULL, *category_obj=NULL;
-
-	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
-
-	policy_obj=cJSON_CreateObject();
-	cJSON_AddNumberToObject(policy_obj, "code", 200);
-	cJSON_AddStringToObject(policy_obj, "msg", "Success");
-	cJSON_AddNumberToObject(policy_obj, "success", 1);
-
-	data_obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(policy_obj, "data", data_obj);
-
-	/*hitPolicyList **/
-	hit_obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
-	if (ctx->hit_cnt >= 1)
-	{
-		for (i = 0; i < ctx->hit_cnt; i++)
-		{
-			cJSON_AddNumberToObject(hit_obj, "policyId", ctx->result[i].config_id);
-			cJSON_AddStringToObject(hit_obj, "policyName", "");
-		}
-	}
-	/*executePolicyList **/
-	execute_obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(data_obj, "executePolicyList", execute_obj);
-	cJSON_AddNumberToObject(execute_obj, "policyId", ctx->enforce_rules[0].config_id);
-	cJSON_AddStringToObject(execute_obj, "policyName", "");
-
-	/*objectList**/
-	obj_list = cJSON_CreateObject();
-	cJSON_AddItemToObject(data_obj, "objectList", obj_list);
-	cJSON_AddNumberToObject(obj_list, "objectId", 12);
-	cJSON_AddStringToObject(obj_list, "objectName", "");
-	cJSON *itemList = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj_list, "itemList", itemList);
-	cJSON_AddNumberToObject(itemList, "itemId", 12);
-	cJSON_AddStringToObject(itemList, "reqParam", "");
-
-	/*categoryList**/
-	category_obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(data_obj, "categoryList", category_obj);
-	cJSON_AddNumberToObject(category_obj, "categoryId", 12);
-	cJSON_AddStringToObject(category_obj, "reqParam", "");
-
-	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	printf("%s\n", policy_payload);
-	cJSON_Delete(policy_obj);
-
-	return policy_payload;
-}
-
-void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *data_obj, void *pme)
-{
-	int scan_ret = 0, table_id = 0;
+	int scan_ret = 0;
 	size_t hit_cnt = 0, i = 0;
+
+	struct http_field_name req_fields[]={	{"User-Agent", TFE_HTTP_USER_AGENT},
+									        {"Cookie", TFE_HTTP_COOKIE}};
+
+	struct http_field_name resp_fields[]={	{"Set-Cookie", TFE_HTTP_SET_COOKIE},
+											{"Content-Type", TFE_HTTP_CONT_TYPE}};
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
@@ -251,40 +216,26 @@ void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol
 		goto decide;
 	}
 
-	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || (protocol_field == PXY_CTRL_HTTP_RES_HDR))
+	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || protocol_field == PXY_CTRL_HTTP_RES_HDR)
 	{
-		table_id = (protocol_field == PXY_CTRL_HTTP_REQ_HDR) ? g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_REQ_HDR] : g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_RES_HDR];
+		struct http_field_name *field_name = (protocol_field == PXY_CTRL_HTTP_REQ_HDR) ? req_fields : resp_fields;
 
-		const char * str_field_name = NULL;
-		scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
-				   str_field_name, strlen(str_field_name));
-		assert(scan_ret == 0);
-		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], table_id,
-			CHARSET_UTF8, value, strlen(value),
-			ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid), ctx->thread_id);
-		if (scan_ret > 0)
+		for(size_t i=0;i<sizeof(req_fields)/sizeof(struct http_field_name);i++)
 		{
-			hit_cnt += scan_ret;
+			const char * str_field_name = field_name[i].field_name;
+			scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
+					   str_field_name, strlen(str_field_name));
+			assert(scan_ret == 0);
+			scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
+				CHARSET_UTF8, value, strlen(value),
+				ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid), ctx->thread_id);
+			if (scan_ret > 0)
+			{
+				hit_cnt += scan_ret;
+			}
 		}
 		goto decide;
 	}
-
-	if ((protocol_field == PXY_CTRL_HTTP_REQ_BODY) || protocol_field == PXY_CTRL_HTTP_RES_BODY)
-	{
-		assert(ctx->sp == NULL);
-		table_id = protocol_field == PXY_CTRL_HTTP_REQ_BODY ? g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_REQ_BODY] : g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_HTTP_RES_BODY];
-		ctx->sp = Maat_stream_scan_string_start(g_pangu_rt->maat[policy_type], table_id, ctx->thread_id);
-		scan_ret = Maat_stream_scan_string(&(ctx->sp), CHARSET_UTF8, (const char *) value, (int) strlen(value),
-				ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid));
-		if (scan_ret > 0)
-		{
-			hit_cnt += scan_ret;
-		}
-		Maat_stream_scan_string_end(&(ctx->sp));
-		ctx->sp = NULL;
-		goto decide;
-	}
-
 	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
 									CHARSET_UTF8, value, strlen(value),
 									ctx->result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
@@ -298,20 +249,29 @@ decide:
 	{
 		ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
 		ctx->hit_cnt = hit_cnt;
-		cJSON  *execute_obj=NULL, *hit_obj=NULL;
-		hit_obj = cJSON_CreateObject();
-		cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
+		cJSON *execute_obj=NULL, *hit_obj=NULL;
+		cJSON *item_obj=NULL, *policy_obj=NULL;
+
+		item_obj=cJSON_CreateObject();
+		cJSON_AddItemToArray(list_arry, item_obj);
+
+		hit_obj=cJSON_CreateArray();
+		cJSON_AddItemToObject(item_obj, "hitPolicyList", hit_obj);
 		if (ctx->hit_cnt >= 1)
 		{
 			for (i = 0; i < ctx->hit_cnt; i++)
 			{
-				cJSON_AddNumberToObject(hit_obj, "policyId", ctx->result[i].config_id);
+				policy_obj=cJSON_CreateObject();
+				cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
+				cJSON_AddItemToArray(hit_obj, policy_obj);
 			}
 		}
 		/*executePolicyList **/
-		execute_obj = cJSON_CreateObject();
-		cJSON_AddItemToObject(data_obj, "executePolicyList", execute_obj);
-		cJSON_AddNumberToObject(execute_obj, "policyId", ctx->enforce_rules[0].config_id);
+		execute_obj=cJSON_CreateArray();
+		cJSON_AddItemToObject(item_obj, "executePolicyList", execute_obj);
+		policy_obj=cJSON_CreateObject();
+		cJSON_AddNumberToObject(policy_obj, "policyId", ctx->enforce_rules[0].config_id);
+		cJSON_AddItemToArray(execute_obj, policy_obj);
 	}
 	return ;
 }
@@ -469,7 +429,6 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 	g_pangu_rt->thread_num = verify->nr_work_threads;
 	g_pangu_rt->local_logger = verify->logger;
 
-#if 1
 	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_MANIPULATION])
 	{
@@ -488,13 +447,12 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i]);
-
-		printf("%p table_name %s, table id %d, i = %d\n", g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i], i);
 		if (g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i] < 0)
 		{
 			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Pangu HTTP Maat table %s register failed.", table_name[i]);
 			goto error_out;
 		}
+		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Pangu policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i]);
 	}
 
 	g_pangu_rt->dyn_maat = create_maat_feather("dyn", profile_path, "DYNAMIC_MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
@@ -516,7 +474,6 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Pangu HTTP Dynamic Maat  TSG_DYN_SUBSCRIBER_IP EX data register failed.");
 		goto error_out;
 	}
-#endif
 	ret = 0;
 error_out:
 	return ret;
@@ -553,17 +510,17 @@ int security_policy_init(struct verify_proxy * verify, const char* profile_path)
 	table_name[PXY_SECURITY_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
 	table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 	table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
-	table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_MAIL_ATT_NAME";
+	table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
 
 	for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[PXY_TABLE_SECURITY][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_SECURITY], table_name[i]);
-		printf("SECURITY: %p table_name %s, table id %d, i = %d\n", g_pangu_rt->maat[PXY_TABLE_SECURITY], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_SECURITY][i], i);
 		if (g_pangu_rt->scan_table_id[PXY_TABLE_SECURITY][i] < 0)
 		{
 			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Security policy maat table %s register failed.", table_name[i]);
 			goto error_out;
 		}
+		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Security policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_SECURITY], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_SECURITY][i]);
 	}
 	ret = 0;
 error_out:

@@ -112,6 +112,4 @@ void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol
 
 int security_policy_init(struct verify_proxy * verify, const char* profile_path);
 
-char *web_json_table_add(void *pme);
-
 #endif

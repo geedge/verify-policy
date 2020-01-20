@@ -126,8 +126,6 @@ int protoco_field_type_str2idx(enum tsg_policy_type type, const char *action_str
 			table_name[PXY_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
 			table_name[PXY_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
 			table_name[PXY_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
-			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_MAIL_ACCOUNT";
-			table_name[PXY_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
 			table_name[PXY_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
 			table_name[PXY_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
 			table_name[PXY_SECURITY_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
@@ -136,7 +134,7 @@ int protoco_field_type_str2idx(enum tsg_policy_type type, const char *action_str
 			table_name[PXY_SECURITY_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
 			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 			table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
-			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_MAIL_ATT_NAME";
+			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -184,6 +182,20 @@ struct ipaddr *ip_to_stream_addr(char *clientIp1, unsigned int clientPort1, char
 	return ip_addr;
 }
 
+void ipaddr_free(struct ipaddr *ip_addr)
+{
+	if(ip_addr->addrtype==ADDR_TYPE_IPV4)
+	{
+		free(ip_addr->v4);
+	}
+
+	if(ip_addr->addrtype==ADDR_TYPE_IPV6)
+	{
+		free(ip_addr->v6);
+	}
+	free(ip_addr);
+}
+
 cJSON *get_query_from_request(const char *data, int thread_id)
 {
 	int i = 0;
@@ -195,7 +207,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "invalid policy parameter");
 		return NULL;
 	}
-	cJSON  *policy_obj=NULL, *data_obj=NULL;
+	cJSON  *policy_obj=NULL, *data_obj=NULL, *list_arry = NULL;
 	policy_obj=cJSON_CreateObject();
 
 	cJSON_AddNumberToObject(policy_obj, "code", 200);
@@ -204,6 +216,9 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 	data_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
+
+	list_arry=cJSON_CreateArray();
+	cJSON_AddItemToObject(data_obj, "list", list_arry);
 
 	cJSON* item = NULL, *subitem = NULL, *subchild = NULL;
 	item = cJSON_GetObjectItem(data_json,"verifyList");
@@ -240,14 +255,14 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 							query_list->table_obj[i].subscriberid = item->valuestring;
 							p += snprintf(p, sizeof(buff) - (p - buff), "subscriberid = %s",query_list->table_obj[i].subscriberid);
 						}
-						http_scan(query_list->table_obj[i].keyword, query_list->type, EV_HTTP_SUBSCRIBE_ID, NULL, data_obj, ctx);
+						http_scan(query_list->table_obj[i].keyword, query_list->type, EV_HTTP_SUBSCRIBE_ID, NULL, list_arry, ctx);
 
 						i++;
 						continue;
 					}
 					if(0 == strcasecmp(query_list->table_obj[i].keyword_scope, "ip"))
 					{
-						int addr_type=0, protocol=0;
+						int addr_type=0, __attribute__((__unused__))protocol=0;
 						char *clientIp1=NULL,*serverIp1=NULL;
 						unsigned int clientPort1=0,serverPort1=0;
 
@@ -265,8 +280,9 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 						if(item && item->type==cJSON_Number) addr_type = item->valueint;
 						query_list->table_obj[i].ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
 
-						http_scan(NULL, query_list->type, PXY_CTRL_IP, query_list->table_obj[i].ip_addr, data_obj, ctx);
+						http_scan(NULL, query_list->type, PXY_CTRL_IP, query_list->table_obj[i].ip_addr, list_arry, ctx);
 
+						ipaddr_free(query_list->table_obj[i].ip_addr);
 						i++;
 						continue;
 					}
@@ -279,11 +295,11 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					if(item && item->type==cJSON_String)
 					{
 						query_list->table_obj[i].keyword = item->valuestring;
-						p += snprintf(p, sizeof(buff) - (p - buff), " content = %s",query_list->table_obj[i].keyword);
+						p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",query_list->table_obj[i].keyword);
 					}
 					mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
 
-					http_scan(query_list->table_obj[i].keyword, query_list->type, query_list->table_obj[i].protocol_field, NULL, data_obj, ctx);
+					http_scan(query_list->table_obj[i].keyword, query_list->type, query_list->table_obj[i].protocol_field, NULL, list_arry, ctx);
 
 					i++;
 					memset(buff, 0, VERIFY_STRING_MAX);
