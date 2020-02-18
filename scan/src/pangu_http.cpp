@@ -62,6 +62,8 @@ struct pangu_http_ctx
 	struct Maat_rule_t result[MAX_SCAN_RESULT];
 	size_t n_enforce;
 	struct Maat_rule_t * enforce_rules;
+	int n_read;
+	struct Maat_hit_path_t hit_path[128];
 	int thread_id;
 };
 
@@ -192,10 +194,42 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	return prior_action;
 }
 
-void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *list_arry, void *pme)
+void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
-	int scan_ret = 0;
-	size_t hit_cnt = 0, i = 0;
+	int i=0;
+	cJSON *attributeObj=NULL,*hitPaths=NULL;
+
+	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
+
+	attributeObj=query_obj->attributes;
+	cJSON_AddItemToArray(attributes, attributeObj);
+
+	hitPaths=cJSON_CreateArray();
+	cJSON_AddItemToObject(attributeObj, "hitPaths", hitPaths);
+
+	cJSON *histObj=NULL;
+	for(i=0; i< ctx->n_read; i++)
+	{
+		if (query_obj->nth_scan == ctx->hit_path[i].Nth_scan)
+		{
+			histObj=cJSON_CreateObject();
+			cJSON_AddItemToArray(hitPaths, histObj);
+			cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
+			cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
+			if(ctx->hit_path[i].compile_id > 0)
+			{
+				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
+				cJSON_AddNumberToObject(histObj, "protocolField", ctx->hit_path[i].virtual_table_id);
+				cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
+			}
+		}
+	}
+}
+
+size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
+{
+	int scan_ret=0, n_read;
+	size_t hit_cnt=0, i=0;
 
 	struct http_field_name req_fields[]={	{"User-Agent", TFE_HTTP_USER_AGENT},
 									        {"Cookie", TFE_HTTP_COOKIE}};
@@ -205,14 +239,20 @@ void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
+	int protocol_field = query_obj->protocol_field;
+	const char *value = query_obj->keyword;
+
 	if (protocol_field == PXY_CTRL_IP)
 	{
-		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], ip_addr, 0,
+		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], query_obj->ip_addr, 0,
 				   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if (scan_ret > 0)
 		{
 			hit_cnt += scan_ret;
 		}
+		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		ctx->n_read=n_read;
 		goto decide;
 	}
 
@@ -234,6 +274,9 @@ void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol
 				hit_cnt += scan_ret;
 			}
 		}
+		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		ctx->n_read=n_read;
 		goto decide;
 	}
 	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
@@ -244,41 +287,37 @@ void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol
 	{
 		hit_cnt+=scan_ret;
 	}
+	n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+	query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+	ctx->n_read=n_read;
 decide:
 	if (hit_cnt > 0)
 	{
 		ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
 		ctx->hit_cnt = hit_cnt;
-		cJSON *execute_obj=NULL, *hit_obj=NULL;
-		cJSON *item_obj=NULL, *policy_obj=NULL;
-
-		item_obj=cJSON_CreateObject();
-		cJSON_AddItemToArray(list_arry, item_obj);
-
+		cJSON  *hit_obj=NULL, *policy_obj=NULL;
 		hit_obj=cJSON_CreateArray();
-		cJSON_AddItemToObject(item_obj, "hitPolicyList", hit_obj);
+		cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
 		if (ctx->hit_cnt >= 1)
 		{
 			for (i = 0; i < ctx->hit_cnt; i++)
 			{
 				policy_obj=cJSON_CreateObject();
 				cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
+				cJSON_AddStringToObject(policy_obj, "policyName", "");
+				if (ctx->enforce_rules[0].config_id == ctx->result[i].config_id)
+				{
+					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+				}
+				else
+				{
+					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", false);
+				}
 				cJSON_AddItemToArray(hit_obj, policy_obj);
 			}
 		}
-		/*executePolicyList **/
-		execute_obj=cJSON_CreateArray();
-		cJSON_AddItemToObject(item_obj, "executePolicyList", execute_obj);
-		policy_obj=cJSON_CreateObject();
-		cJSON_AddNumberToObject(policy_obj, "policyId", ctx->enforce_rules[0].config_id);
-		cJSON_AddItemToArray(execute_obj, policy_obj);
 	}
-	return ;
-}
-
-char * verify_policy_str_to_addr()
-{
-	return NULL;
+	return hit_cnt;
 }
 
 static Maat_feather_t create_maat_feather(const char * instance_name, const char * profile, const char * section, const char *table_name, int max_thread, void * logger)
@@ -420,7 +459,7 @@ void subscribe_id_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA* to, MAAT_PLUGIN_EX_D
 	return;
 }
 
-int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
+int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1;
 
@@ -428,7 +467,6 @@ int pangu_policy_init(struct verify_proxy * verify, const char* profile_path)
 
 	g_pangu_rt->thread_num = verify->nr_work_threads;
 	g_pangu_rt->local_logger = verify->logger;
-
 	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_MANIPULATION])
 	{
@@ -479,7 +517,7 @@ error_out:
 	return ret;
 }
 
-int security_policy_init(struct verify_proxy * verify, const char* profile_path)
+int security_policy_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1;
 

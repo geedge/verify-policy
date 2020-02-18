@@ -11,7 +11,7 @@
 #include <event2/event.h>
 #include "verify_policy_utils.h"
 
-enum tsg_policy_type
+enum verify_policy_type
 {
     PXY_TABLE_SECURITY,
     PXY_TABLE_MANIPULATION,
@@ -81,7 +81,7 @@ enum tfe_http_event
 	EV_HTTP_SUBSCRIBE_ID = 1ULL << SUBSCRIBE_ID,
 };
 
-struct verify_proxy_thread
+struct verify_policy_thread
 {
 	int  id;
 	pthread_t pid;
@@ -92,24 +92,48 @@ struct verify_proxy_thread
 	void * (*routine)(void *);
 };
 
-struct verify_proxy
+struct verify_policy
 {
 	char name[VERIFY_SYMBOL_MAX];
 	void * logger;
 	unsigned int log_level;
 	unsigned int nr_work_threads;
 	unsigned int listen_port;
-	struct verify_proxy_thread *work_threads[TFE_THREAD_MAX];
+	struct verify_policy_thread *work_threads[TFE_THREAD_MAX];
 };
 
-extern struct verify_proxy * g_verify_proxy;
+struct verify_policy_query_obj
+{
+	int protocol_field;
+
+	char *keyword;
+	char *attri_name;
+
+	struct ipaddr *ip_addr;
+
+	char *subscriberid;
+
+    int nth_scan;
+    cJSON* attributes;
+
+};
+
+struct verify_policy_query
+{
+	enum verify_policy_type type;
+	struct verify_policy_query_obj query_obj[32];
+};
+
+extern struct verify_policy * g_verify_proxy;
 
 void * pangu_http_ctx_new(unsigned int thread_id);
 
 void pangu_http_ctx_free(void * pme);
 
-void http_scan(const char *value, enum tsg_policy_type policy_type, int protocol_field, struct ipaddr *ip_addr, cJSON *data_obj, void *pme);
+size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
 
-int security_policy_init(struct verify_proxy * verify, const char* profile_path);
+void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme);
+
+int security_policy_init(struct verify_policy * verify, const char* profile_path);
 
 #endif
