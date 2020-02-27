@@ -219,7 +219,7 @@ void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attribute
 			if(ctx->hit_path[i].compile_id > 0)
 			{
 				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
-				cJSON_AddNumberToObject(histObj, "protocolField", ctx->hit_path[i].virtual_table_id);
+				//cJSON_AddNumberToObject(histObj, "protocolField", ctx->hit_path[i].virtual_table_id);
 				cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
 			}
 		}

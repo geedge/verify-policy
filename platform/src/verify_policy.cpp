@@ -330,7 +330,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				{
 					int item = 0;
 					cJSON *verfifySession = cJSON_CreateObject();
-					cJSON_AddItemToObject(data_obj, "verfifySession", verfifySession);
+					cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
 					cJSON *attributes=cJSON_CreateArray();
 					cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 					for (item = 0; item < i; item++)
@@ -369,7 +369,7 @@ static int evhttp_socket_send(struct evhttp_request *req, char *sendbuf)
         goto err;
     }
     evhttp_add_header(evhttp_request_get_output_headers(req),
-		              "Content-Type", "text/html");
+		              "Content-Type", "application/json");
 	evhttp_add_header(evhttp_request_get_output_headers(req), "Connection", "keep-alive");
     evbuffer_add_printf(evb, "%s", sendbuf);
     evhttp_send_reply(req, HTTP_OK, "OK", evb);
