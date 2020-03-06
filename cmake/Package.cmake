@@ -43,6 +43,6 @@ endif()
 
 # setup %config(noreplace)
 set(CPACK_RPM_USER_FILELIST "%config(noreplace) ${CMAKE_INSTALL_PREFIX}/conf/verify_policy.conf"
-			                 "%config(noreplace) ${CMAKE_INSTALL_PREFIX}/resource/table_info.conf"
-                           "%config(noreplace) ${CMAKE_INSTALL_PREFIX}/resource/dynamic_maat_table_info.conf")
+			                 "%config(noreplace) ${CMAKE_INSTALL_PREFIX}/resource/table_info_proxy.conf"
+                           "%config(noreplace) ${CMAKE_INSTALL_PREFIX}/resource/table_info_security.conf")
 include(CPack)

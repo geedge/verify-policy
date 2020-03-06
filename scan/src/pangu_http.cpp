@@ -242,7 +242,7 @@ size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query
 	int protocol_field = query_obj->protocol_field;
 	const char *value = query_obj->keyword;
 
-	if (protocol_field == PXY_CTRL_IP)
+	if (protocol_field == PXY_CTRL_IP && query_obj->ip_addr != NULL)
 	{
 		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], query_obj->ip_addr, 0,
 				   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);

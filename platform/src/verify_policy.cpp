@@ -134,50 +134,6 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 
 	return i;
 }
-#if 0
-struct ipaddr *ip_to_stream_addr(struct policy_attribute_obj *attribute_obj, int cnt)
-{
-	int i = 0;
-	int addr_type=0, __attribute__((__unused__))protocol=0;
-	char *clientIp1=NULL,*serverIp1=NULL;
-	unsigned int clientPort1=0,serverPort1=0;
-	for(i = 0; i < cnt; i++)
-	{
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "clientIp")) clientIp1 = attribute_obj[i].attributeValue;
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "clientPort")) clientPort1 = atoi(attribute_obj[i].attributeValue);
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "serverIp")) serverIp1 = attribute_obj[i].attributeValue;
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "serverPort")) serverPort1 = atoi(attribute_obj[i].attributeValue);
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "addrType")) addr_type = atoi(attribute_obj[i].attributeValue);
-		if (0 == strcasecmp(attribute_obj[i].attributeName, "protocol")) protocol = atoi(attribute_obj[i].attributeValue);
-	}
-
-	struct ipaddr *ip_addr = ALLOC(struct ipaddr, 1);
-	if(addr_type == 4)
-	{
-		struct stream_tuple4_v4 *v4_addr = ALLOC(struct stream_tuple4_v4, 1);
-		ip_addr->addrtype=ADDR_TYPE_IPV4;
-		inet_pton(AF_INET,clientIp1,&(v4_addr->saddr));
-		v4_addr->source=htons(clientPort1);
-		inet_pton(AF_INET,serverIp1,&(v4_addr->daddr));
-		v4_addr->dest=htons(serverPort1);
-		ip_addr->v4=v4_addr;
-	}
-	if(addr_type == 6)
-	{
-		struct stream_tuple4_v6 *v6_addr = ALLOC(struct stream_tuple4_v6, 1);
-		ip_addr->addrtype=ADDR_TYPE_IPV6;
-		inet_pton(AF_INET6,clientIp1,&(v6_addr->saddr));
-		v6_addr->source=htons(clientPort1);
-		inet_pton(AF_INET6,serverIp1,&(v6_addr->daddr));
-		v6_addr->dest=htons(serverPort1);
-		ip_addr->v6=v6_addr;
-	}
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    contentType = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
-		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
-
-	return ip_addr;
-}
-#endif
 
 struct ipaddr *ip_to_stream_addr(char *clientIp1, unsigned int clientPort1, char *serverIp1, unsigned int serverPort1, int addr_type)
 {
@@ -225,8 +181,9 @@ void ipaddr_free(struct ipaddr *ip_addr)
 cJSON *get_query_from_request(const char *data, int thread_id)
 {
 	int i = 0;
-	size_t hit_cnt = 0;
-	char buff[VERIFY_STRING_MAX], *p = NULL;;
+	int hit_cnt = -1;
+	char buff[VERIFY_STRING_MAX], *p = NULL;
+	struct verify_policy_query *policy_query = NULL;
 
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
@@ -243,8 +200,6 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	data_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
-	char *log_payload=NULL;
-
 	cJSON* item = NULL, *subitem = NULL, *subchild = NULL;
 	cJSON* attributes=NULL, *attributeValue=NULL;
 	item = cJSON_GetObjectItem(data_json,"verifyList");
@@ -252,16 +207,21 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			struct verify_policy_query *policy_query = ALLOC(struct verify_policy_query, 1);
+			policy_query = ALLOC(struct verify_policy_query, 1);
 			item = cJSON_GetObjectItem(subitem,"policyType");
 			if(item && item->type==cJSON_String)
 			{
 				policy_query->type = tsg_policy_type_str2idx(item->valuestring);
+				if (policy_query->type >= __SCAN_POLICY_MAX)
+				{
+					mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy type error, policy id = %d", policy_query->type);
+					goto free;
+				}
 			}
 			item = cJSON_GetObjectItem(subitem,"verifySession");
 			if(item == NULL || item->type!=cJSON_Object)
 			{
-				goto end;
+				goto free;
 			}
 			attributes = cJSON_GetObjectItem(item,"attributes");
 			if(attributes && attributes->type==cJSON_Array)
@@ -283,12 +243,17 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					if(item && item->type==cJSON_String)
 					{
 						policy_query->query_obj[i].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
+						if(policy_query->query_obj[i].protocol_field == __SECURITY_TABLE_MAX ||
+						   policy_query->query_obj[i].protocol_field == __SCAN_TABLE_MAX)
+						{
+							mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
+							goto free;
+						}
 					}
-
 					attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
 					if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
 					{
-						goto end;
+						goto free;
 					}
 					if(0 == strcasecmp(policy_query->query_obj[i].attri_name, "ip"))
 					{
@@ -326,17 +291,14 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					i++;
 					memset(buff, 0, VERIFY_STRING_MAX);
 				}
-				if (hit_cnt > 0)
+				int item = 0;
+				cJSON *verfifySession = cJSON_CreateObject();
+				cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
+				cJSON *attributes=cJSON_CreateArray();
+				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
+				for (item = 0; item < i; item++)
 				{
-					int item = 0;
-					cJSON *verfifySession = cJSON_CreateObject();
-					cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
-					cJSON *attributes=cJSON_CreateArray();
-					cJSON_AddItemToObject(verfifySession, "attributes", attributes);
-					for (item = 0; item < i; item++)
-					{
-						get_scan_status(&policy_query->query_obj[item], attributes,data_obj, ctx);
-					}
+					get_scan_status(&policy_query->query_obj[item], attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}
@@ -344,8 +306,14 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 			i=0;
 			FREE(&policy_query);
 		}
+		goto end;
+free:
+	if (policy_query)
+	{
+		FREE(&policy_query);
+	}
 end:
-		if (hit_cnt > 0)
+		if (hit_cnt >= 0)
 		{
 			cJSON_AddBoolToObject(policy_obj, "success", true);
 		}
