@@ -117,6 +117,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 			table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
 			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
+			table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -243,8 +244,8 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					if(item && item->type==cJSON_String)
 					{
 						policy_query->query_obj[i].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
-						if(policy_query->query_obj[i].protocol_field == __SECURITY_TABLE_MAX ||
-						   policy_query->query_obj[i].protocol_field == __SCAN_TABLE_MAX)
+						if ((policy_query->type == PXY_TABLE_MANIPULATION && policy_query->query_obj[i].protocol_field == __SCAN_TABLE_MAX)
+							|| (policy_query->type == PXY_TABLE_SECURITY && policy_query->query_obj[i].protocol_field == __SECURITY_TABLE_MAX))
 						{
 							mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
 							goto free;

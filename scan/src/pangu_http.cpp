@@ -63,7 +63,7 @@ struct pangu_http_ctx
 	size_t n_enforce;
 	struct Maat_rule_t * enforce_rules;
 	int n_read;
-	struct Maat_hit_path_t hit_path[128];
+	struct Maat_hit_path_t hit_path[2048];
 	int thread_id;
 };
 
@@ -549,6 +549,7 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 	table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 	table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
 	table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
+	table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
 
 	for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 	{
