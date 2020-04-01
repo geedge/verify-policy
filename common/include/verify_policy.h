@@ -29,6 +29,7 @@ enum manipulate_sacn_table
 	PXY_CTRL_HTTP_RES_HDR,
 	PXY_CTRL_HTTP_RES_BODY,
 	PXY_CTRL_SUBSCRIBE_ID,
+    PXY_CTRL_APP_ID,
 	__SCAN_TABLE_MAX
 };
 

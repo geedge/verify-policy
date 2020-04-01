@@ -216,10 +216,9 @@ void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attribute
 			cJSON_AddItemToArray(hitPaths, histObj);
 			cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
 			cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
+			cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
 			if(ctx->hit_path[i].compile_id > 0)
 			{
-				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
-				//cJSON_AddNumberToObject(histObj, "protocolField", ctx->hit_path[i].virtual_table_id);
 				cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
 			}
 		}
@@ -474,7 +473,7 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 	}
 
 	const char * table_name[__SCAN_TABLE_MAX];
-	table_name[PXY_CTRL_IP] = "TSG_OBJ_IP_ADDR";
+	table_name[PXY_CTRL_IP] = "TSG_SECURITY_ADDR";
 	table_name[PXY_CTRL_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 	table_name[PXY_CTRL_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 	table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
@@ -482,6 +481,7 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 	table_name[PXY_CTRL_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
 	table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_CONTENT";
 	table_name[PXY_CTRL_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
+	table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i]);
@@ -527,7 +527,7 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 		goto error_out;
 	}
 	const char * table_name[__SECURITY_TABLE_MAX];
-	table_name[PXY_SECURITY_IP] = "TSG_OBJ_IP_ADDR";
+	table_name[PXY_SECURITY_IP] = "TSG_SECURITY_ADDR";
 	table_name[PXY_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 	table_name[PXY_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 	table_name[PXY_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
