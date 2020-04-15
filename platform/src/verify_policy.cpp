@@ -64,7 +64,7 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[PXY_TABLE_SECURITY] = "tsg_security";
-	policy_name[PXY_TABLE_MANIPULATION] = "proxy_manipulation";
+	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
@@ -180,12 +180,86 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue)
+{
+	cJSON* item = NULL;
+	int addr_type=0, __attribute__((__unused__))protocol=0;
+	char *clientIp1=NULL,*serverIp1=NULL;
+	unsigned int clientPort1=0,serverPort1=0;
+
+	item = cJSON_GetObjectItem(attributeValue,"clientIp");
+	if(item && item->type==cJSON_String) clientIp1 = item->valuestring;
+	item = cJSON_GetObjectItem(attributeValue,"serverIp");
+	if(item && item->type==cJSON_String) serverIp1 = (item->valuestring);
+	item = cJSON_GetObjectItem(attributeValue,"clientPort");
+	if(item && item->type==cJSON_String) clientPort1 =atoi(item->valuestring);
+	item = cJSON_GetObjectItem(attributeValue,"serverPort");
+	if(item && item->type==cJSON_String) serverPort1 =atoi(item->valuestring);
+	item = cJSON_GetObjectItem(attributeValue,"protocol");
+	if(item && item->type==cJSON_Number) protocol = item->valueint;
+	item=cJSON_GetObjectItem(attributeValue,"addrType");
+	if(item && item->type==cJSON_Number) addr_type = item->valueint;
+
+	struct ipaddr *ip_addr = NULL;
+	ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+
+	return ip_addr;
+}
+
+static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_policy_query *policy_query)
+{
+	int xret = -1;
+	char buff[VERIFY_STRING_MAX], *p = NULL;
+	cJSON* item = NULL, *attributeValue=NULL;
+
+	p = buff;
+	item = cJSON_GetObjectItem(subchild, "attributeName");
+	if(item && item->type==cJSON_String)
+	{
+		policy_query->verify_object[curr_id].attri_name = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), "attributeName = %s",policy_query->verify_object[curr_id].attri_name);
+	}
+	policy_query->verify_object[curr_id].attributes=cJSON_Duplicate(subchild, 1);
+
+	item = cJSON_GetObjectItem(subchild, "tableName");
+	if(item && item->type==cJSON_String)
+	{
+		policy_query->verify_object[curr_id].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
+		if ((policy_query->type == PXY_TABLE_MANIPULATION && policy_query->verify_object[curr_id].protocol_field == __SCAN_TABLE_MAX)
+			|| (policy_query->type == PXY_TABLE_SECURITY && policy_query->verify_object[curr_id].protocol_field == __SECURITY_TABLE_MAX))
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
+			goto finish;
+		}
+	}
+	attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
+	if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
+	{
+		goto finish;
+	}
+	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "ip"))
+	{
+		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue);
+		goto end;
+	}
+	item = cJSON_GetObjectItem(attributeValue,"string");
+	{
+		policy_query->verify_object[curr_id].keyword = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
+	}
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
+	memset(buff, 0, VERIFY_STRING_MAX);
+end:
+	xret = 1;
+finish:
+	return xret;
+}
+
 cJSON *get_query_from_request(const char *data, int thread_id)
 {
 	int i = 0;
 	int hit_cnt = -1;
-	char buff[VERIFY_STRING_MAX], *p = NULL;
-	struct verify_policy_query *policy_query = NULL;
+	struct verify_policy_query *verify_policy = NULL;
 
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
@@ -202,21 +276,20 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	data_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
-	cJSON* item = NULL, *subitem = NULL, *subchild = NULL;
-	cJSON* attributes=NULL, *attributeValue=NULL;
+	cJSON* item = NULL, *subitem = NULL, *subchild = NULL, *attributes=NULL;
 	item = cJSON_GetObjectItem(data_json,"verifyList");
 	if(item && item->type==cJSON_Array)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			policy_query = ALLOC(struct verify_policy_query, 1);
+			verify_policy = ALLOC(struct verify_policy_query, 1);
 			item = cJSON_GetObjectItem(subitem,"policyType");
 			if(item && item->type==cJSON_String)
 			{
-				policy_query->type = tsg_policy_type_str2idx(item->valuestring);
-				if (policy_query->type >= __SCAN_POLICY_MAX)
+				verify_policy->type = tsg_policy_type_str2idx(item->valuestring);
+				if (verify_policy->type >= __SCAN_POLICY_MAX)
 				{
-					mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy type error, policy id = %d", policy_query->type);
+					mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy type error, policy id = %d", verify_policy->type);
 					goto free;
 				}
 			}
@@ -232,66 +305,17 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 				{
-					p = buff;
-					item = cJSON_GetObjectItem(subchild, "attributeName");
-					if(item && item->type==cJSON_String)
-					{
-						policy_query->query_obj[i].attri_name = item->valuestring;
-						p += snprintf(p, sizeof(buff) - (p - buff), "attributeName = %s",policy_query->query_obj[i].attri_name);
-					}
-					policy_query->query_obj[i].attributes=cJSON_Duplicate(subchild, 1);
-
-					item = cJSON_GetObjectItem(subchild, "tableName");
-					if(item && item->type==cJSON_String)
-					{
-						policy_query->query_obj[i].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
-						if ((policy_query->type == PXY_TABLE_MANIPULATION && policy_query->query_obj[i].protocol_field == __SCAN_TABLE_MAX)
-							|| (policy_query->type == PXY_TABLE_SECURITY && policy_query->query_obj[i].protocol_field == __SECURITY_TABLE_MAX))
-						{
-							mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
-							goto free;
-						}
-					}
-					attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
-					if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
+					hit_cnt = get_attribute_from_json(i, subchild, verify_policy);
+					if (hit_cnt < 0)
 					{
 						goto free;
 					}
-					if(0 == strcasecmp(policy_query->query_obj[i].attri_name, "ip"))
+					hit_cnt = http_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
+					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "ip"))
 					{
-						int addr_type=0, __attribute__((__unused__))protocol=0;
-						char *clientIp1=NULL,*serverIp1=NULL;
-						unsigned int clientPort1=0,serverPort1=0;
-						item = cJSON_GetObjectItem(attributeValue,"clientIp");
-						if(item && item->type==cJSON_String) clientIp1 = item->valuestring;
-						item = cJSON_GetObjectItem(attributeValue,"serverIp");
-						if(item && item->type==cJSON_String) serverIp1 = (item->valuestring);
-						item = cJSON_GetObjectItem(attributeValue,"clientPort");
-						if(item && item->type==cJSON_String) clientPort1 =atoi(item->valuestring);
-						item = cJSON_GetObjectItem(attributeValue,"serverPort");
-						if(item && item->type==cJSON_String) serverPort1 =atoi(item->valuestring);
-						item = cJSON_GetObjectItem(attributeValue,"protocol");
-						if(item && item->type==cJSON_Number) protocol = item->valueint;
-						item=cJSON_GetObjectItem(attributeValue,"addrType");
-						if(item && item->type==cJSON_Number) addr_type = item->valueint;
-						policy_query->query_obj[i].ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
-
-						hit_cnt = http_scan(policy_query->type, &policy_query->query_obj[i], data_obj, ctx);
-
-						ipaddr_free(policy_query->query_obj[i].ip_addr);
-						i++;
-						continue;
+						ipaddr_free(verify_policy->verify_object[i].ip_addr);
 					}
-					item = cJSON_GetObjectItem(attributeValue,"string");
-					{
-						policy_query->query_obj[i].keyword = item->valuestring;
-						p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->query_obj[i].keyword);
-					}
-					mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
-
-					hit_cnt = http_scan(policy_query->type, &policy_query->query_obj[i], data_obj, ctx);
 					i++;
-					memset(buff, 0, VERIFY_STRING_MAX);
 				}
 				int item = 0;
 				cJSON *verfifySession = cJSON_CreateObject();
@@ -300,20 +324,20 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					get_scan_status(&policy_query->query_obj[item], attributes,data_obj, ctx);
+					get_scan_status(&verify_policy->verify_object[item], attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}
 
 			i=0;
-			FREE(&policy_query);
+			FREE(&verify_policy);
 		}
 		goto end;
 free:
-	if (policy_query)
-	{
-		FREE(&policy_query);
-	}
+		if (verify_policy)
+		{
+			FREE(&verify_policy);
+		}
 end:
 		if (hit_cnt >= 0)
 		{

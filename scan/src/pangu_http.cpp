@@ -130,6 +130,57 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	struct Maat_rule_t monit_rule[n_hit];
 	enum pangu_action prior_action = PG_ACTION_NONE;
 
+
+	for (i = 0; i < n_hit; i++)
+	{
+		unsigned char __expand_action = (unsigned char) hit_rules[i].action;
+		enum pangu_action __action = (enum pangu_action) __expand_action;
+
+		if (__action == PG_ACTION_MONIT)
+		{
+			memcpy(monit_rule + n_monit, hit_rules + i, sizeof(struct Maat_rule_t));
+			n_monit++;
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	exist_enforce_num = *n_enforce;
+	if (prior_action == PG_ACTION_MONIT)
+	{
+		*n_enforce += n_monit;
+	}
+	else
+	{
+		*n_enforce += n_monit + 1;
+	}
+
+	*enforce_rules = (struct Maat_rule_t *) realloc(*enforce_rules, sizeof(struct Maat_rule_t) * (*n_enforce));
+	if (prior_action == PG_ACTION_MONIT)
+	{
+		memcpy(*enforce_rules + exist_enforce_num, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+	}
+	else
+	{
+		memmove(*enforce_rules+1, *enforce_rules, exist_enforce_num*sizeof(struct Maat_rule_t));
+		memcpy(*enforce_rules, prior_rule, sizeof(struct Maat_rule_t));
+		memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+	}
+
+	return prior_action;
+}
+
+#if 0
+static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules, size_t n_hit,
+	struct Maat_rule_t ** enforce_rules, size_t * n_enforce)
+{
+	size_t n_monit = 0, exist_enforce_num = 0, i = 0;
+	const struct Maat_rule_t * prior_rule = hit_rules;
+	struct Maat_rule_t monit_rule[n_hit];
+	enum pangu_action prior_action = PG_ACTION_NONE;
+
 	for (i = 0; i < n_hit; i++)
 	{
 		unsigned char __expand_action = (unsigned char) hit_rules[i].action;
@@ -193,6 +244,7 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 
 	return prior_action;
 }
+#endif
 
 void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
@@ -216,6 +268,10 @@ void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attribute
 			cJSON_AddItemToArray(hitPaths, histObj);
 			cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
 			cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
+			if (ctx->hit_path[i].top_group_id < 0)
+			{
+				ctx->hit_path[i].top_group_id = ctx->hit_path[i].sub_group_id;
+			}
 			cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
 			if(ctx->hit_path[i].compile_id > 0)
 			{
@@ -225,10 +281,52 @@ void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attribute
 	}
 }
 
+static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data_obj, void *pme)
+{
+	size_t i=0, ret = 0;
+
+	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
+
+	if (hit_cnt <= 0)
+	{
+		return 0;
+	}
+
+	ret = Maat_rule_sort_by_evaluation_order(maat, ctx->result, hit_cnt);
+	if (ret != hit_cnt)
+	{
+		return 0;
+	}
+	ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
+	ctx->hit_cnt = hit_cnt;
+	cJSON  *hit_obj=NULL, *policy_obj=NULL;
+	hit_obj=cJSON_CreateArray();
+	cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
+	if (ctx->hit_cnt >= 1)
+	{
+		for (i = 0; i < ctx->hit_cnt; i++)
+		{
+			policy_obj=cJSON_CreateObject();
+			cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
+			cJSON_AddStringToObject(policy_obj, "policyName", "");
+			if (ctx->enforce_rules[0].config_id == ctx->result[i].config_id)
+			{
+				cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+			}
+			else
+			{
+				cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", false);
+			}
+			cJSON_AddItemToArray(hit_obj, policy_obj);
+		}
+	}
+	return 0;
+}
+
 size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
-	size_t hit_cnt=0, i=0;
+	size_t hit_cnt=0;
 
 	struct http_field_name req_fields[]={	{"User-Agent", TFE_HTTP_USER_AGENT},
 									        {"Cookie", TFE_HTTP_COOKIE}};
@@ -277,6 +375,7 @@ size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query
 		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 		goto decide;
+
 	}
 	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
 									CHARSET_UTF8, value, strlen(value),
@@ -290,32 +389,7 @@ size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query
 	query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
 	ctx->n_read=n_read;
 decide:
-	if (hit_cnt > 0)
-	{
-		ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
-		ctx->hit_cnt = hit_cnt;
-		cJSON  *hit_obj=NULL, *policy_obj=NULL;
-		hit_obj=cJSON_CreateArray();
-		cJSON_AddItemToObject(data_obj, "hitPolicyList", hit_obj);
-		if (ctx->hit_cnt >= 1)
-		{
-			for (i = 0; i < ctx->hit_cnt; i++)
-			{
-				policy_obj=cJSON_CreateObject();
-				cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
-				cJSON_AddStringToObject(policy_obj, "policyName", "");
-				if (ctx->enforce_rules[0].config_id == ctx->result[i].config_id)
-				{
-					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
-				}
-				else
-				{
-					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", false);
-				}
-				cJSON_AddItemToArray(hit_obj, policy_obj);
-			}
-		}
-	}
+	http_hit_policy_list(g_pangu_rt->maat[policy_type], hit_cnt, data_obj, (void *)ctx);
 	return hit_cnt;
 }
 

@@ -123,7 +123,7 @@ struct verify_policy_query_obj
 struct verify_policy_query
 {
 	enum verify_policy_type type;
-	struct verify_policy_query_obj query_obj[32];
+	struct verify_policy_query_obj verify_object[32];
 };
 
 extern struct verify_policy * g_verify_proxy;
