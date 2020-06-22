@@ -171,7 +171,7 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	return prior_action;
 }
 
-void get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
+void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
 	int i=0;
 	cJSON *attributeObj=NULL,*hitPaths=NULL;
@@ -255,7 +255,7 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 	return 0;
 }
 
-size_t http_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
+size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
 	size_t hit_cnt=0;

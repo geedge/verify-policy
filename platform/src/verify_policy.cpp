@@ -23,8 +23,8 @@
 #include <MESA/stream.h>
 
 #include "verify_policy.h"
-#include "MESA_prof_load.h"
-#include "MESA_handle_logger.h"
+#include <MESA/MESA_prof_load.h>
+#include <MESA/MESA_handle_logger.h>
 #include "verify_policy_utils.h"
 #include "verify_policy_logging.h"
 
@@ -310,7 +310,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					{
 						goto free;
 					}
-					hit_cnt = http_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
+					hit_cnt = http_policy_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
 					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "ip"))
 					{
 						ipaddr_free(verify_policy->verify_object[i].ip_addr);
@@ -324,7 +324,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					get_scan_status(&verify_policy->verify_object[item], attributes,data_obj, ctx);
+					http_get_scan_status(&verify_policy->verify_object[item], attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}

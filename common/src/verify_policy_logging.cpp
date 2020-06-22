@@ -16,8 +16,9 @@
 #include <ctype.h>
 
 #include "verify_policy_logging.h"
-#include "MESA_prof_load.h"
-#include "MESA_handle_logger.h"
+#include <MESA/MESA_prof_load.h>
+#include <MESA/MESA_handle_logger.h>
+
 
 RTLogInit2Data logging_sc_lid;
 
