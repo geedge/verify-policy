@@ -11,7 +11,5 @@ target_link_libraries(verify-policy pthread dl
 		libevent-static
 		MESA_handle_logger
 		MESA_prof_load
-		cjson
-		MESA_htable 
-		MESA_field_stat)
+		cjson)
 

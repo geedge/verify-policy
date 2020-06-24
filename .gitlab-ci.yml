@@ -1,0 +1,104 @@
+image: "git.mesalab.cn:7443/mesa_platform/build-env:master"
+variables:
+  GIT_STRATEGY: "clone"
+  BUILD_PADDING_PREFIX: /tmp/padding_for_CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX/
+  INSTALL_PREFIX: "/home/tsg/verify-policy"
+  TESTING_VERSION_BUILD: 0
+
+stages:
+- build
+
+.build_by_travis:
+  before_script:
+  - mkdir -p $BUILD_PADDING_PREFIX/$CI_PROJECT_NAMESPACE/
+  - ln -s $CI_PROJECT_DIR $BUILD_PADDING_PREFIX/$CI_PROJECT_PATH
+  - cd $BUILD_PADDING_PREFIX/$CI_PROJECT_PATH
+  - chmod +x ./ci/travis.sh
+  script:
+  - yum makecache
+  - ./ci/travis.sh
+  - cd build
+  tags:
+  - share
+
+branch_build_debug:
+  stage: build
+  extends: .build_by_travis
+  variables:
+    BUILD_TYPE: Debug
+  except:
+    - /^develop.*$/i
+    - /^master.*$/i
+    - tags
+
+branch_build_release:
+  stage: build
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+  extends: .build_by_travis
+  except:
+    - /^develop.*$/i
+    - /^master.*$/i
+    - tags
+
+develop_build_debug:
+  stage: build
+  extends: .build_by_travis
+  variables:
+    BUILD_TYPE: Debug
+    PACKAGE: 1
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-debug"
+    paths:
+      - build/*.rpm
+  only:
+    - /^develop.*$/i
+    - /^master.*$/i
+
+develop_build_release:
+  stage: build
+  extends: .build_by_travis
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+    PACKAGE: 1
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-release"
+    paths:
+      - build/*.rpm
+  only:
+    - /^develop.*$/i
+    - /^master.*$/i
+
+
+release_build_release:
+  stage: build
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+    PACKAGE: 1
+    UPLOAD: 1
+    PULP3_REPO_NAME: verify-policy-stable-x86_64.el7
+    PULP3_DIST_NAME: verify-policy-stable-x86_64.el7
+  extends: .build_by_travis
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-release"
+    paths:
+      - build/*.rpm
+  only:
+    - tags
+
+release_build_release_devel:
+  stage: build
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+    ENABLE_DEVEL_SWITCH: "ON"
+    PACKAGE: 1
+    UPLOAD: 1
+    PULP3_REPO_NAME: verify-policy-stable-x86_64.el7
+    PULP3_DIST_NAME: verify-policy-stable-x86_64.el7
+  extends: .build_by_travis
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-release"
+    paths:
+      - build/*.rpm
+  only:
+    - tags
