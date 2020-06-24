@@ -30,6 +30,10 @@ enum manipulate_sacn_table
 	PXY_CTRL_HTTP_RES_BODY,
 	PXY_CTRL_SUBSCRIBE_ID,
     PXY_CTRL_APP_ID,
+    PXY_CTRL_IP_SRC_ASN,
+	PXY_CTRL_IP_DST_ASN,
+	PXY_CTRL_IP_SRC_LOCATION,
+	PXY_CTRL_IP_DST_LOCATION,
 	__SCAN_TABLE_MAX
 };
 
@@ -58,6 +62,10 @@ enum security_scan_table
     PXY_SECURITY_FTP_CONTENT,
     PXY_SECURITY_FTP_ACCOUNT,
     PXY_SECURITY_APP_ID,
+    PXY_SECURITY_IP_SRC_ASN,
+    PXY_SECURITY_IP_DST_ASN,
+    PXY_SECURITY_IP_SRC_LOCATION,
+    PXY_SECURITY_IP_DST_LOCATION,
 	__SECURITY_TABLE_MAX
 };
 
@@ -101,7 +109,7 @@ struct verify_policy
 	unsigned int log_level;
 	unsigned int nr_work_threads;
 	unsigned int listen_port;
-	struct verify_policy_thread *work_threads[TFE_THREAD_MAX];
+	struct verify_policy_thread *work_threads[VERIFY_ARRAY_MAX];
 };
 
 struct verify_policy_query_obj

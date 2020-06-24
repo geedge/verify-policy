@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #include <MESA/Maat_rule.h>
 #include <MESA/MESA_handle_logger.h>
@@ -46,6 +47,31 @@ enum tfe_http_std_field
 	TFE_HTTP_CONT_TYPE,
 };
 
+enum verify_profile_table
+{
+	POLICY_ASN_USER_DEFINED,
+	POLICY_ASN_BUILT_IN,
+	POLICY_LOCATION_USER_DEFINED,
+	POLICY_LOCATION_BUILT_IN,
+	POLICY_PROFILE_TABLE_MAX
+};
+
+struct ip_data_table
+{
+	int profile_id;
+
+	int ref_cnt;
+
+	char *asn;
+	char *organization;
+
+	char *country_full;
+	char *province_full;
+	char *city_full;
+
+	pthread_mutex_t lock;
+};
+
 struct http_field_name
 {
 	const char * field_name;
@@ -75,6 +101,7 @@ struct pangu_rt
 	void * local_logger;
 	int log_level;
 	int thread_num;
+	int plolicy_table_id[POLICY_PROFILE_TABLE_MAX];
 	int scan_table_id[__SCAN_POLICY_MAX][__SECURITY_TABLE_MAX];
 };
 struct pangu_rt * g_pangu_rt;
@@ -120,6 +147,179 @@ void __pangu_action_weight_init()
 static inline int action_cmp(enum pangu_action a1, enum pangu_action a2)
 {
 	return pangu_action_weight[a1] - pangu_action_weight[a2];
+}
+
+static char* verify_unescape(char* s)
+{
+	int i=0,j=0;
+	int len=strlen(s);
+	for(i=0,j=0;i<len;i++)
+	{
+		if(s[i]=='\\')
+		{
+			switch(s[i+1])
+			{
+				case '&':
+					s[j]='&';
+					break;
+				case 'b':
+					s[j]=' ';//space,0x20;
+					break;
+				case '\\':
+					s[j]='\\';
+					break;
+				default:
+					s[j]=s[i];
+					i--;	//undo the followed i++
+					break;
+			}
+			i++;
+			j++;
+		}
+		else
+		{
+			s[j]=s[i];
+			j++;
+		}
+	}
+	s[j]='\0';
+	return s;
+}
+
+void ip_asn_table_new_cb(int table_id, const char* key, const char* table_line, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
+{
+	int addr_type;
+	int ret=0,profile_id=0,is_valid=0;
+	char start_ip[40], end_ip[40],asn[40]={0};
+	char organization[VERIFY_ARRAY_MAX];
+
+	ret=sscanf(table_line, "%d\t%d\t%s\t%s\t%s\t%s\t%d", &profile_id, &addr_type, start_ip, end_ip, asn, organization, &is_valid);
+	if(ret!=7)
+	{
+		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Policy table parse ip ASN failed, ret:%d, %s", ret, table_line);
+		return;
+	}
+	verify_unescape(organization);
+
+	struct ip_data_table* ip_asn=ALLOC(struct ip_data_table, 1);
+	memset(ip_asn, 0, sizeof(struct ip_data_table));
+	ip_asn->profile_id=profile_id;
+	ip_asn->asn=strdup(asn);
+	ip_asn->organization=strdup(organization);
+	ip_asn->ref_cnt=1;
+	pthread_mutex_init(&(ip_asn->lock), NULL);
+
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Policy table add success %d", profile_id);
+	*ad = ip_asn;
+}
+
+void ip_location_table_new_cb(int table_id, const char* key, const char* table_line, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
+{
+	int ret=0,profile_id=0,is_valid=0;
+	int geoname_id=0, addr_type=0;
+	double latitude, longitude, coords;
+	char language[40], start_ip[40], end_ip[40];
+	char continent_abbr[VERIFY_ARRAY_MAX],continent_full[VERIFY_ARRAY_MAX];
+	char country_abbr[VERIFY_ARRAY_MAX],province_abbr[VERIFY_ARRAY_MAX], time_zone[VERIFY_ARRAY_MAX];
+	char country_full[VERIFY_ARRAY_MAX],province_full[VERIFY_ARRAY_MAX], city_full[VERIFY_ARRAY_MAX];
+
+	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
+			   &addr_type, start_ip,end_ip,&latitude,&longitude,&coords,language,
+			   continent_abbr,continent_full, country_abbr,country_full,province_abbr,province_full,
+			   city_full,time_zone,&is_valid);
+
+	if(ret!=18)
+	{
+		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
+		return;
+	}
+	verify_unescape(continent_full);
+	verify_unescape(country_full);
+	verify_unescape(province_full);
+	verify_unescape(city_full);
+
+	struct ip_data_table* ip_asn=ALLOC(struct ip_data_table, 1);
+	memset(ip_asn, 0, sizeof(struct ip_data_table));
+	ip_asn->profile_id=profile_id;
+	ip_asn->country_full=strdup(country_full);
+	ip_asn->province_full=strdup(province_full);
+	ip_asn->city_full=strdup(city_full);
+	ip_asn->ref_cnt=1;
+	pthread_mutex_init(&(ip_asn->lock), NULL);
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Policy table add success %d", profile_id);
+
+	*ad = ip_asn;
+}
+
+void ip_table_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA *to, MAAT_PLUGIN_EX_DATA *from, long argl, void* argp)
+{
+	struct ip_data_table* ip_asn=(struct ip_data_table*)(*from);
+	pthread_mutex_lock(&(ip_asn->lock));
+	ip_asn->ref_cnt++;
+	pthread_mutex_unlock(&(ip_asn->lock));
+	*to=ip_asn;
+}
+
+void ip_table_free_cb(int table_id, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
+{
+	if(*ad==NULL)
+	{
+		return;
+	}
+	struct ip_data_table* ip_asn=(struct ip_data_table*)(*ad);
+	pthread_mutex_lock(&(ip_asn->lock));
+	ip_asn->ref_cnt--;
+	if(ip_asn->ref_cnt>0)
+	{
+		pthread_mutex_unlock(&(ip_asn->lock));
+		return;
+	}
+	pthread_mutex_unlock(&(ip_asn->lock));
+	pthread_mutex_destroy(&(ip_asn->lock));
+
+	if(ip_asn->asn)	FREE(&ip_asn->asn);
+	if(ip_asn->organization) FREE(&ip_asn->organization);
+	if(ip_asn->country_full) FREE(&ip_asn->country_full);
+	if(ip_asn->province_full) FREE(&ip_asn->province_full);
+	if(ip_asn->city_full) FREE(&ip_asn->city_full);
+
+	FREE(&ip_asn);
+	*ad=NULL;
+	return;
+}
+
+void ip_table_free(struct ip_data_table* ip_asn)
+{
+	ip_table_free_cb(0, (void **)&ip_asn, 0, NULL);
+}
+
+int maat_ip_table_init(int profile_idx,
+					   Maat_plugin_EX_free_func_t* free_func,
+					   Maat_plugin_EX_dup_func_t* dup_func)
+{
+	int table_id=0;
+
+	Maat_plugin_EX_new_func_t *new_func[] = {
+			[POLICY_ASN_USER_DEFINED] = ip_asn_table_new_cb,
+			[POLICY_ASN_BUILT_IN] = ip_asn_table_new_cb,
+			[POLICY_LOCATION_USER_DEFINED] = ip_location_table_new_cb,
+			[POLICY_LOCATION_BUILT_IN] = ip_location_table_new_cb,
+	};
+	const char *table_name_map[] = {"TSG_IP_ASN_USER_DEFINED",
+									"TSG_IP_ASN_BUILT_IN",
+									"TSG_IP_LOCATION_USER_DEFINED",
+									"TSG_IP_LOCATION_BUILT_IN"};
+
+	const char *table_name = table_name_map[profile_idx];
+	table_id=g_pangu_rt->plolicy_table_id[profile_idx]=Maat_table_register(g_pangu_rt->maat[PXY_TABLE_SECURITY], table_name);
+	if(table_id >= 0)
+	{
+		table_id=Maat_ip_plugin_EX_register(g_pangu_rt->maat[PXY_TABLE_SECURITY], table_id, new_func[profile_idx], free_func, dup_func,
+									   0, NULL);
+		return 0;
+	}
+	mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Pangu HTTP register table %s failed.", table_name);
+	return -1;
 }
 
 static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules, size_t n_hit,
@@ -255,6 +455,131 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 	return 0;
 }
 
+int verify_ip_addr_to_address(struct ipaddr *ip_addr, struct ip_address *dest_ip, struct ip_address *source_ip)
+{
+	if(ip_addr==NULL) return -1;
+	if (ip_addr->addrtype == ADDR_TYPE_IPV4)
+	{
+		struct stream_tuple4_v4 *v4_addr = (struct stream_tuple4_v4 *)ip_addr->v4;
+		source_ip->ip_type=4;
+		source_ip->ipv4=v4_addr->saddr;
+		dest_ip->ip_type=4;
+		dest_ip->ipv4=v4_addr->daddr;
+	}
+	if (ip_addr->addrtype == ADDR_TYPE_IPV6)
+	{
+		struct stream_tuple4_v6 *v6_addr = (struct stream_tuple4_v6 *)ip_addr->v6;
+		source_ip->ip_type=6;
+		memcpy((char *)(source_ip->ipv6), v6_addr->saddr, IPV6_ADDR_LEN);
+		dest_ip->ip_type=6;
+		memcpy((char *)(dest_ip->ipv6),v6_addr->daddr, IPV6_ADDR_LEN);
+	}
+	return 0;
+}
+
+int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, struct ip_address *dip, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type, struct pangu_http_ctx * ctx )
+{
+	int scan_ret=0, hit_cnt_ip=0;
+	char buff[VERIFY_ARRAY_MAX]={0};
+	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
+
+	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_LOCATION_USER_DEFINED], sip, (void **)&ip_location_client, 1);
+	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_LOCATION_USER_DEFINED], dip, (void **)&ip_location_server, 1);
+
+	if (ip_location_client == NULL)
+	{
+		Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY],  g_pangu_rt->plolicy_table_id[POLICY_LOCATION_BUILT_IN], sip, (void **)&ip_location_client, 1);
+	}
+	if (ip_location_server == NULL)
+	{
+		Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY],  g_pangu_rt->plolicy_table_id[POLICY_LOCATION_BUILT_IN], dip, (void **)&ip_location_server, 1);
+	}
+
+	int ip_location_table = 0;
+	if(ip_location_server!=NULL)
+	{
+		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_LOCATION : (int)PXY_CTRL_IP_DST_LOCATION;
+		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_server->country_full, ip_location_server->city_full);
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
+										 CHARSET_GBK, buff, strlen(buff),
+										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 &(ctx->scan_mid), (int) thread_id);
+		if(scan_ret>0)
+		{
+			hit_cnt_ip+=scan_ret;
+		}
+	}
+	if(ip_location_client!=NULL)
+	{
+		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_LOCATION : (int)PXY_CTRL_IP_SRC_LOCATION;
+		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
+										 CHARSET_GBK, buff, strlen(buff),
+										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 &(ctx->scan_mid), (int) thread_id);
+		if(scan_ret>0)
+		{
+			hit_cnt_ip+=scan_ret;
+		}
+	}
+
+	if(ip_location_server)
+		ip_table_free(ip_location_server);
+	if(ip_location_client)
+		ip_table_free(ip_location_client);
+	return hit_cnt_ip;
+}
+
+int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct ip_address* dip, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type, struct pangu_http_ctx * ctx)
+{
+	int scan_ret=0, hit_cnt_ip=0;
+	struct ip_data_table* ip_asn_client=NULL, *ip_asn_server=NULL;
+
+	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_ASN_USER_DEFINED], sip, (void **)&ip_asn_client, 1);
+	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY],  g_pangu_rt->plolicy_table_id[POLICY_ASN_USER_DEFINED], dip, (void **)&ip_asn_server, 1);
+
+	if (ip_asn_client == NULL)
+	{
+		Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY],  g_pangu_rt->plolicy_table_id[POLICY_ASN_BUILT_IN], sip, (void **)&ip_asn_client, 1);
+	}
+	if (ip_asn_server == NULL)
+	{
+		Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY],  g_pangu_rt->plolicy_table_id[POLICY_ASN_BUILT_IN], dip, (void **)&ip_asn_server, 1);
+	}
+
+	int ip_asn_table = 0;
+	if(ip_asn_server!=NULL)
+	{
+		ip_asn_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_ASN : (int)PXY_CTRL_IP_DST_ASN;
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_asn_table],
+										 CHARSET_UTF8, ip_asn_server->asn, strlen(ip_asn_server->asn),
+										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 &(ctx->scan_mid), (int) thread_id);
+
+		if(scan_ret>0)
+		{
+			hit_cnt_ip+=scan_ret;
+		}
+	}
+	if(ip_asn_client!=NULL)
+	{
+		ip_asn_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_ASN : (int)PXY_CTRL_IP_SRC_ASN;
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_asn_table],
+										 CHARSET_UTF8, ip_asn_client->asn, strlen(ip_asn_client->asn),
+										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 &(ctx->scan_mid), (int) thread_id);
+		if(scan_ret>0)
+		{
+			hit_cnt_ip+=scan_ret;
+		}
+	}
+	if(ip_asn_server)
+		ip_table_free(ip_asn_server);
+	if(ip_asn_client)
+		ip_table_free(ip_asn_client);
+	return hit_cnt_ip;
+}
+
 size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
@@ -273,6 +598,19 @@ size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_polic
 
 	if (protocol_field == PXY_CTRL_IP && query_obj->ip_addr != NULL)
 	{
+		struct ip_address dest_ip, source_ip;
+		verify_ip_addr_to_address(query_obj->ip_addr, &dest_ip, &source_ip);
+		scan_ret = http_ip_location_scan(ctx->result, &source_ip, &dest_ip, hit_cnt, ctx->thread_id, policy_type, ctx);
+		if(scan_ret > 0)
+		{
+			hit_cnt+=scan_ret;
+		}
+		scan_ret = http_ip_asn_scan(ctx->result, &source_ip, &dest_ip, hit_cnt, ctx->thread_id, policy_type, ctx);
+		if(scan_ret > 0)
+		{
+			hit_cnt+=scan_ret;
+		}
+
 		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], query_obj->ip_addr, 0,
 				   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if (scan_ret > 0)
@@ -488,6 +826,10 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 	table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_CONTENT";
 	table_name[PXY_CTRL_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
 	table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
+	table_name[PXY_CTRL_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
+	table_name[PXY_CTRL_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
+	table_name[PXY_CTRL_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
+	table_name[PXY_CTRL_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i]);
@@ -498,7 +840,6 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 		}
 		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Pangu policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i]);
 	}
-
 	g_pangu_rt->dyn_maat = create_maat_feather("dyn", profile_path, "DYNAMIC_MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
 	if (!g_pangu_rt->dyn_maat)
 	{
@@ -556,6 +897,10 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 	table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
 	table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
 	table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
+	table_name[PXY_SECURITY_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
+	table_name[PXY_SECURITY_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
+	table_name[PXY_SECURITY_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
+	table_name[PXY_SECURITY_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
 
 	for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 	{
@@ -566,6 +911,15 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 			goto error_out;
 		}
 		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Security policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_SECURITY], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_SECURITY][i]);
+	}
+
+	for(int i = POLICY_ASN_USER_DEFINED; i < POLICY_PROFILE_TABLE_MAX; i++)
+	{
+		ret = maat_ip_table_init(i, ip_table_free_cb, ip_table_dup_cb);
+		if(ret<0)
+		{
+			goto error_out;
+		}
 	}
 	ret = 0;
 error_out:

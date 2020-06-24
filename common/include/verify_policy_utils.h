@@ -6,7 +6,7 @@
 
 #define VERIFY_SYMBOL_MAX			64
 #define VERIFY_STRING_MAX			2048
-#define TFE_THREAD_MAX			128
+#define VERIFY_ARRAY_MAX			128
 
 /** Alway treated the expr as true */
 #ifndef likely

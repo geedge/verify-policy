@@ -592,6 +592,7 @@ finish:
 int main(int argc, char * argv[])
 {
 	const char * main_profile = "./conf/verify_policy.conf";
+	struct timespec start_time, end_time;
 
 	int ret = 0, opt = 0;
 	while ((opt = getopt(argc, argv, "v")) != -1)
@@ -609,6 +610,8 @@ int main(int argc, char * argv[])
 	assert(g_verify_proxy);
 	strcpy(g_verify_proxy->name, "verify_policy");
 
+	clock_gettime(CLOCK_REALTIME, &(start_time));
+
 	g_verify_proxy->logger = verify_syslog_init(main_profile);
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
@@ -618,8 +621,16 @@ int main(int argc, char * argv[])
 	ret = pangu_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
 
+	clock_gettime(CLOCK_REALTIME, &(end_time));
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	printf("Read table_info_proxy.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
+
+	clock_gettime(CLOCK_REALTIME, &(start_time));
 	ret = security_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init security module, Exit.");
+	clock_gettime(CLOCK_REALTIME, &(end_time));
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_security.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	printf("Read table_info_security.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	ret = pangu_policy_work_thread_run(g_verify_proxy);
 
