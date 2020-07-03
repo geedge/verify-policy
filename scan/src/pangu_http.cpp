@@ -826,6 +826,8 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 	table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_CONTENT";
 	table_name[PXY_CTRL_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
 	table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
+	table_name[PXY_CTRL_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
+	table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
 	table_name[PXY_CTRL_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
 	table_name[PXY_CTRL_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[PXY_CTRL_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
