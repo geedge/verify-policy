@@ -78,6 +78,16 @@ struct http_field_name
 	enum tfe_http_std_field field_id;
 };
 
+struct ip_data_ctx
+{
+	char *asn_client;
+	char *asn_server;
+	char *organization_client;
+	char *organization_server;
+	char *location_client;
+	char *location_server;
+};
+
 struct pangu_http_ctx
 {
 	enum pangu_action action;
@@ -90,6 +100,8 @@ struct pangu_http_ctx
 	struct Maat_rule_t * enforce_rules;
 	int n_read;
 	struct Maat_hit_path_t hit_path[2048];
+
+	struct ip_data_ctx ip_ctx;
 	int thread_id;
 };
 
@@ -126,6 +138,19 @@ void pangu_http_ctx_free(void * pme)
 	Maat_clean_status(&(ctx->scan_mid));
 	ctx->scan_mid = NULL;
 
+	struct ip_data_ctx *ip_ctx = &ctx->ip_ctx;
+	if(ip_ctx->asn_client)
+		FREE(&ip_ctx->asn_client);
+	if(ip_ctx->asn_server)
+		FREE(&ip_ctx->asn_server);
+	if(ip_ctx->organization_client)
+		FREE(&ip_ctx->organization_client);
+	if(ip_ctx->organization_server)
+		FREE(&ip_ctx->organization_server);
+	if(ip_ctx->location_client)
+		FREE(&ip_ctx->location_client);
+	if(ip_ctx->location_server)
+		FREE(&ip_ctx->location_server);
 	if(ctx->sp)
 	{
 		Maat_stream_scan_string_end(&(ctx->sp));
@@ -371,6 +396,55 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	return prior_action;
 }
 
+void http_get_location_status(cJSON *attributes, cJSON *attributeObj, struct ip_data_ctx *ip_ctx )
+{
+	int i=0;
+	cJSON* item=NULL; char *attri_name=NULL;
+	cJSON* ipAsn=NULL;
+
+	item = cJSON_GetObjectItem(attributeObj, "attributeType");
+	if(item == NULL || item->type!=cJSON_String || strcasecmp(item->valuestring, "ip") != 0)
+	{
+		return;
+	}
+	item = cJSON_GetObjectItem(attributeObj, "attributeName");
+	if(item && item->type==cJSON_String)
+	{
+		attri_name = item->valuestring;
+		if(strcasecmp(attri_name, "source") == 0)
+		{
+			cJSON_AddStringToObject(attributeObj, "ipGeoLocation",ip_ctx->location_client);
+
+			ipAsn=cJSON_CreateArray();
+			cJSON_AddItemToObject(attributeObj, "ipAsn", ipAsn);
+			cJSON *ipAsnObj=NULL;
+			for(i=0; i< 1; i++)
+			{
+				ipAsnObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(ipAsn, ipAsnObj);
+				cJSON_AddStringToObject(ipAsnObj, "asNumber", ip_ctx->asn_client);
+				cJSON_AddStringToObject(ipAsnObj, "organization", ip_ctx->organization_client);
+			}
+		}
+		if(strcasecmp(attri_name, "destination") == 0)
+		{
+			cJSON_AddStringToObject(attributeObj, "ipGeoLocation",ip_ctx->location_server);
+
+			ipAsn=cJSON_CreateArray();
+			cJSON_AddItemToObject(attributeObj, "ipAsn", ipAsn);
+			cJSON *ipAsnObj=NULL;
+			for(i=0; i< 1; i++)
+			{
+				ipAsnObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(ipAsn, ipAsnObj);
+				cJSON_AddStringToObject(ipAsnObj, "asNumber", ip_ctx->asn_server);
+				cJSON_AddStringToObject(ipAsnObj, "organization", ip_ctx->organization_server);
+			}
+		}
+	}
+	return;
+}
+
 void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
 	int i=0;
@@ -404,6 +478,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attr
 			}
 		}
 	}
+	http_get_location_status(attributes, attributeObj, &ctx->ip_ctx);
 }
 
 static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data_obj, void *pme)
@@ -498,7 +573,12 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	int ip_location_table = 0;
 	if(ip_location_server!=NULL)
 	{
+		memset(buff,0,sizeof(buff));
+		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->city_full, ip_location_server->province_full, ip_location_server->country_full);
+		ctx->ip_ctx.location_server=strdup(buff);
+
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_LOCATION : (int)PXY_CTRL_IP_DST_LOCATION;
+		memset(buff,0,sizeof(buff));
 		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_server->country_full, ip_location_server->city_full);
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
 										 CHARSET_GBK, buff, strlen(buff),
@@ -511,7 +591,13 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	}
 	if(ip_location_client!=NULL)
 	{
+		memset(buff,0,sizeof(buff));
+		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->city_full, ip_location_client->province_full, ip_location_client->country_full);
+		ctx->ip_ctx.location_client=strdup(buff);
+
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_LOCATION : (int)PXY_CTRL_IP_SRC_LOCATION;
+
+		memset(buff,0,sizeof(buff));
 		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
 										 CHARSET_GBK, buff, strlen(buff),
@@ -550,6 +636,9 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 	int ip_asn_table = 0;
 	if(ip_asn_server!=NULL)
 	{
+		ctx->ip_ctx.asn_server=strdup(ip_asn_server->asn);
+		ctx->ip_ctx.organization_server=strdup(ip_asn_server->organization);
+
 		ip_asn_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_ASN : (int)PXY_CTRL_IP_DST_ASN;
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_asn_table],
 										 CHARSET_UTF8, ip_asn_server->asn, strlen(ip_asn_server->asn),
@@ -563,6 +652,9 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 	}
 	if(ip_asn_client!=NULL)
 	{
+		ctx->ip_ctx.asn_client=strdup(ip_asn_client->asn);
+		ctx->ip_ctx.organization_client=strdup(ip_asn_client->organization);
+
 		ip_asn_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_ASN : (int)PXY_CTRL_IP_SRC_ASN;
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_asn_table],
 										 CHARSET_UTF8, ip_asn_client->asn, strlen(ip_asn_client->asn),
@@ -596,7 +688,7 @@ size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_polic
 	int protocol_field = query_obj->protocol_field;
 	const char *value = query_obj->keyword;
 
-	if (protocol_field == PXY_CTRL_IP && query_obj->ip_addr != NULL)
+	if ((protocol_field == PXY_CTRL_SOURCE_ADDR || protocol_field == PXY_CTRL_DESTINATION_ADDR) && query_obj->ip_addr != NULL)
 	{
 		struct ip_address dest_ip, source_ip;
 		verify_ip_addr_to_address(query_obj->ip_addr, &dest_ip, &source_ip);
@@ -611,7 +703,7 @@ size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_polic
 			hit_cnt+=scan_ret;
 		}
 
-		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_CTRL_IP], query_obj->ip_addr, 0,
+		scan_ret = Maat_scan_proto_addr(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], query_obj->ip_addr, 0,
 				   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if (scan_ret > 0)
 		{
@@ -817,7 +909,8 @@ int pangu_policy_init(struct verify_policy * verify, const char* profile_path)
 	}
 
 	const char * table_name[__SCAN_TABLE_MAX];
-	table_name[PXY_CTRL_IP] = "TSG_SECURITY_ADDR";
+	table_name[PXY_CTRL_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
+	table_name[PXY_CTRL_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
 	table_name[PXY_CTRL_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 	table_name[PXY_CTRL_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 	table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
@@ -876,7 +969,8 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 		goto error_out;
 	}
 	const char * table_name[__SECURITY_TABLE_MAX];
-	table_name[PXY_SECURITY_IP] = "TSG_SECURITY_ADDR";
+	table_name[PXY_SECURITY_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
+	table_name[PXY_SECURITY_DESTINATION_ADDR] = "TSG_SECURITY_DESTINATION_ADDR";
 	table_name[PXY_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 	table_name[PXY_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 	table_name[PXY_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";

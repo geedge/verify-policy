@@ -85,7 +85,8 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 	switch(type)
 	{
 		case PXY_TABLE_MANIPULATION:
-			table_name[PXY_CTRL_IP] = "TSG_OBJ_IP_ADDR";
+			table_name[PXY_CTRL_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
+			table_name[PXY_CTRL_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
 			table_name[PXY_CTRL_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 			table_name[PXY_CTRL_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 			table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
@@ -98,7 +99,8 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
 			break;
 		case PXY_TABLE_SECURITY:
-			table_name[PXY_SECURITY_IP] = "TSG_OBJ_IP_ADDR";
+			table_name[PXY_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
+			table_name[PXY_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
 			table_name[PXY_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
 			table_name[PXY_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
 			table_name[PXY_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
@@ -139,7 +141,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 	return i;
 }
 
-struct ipaddr *ip_to_stream_addr(char *clientIp1, unsigned int clientPort1, char *serverIp1, unsigned int serverPort1, int addr_type)
+struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1, const char *serverIp1, unsigned int serverPort1, int addr_type)
 {
 	struct ipaddr *ip_addr = ALLOC(struct ipaddr, 1);
 	if(addr_type == 4)
@@ -182,29 +184,32 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue)
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue, char *attributeName)
 {
 	cJSON* item = NULL;
 	int addr_type=0, __attribute__((__unused__))protocol=0;
-	char *clientIp1=NULL,*serverIp1=NULL;
-	unsigned int clientPort1=0,serverPort1=0;
+	const char *Ip=NULL;
+	unsigned int Port=0;
 
-	item = cJSON_GetObjectItem(attributeValue,"clientIp");
-	if(item && item->type==cJSON_String) clientIp1 = item->valuestring;
-	item = cJSON_GetObjectItem(attributeValue,"serverIp");
-	if(item && item->type==cJSON_String) serverIp1 = (item->valuestring);
-	item = cJSON_GetObjectItem(attributeValue,"clientPort");
-	if(item && item->type==cJSON_String) clientPort1 =atoi(item->valuestring);
-	item = cJSON_GetObjectItem(attributeValue,"serverPort");
-	if(item && item->type==cJSON_String) serverPort1 =atoi(item->valuestring);
+	item = cJSON_GetObjectItem(attributeValue,"ip");
+	if(item && item->type==cJSON_String) Ip = item->valuestring;
+	item = cJSON_GetObjectItem(attributeValue,"port");
+	if(item && item->type==cJSON_String) Port =atoi(item->valuestring);
 	item = cJSON_GetObjectItem(attributeValue,"protocol");
 	if(item && item->type==cJSON_Number) protocol = item->valueint;
 	item=cJSON_GetObjectItem(attributeValue,"addrType");
 	if(item && item->type==cJSON_Number) addr_type = item->valueint;
 
 	struct ipaddr *ip_addr = NULL;
-	ip_addr = ip_to_stream_addr(clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+	if(strcasecmp(attributeName, "source") == 0)
+	{
+		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type);
+	}
 
+	if(strcasecmp(attributeName, "destination") == 0)
+	{
+		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type);
+	}
 	return ip_addr;
 }
 
@@ -239,9 +244,10 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	{
 		goto finish;
 	}
-	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "ip"))
+	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "source") ||
+	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "destination"))
 	{
-		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue);
+		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name);
 		goto end;
 	}
 	item = cJSON_GetObjectItem(attributeValue,"string");

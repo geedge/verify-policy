@@ -21,7 +21,8 @@ enum verify_policy_type
 
 enum manipulate_sacn_table
 {
-	PXY_CTRL_IP,
+    PXY_CTRL_SOURCE_ADDR,
+    PXY_CTRL_DESTINATION_ADDR,
 	PXY_CTRL_HTTP_URL,
 	PXY_CTRL_HTTP_FQDN,
 	PXY_CTRL_HTTP_REQ_HDR,
@@ -41,7 +42,8 @@ enum manipulate_sacn_table
 
 enum security_scan_table
 {
-	PXY_SECURITY_IP,
+    PXY_SECURITY_SOURCE_ADDR,
+    PXY_SECURITY_DESTINATION_ADDR,
 	PXY_SECURITY_HTTP_URL,
 	PXY_SECURITY_HTTP_FQDN,
 	PXY_SECURITY_HTTP_REQ_HDR,
