@@ -355,7 +355,7 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	struct Maat_rule_t monit_rule[n_hit];
 	enum pangu_action prior_action = PG_ACTION_NONE;
 
-	for (i = 0; i < n_hit; i++)
+	for (i = 0; i < n_hit && i < MAX_SCAN_RESULT ; i++)
 	{
 		unsigned char __expand_action = (unsigned char) hit_rules[i].action;
 		enum pangu_action __action = (enum pangu_action) __expand_action;
@@ -492,6 +492,8 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 	{
 		return 0;
 	}
+
+	if (hit_cnt >= MAX_SCAN_RESULT)	hit_cnt = MAX_SCAN_RESULT;
 
 	ret = Maat_rule_sort_by_evaluation_order(maat, ctx->result, hit_cnt);
 	if (ret != hit_cnt)
