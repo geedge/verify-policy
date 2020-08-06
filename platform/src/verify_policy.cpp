@@ -81,6 +81,7 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_str, char *buff, char **p)
 {
 	const char * table_name[__SECURITY_TABLE_MAX] ={0};
+	size_t max = type != PXY_TABLE_MANIPULATION ? (int)PXY_SECURITY_APP_ID : (int)PXY_CTRL_DOH_HOST;
 
 	switch(type)
 	{
@@ -112,6 +113,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
 			table_name[PXY_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
 			table_name[PXY_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
+			table_name[PXY_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
 			table_name[PXY_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
 			table_name[PXY_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
 			table_name[PXY_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
@@ -130,8 +132,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			break;
 	}
 	size_t i = 0;
-
-	for (i = 0; i < sizeof(table_name) / sizeof(const char *); i++)
+	for (i = 0; i <= max; i++)
 	{
 		if (0 == strcasecmp(action_str, table_name[i]))
 			break;

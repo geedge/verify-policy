@@ -576,7 +576,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_server!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->city_full, ip_location_server->province_full, ip_location_server->country_full);
+		snprintf(buff, sizeof(buff), "%s,%s", ip_location_server->city_full,ip_location_server->country_full);
 		ctx->ip_ctx.location_server=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_LOCATION : (int)PXY_CTRL_IP_DST_LOCATION;
@@ -594,7 +594,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_client!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->city_full, ip_location_client->province_full, ip_location_client->country_full);
+		snprintf(buff, sizeof(buff), "%s,%s", ip_location_client->city_full, ip_location_client->country_full);
 		ctx->ip_ctx.location_client=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_LOCATION : (int)PXY_CTRL_IP_SRC_LOCATION;
@@ -603,7 +603,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
 										 CHARSET_GBK, buff, strlen(buff),
-										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 result+hit_cnt+hit_cnt_ip, NULL, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
 										 &(ctx->scan_mid), (int) thread_id);
 		if(scan_ret>0)
 		{
@@ -660,7 +660,7 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 		ip_asn_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_ASN : (int)PXY_CTRL_IP_SRC_ASN;
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_asn_table],
 										 CHARSET_UTF8, ip_asn_client->asn, strlen(ip_asn_client->asn),
-										 result+hit_cnt, NULL, MAX_SCAN_RESULT-hit_cnt,
+										 result+hit_cnt+hit_cnt_ip, NULL, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
 										 &(ctx->scan_mid), (int) thread_id);
 		if(scan_ret>0)
 		{
@@ -984,6 +984,7 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 	table_name[PXY_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
 	table_name[PXY_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
 	table_name[PXY_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
+	table_name[PXY_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
 	table_name[PXY_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
 	table_name[PXY_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
 	table_name[PXY_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
