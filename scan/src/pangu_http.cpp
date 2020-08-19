@@ -558,6 +558,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 {
 	int scan_ret=0, hit_cnt_ip=0;
 	char buff[VERIFY_ARRAY_MAX]={0};
+	struct Maat_hit_path_t hit_path[2048];
 	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
 
 	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_LOCATION_USER_DEFINED], sip, (void **)&ip_location_client, 1);
@@ -590,6 +591,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 		{
 			hit_cnt_ip+=scan_ret;
 		}
+		ctx->n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, hit_path, sizeof(hit_path));
 	}
 	if(ip_location_client!=NULL)
 	{
@@ -609,6 +611,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 		{
 			hit_cnt_ip+=scan_ret;
 		}
+		ctx->n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, hit_path, sizeof(hit_path));
 	}
 
 	if(ip_location_server)
@@ -621,6 +624,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct ip_address* dip, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type, struct pangu_http_ctx * ctx)
 {
 	int scan_ret=0, hit_cnt_ip=0;
+	struct Maat_hit_path_t hit_path[2048];
 	struct ip_data_table* ip_asn_client=NULL, *ip_asn_server=NULL;
 
 	Maat_ip_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_ASN_USER_DEFINED], sip, (void **)&ip_asn_client, 1);
@@ -651,6 +655,7 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 		{
 			hit_cnt_ip+=scan_ret;
 		}
+		ctx->n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, hit_path, sizeof(hit_path));
 	}
 	if(ip_asn_client!=NULL)
 	{
@@ -666,6 +671,7 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 		{
 			hit_cnt_ip+=scan_ret;
 		}
+		ctx->n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, hit_path, sizeof(hit_path));
 	}
 	if(ip_asn_server)
 		ip_table_free(ip_asn_server);
