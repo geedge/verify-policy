@@ -320,7 +320,8 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 						goto free;
 					}
 					hit_cnt = http_policy_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
-					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "ip"))
+					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
+					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
 					{
 						ipaddr_free(verify_policy->verify_object[i].ip_addr);
 					}

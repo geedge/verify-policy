@@ -15,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	set (CMAKE_INSTALL_PREFIX "/home/tsg/verify-policy" CACHE PATH "default install path" FORCE )
+	set (CMAKE_INSTALL_PREFIX "/opt/tsg/verify-policy" CACHE PATH "default install path" FORCE )
 endif()
 
 # Global compile options
@@ -45,7 +45,7 @@ endif()
 
 add_custom_target("install-program" COMMAND ${CMAKE_COMMAND} ARGS -DCOMPONENT=Program -P cmake_install.cmake)
 add_custom_target("install-profile" COMMAND ${CMAKE_COMMAND} ARGS -DCOMPONENT=Profile -P cmake_install.cmake)
-add_custom_target("tarball" COMMAND sh ${CMAKE_SCRIPT_PATH}/tarball.sh ${TARGET_VERSION} ${TARGET_DESCRIBE})
+add_custom_target("tarball" COMMAND sh ${CMAKE_SCRIPT_PATH}/tarball/tarball.sh ${TARGET_VERSION} ${TARGET_DESCRIBE})
 
 enable_testing()
 #add_subdirectory(conf)

@@ -22,14 +22,15 @@ set(CPACK_RPM_PRE_INSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/cmake/PreInstall.in)
 #set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/cmake/PostUninstall.in)
 #set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/cmake/PreUninstall.in)
 
-set(CMAKE_INSTALL_PREFIX "/home/tsg/verify-policy")
-set(CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX /home/tsg)
+set(CMAKE_INSTALL_PREFIX "/opt/tsg/verify-policy")
+set(CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX /opt/tsg)
 
 install(PROGRAMS build/platform/verify-policy DESTINATION ./bin)
 install(DIRECTORY ./conf DESTINATION ./)
 install(DIRECTORY ./resource DESTINATION ./)
 
-install(FILES script/verify-policy.service DESTINATION /usr/lib/systemd/system/)
+install(FILES script/service/verify-policy.service DESTINATION /usr/lib/systemd/system/)
+install(FILES script/tmpfiles/verify_policy.conf DESTINATION /usr/lib/tmpfiles.d/)
 
 # Must uninstall the debug package before install release package
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
