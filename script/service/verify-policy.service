@@ -3,8 +3,8 @@ Description=Verify Policy Engine
 After=redis.service
 
 [Service]
-WorkingDirectory=/home/tsg/verify-policy
-ExecStart=/home/tsg/verify-policy/bin/verify-policy
+WorkingDirectory=/opt/tsg/verify-policy
+ExecStart=/opt/tsg/verify-policy/bin/verify-policy
 Restart=always
 RestartSec=5s
 
