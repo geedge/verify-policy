@@ -347,6 +347,7 @@ int maat_ip_table_init(int profile_idx,
 	return -1;
 }
 
+#if 0
 static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules, size_t n_hit,
 	struct Maat_rule_t ** enforce_rules, size_t * n_enforce)
 {
@@ -393,6 +394,77 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 		memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct Maat_rule_t));
 	}
 
+	return prior_action;
+}
+#endif
+
+static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules, size_t n_hit, struct Maat_rule_t ** enforce_rules, size_t * n_enforce)
+{
+	size_t n_monit = 0, exist_enforce_num = 0, i = 0;
+	const struct Maat_rule_t * prior_rule = hit_rules;
+	struct Maat_rule_t monit_rule[n_hit];
+	enum pangu_action prior_action = PG_ACTION_NONE;
+
+	for (i = 0; i < n_hit && i<MAX_SCAN_RESULT; i++)
+	{
+		unsigned char __expand_action = (unsigned char) hit_rules[i].action;
+		enum pangu_action __action = (enum pangu_action) __expand_action;
+
+		if (__action == PG_ACTION_MONIT)
+		{
+			memcpy(monit_rule + n_monit, hit_rules + i, sizeof(struct Maat_rule_t));
+			n_monit++;
+		}
+		if (action_cmp(__action, prior_action) > 0)
+		{
+			prior_rule = hit_rules + i;
+			prior_action = __action;
+		}
+		else if (action_cmp(__action, prior_action) == 0)
+		{
+			if (hit_rules[i].config_id > prior_rule->config_id)
+			{
+				prior_rule = hit_rules + i;
+			}
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	if (prior_action == PG_ACTION_WHITELIST)
+	{
+		if(*n_enforce==0)
+		{
+			*enforce_rules=ALLOC(struct Maat_rule_t, 1);
+		}
+		*enforce_rules[0]=*prior_rule;
+		*n_enforce=1;
+		return PG_ACTION_WHITELIST;
+	}
+
+	exist_enforce_num = *n_enforce;
+	if (prior_action == PG_ACTION_MONIT)
+	{
+		*n_enforce += n_monit;
+	}
+	else
+	{
+		*n_enforce += n_monit + 1;
+	}
+
+	*enforce_rules = (struct Maat_rule_t *) realloc(*enforce_rules, sizeof(struct Maat_rule_t) * (*n_enforce));
+	if (prior_action == PG_ACTION_MONIT)
+	{
+		memcpy(*enforce_rules + exist_enforce_num, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+	}
+	else
+	{
+		memmove(*enforce_rules+1, *enforce_rules, exist_enforce_num*sizeof(struct Maat_rule_t));
+		memcpy(*enforce_rules, prior_rule, sizeof(struct Maat_rule_t));
+		memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+	}
 	return prior_action;
 }
 
@@ -484,7 +556,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attr
 static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data_obj, void *pme)
 {
 	bool succeeded = false;
-	size_t rules=0, i=0, ret=0;
+	size_t rules=0, i=0;
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
@@ -495,11 +567,13 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 
 	if (hit_cnt >= MAX_SCAN_RESULT)	hit_cnt = MAX_SCAN_RESULT;
 
+#if 0
 	ret = Maat_rule_sort_by_evaluation_order(maat, ctx->result, hit_cnt);
 	if (ret != hit_cnt)
 	{
 		return 0;
 	}
+#endif
 	ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
 	ctx->hit_cnt = hit_cnt;
 	cJSON  *hit_obj=NULL, *policy_obj=NULL;
@@ -509,6 +583,7 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
+			succeeded = false;
 			policy_obj=cJSON_CreateObject();
 			cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
 			cJSON_AddStringToObject(policy_obj, "policyName", "");
