@@ -2,7 +2,7 @@ image: "git.mesalab.cn:7443/mesa_platform/build-env:master"
 variables:
   GIT_STRATEGY: "clone"
   BUILD_PADDING_PREFIX: /tmp/padding_for_CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX/
-  INSTALL_PREFIX: "/home/tsg/verify-policy"
+  INSTALL_PREFIX: "/opt/tsg/verify-policy"
   TESTING_VERSION_BUILD: 0
 
 stages:
@@ -76,8 +76,8 @@ release_build_release:
     BUILD_TYPE: RelWithDebInfo
     PACKAGE: 1
     UPLOAD: 1
-    PULP3_REPO_NAME: verify-policy-stable-x86_64.el7
-    PULP3_DIST_NAME: verify-policy-stable-x86_64.el7
+    PULP3_REPO_NAME: tsg-stable-x86_64.el7
+    PULP3_DIST_NAME: tsg-stable-x86_64.el7
   extends: .build_by_travis
   artifacts:
     name: "verify-policy-$CI_COMMIT_REF_NAME-release"
@@ -93,8 +93,9 @@ release_build_release_devel:
     ENABLE_DEVEL_SWITCH: "ON"
     PACKAGE: 1
     UPLOAD: 1
-    PULP3_REPO_NAME: verify-policy-stable-x86_64.el7
-    PULP3_DIST_NAME: verify-policy-stable-x86_64.el7
+    SYMBOL_TARGET: verify-policy
+    PULP3_REPO_NAME: tsg-stable-x86_64.el7
+    PULP3_DIST_NAME: tsg-stable-x86_64.el7
   extends: .build_by_travis
   artifacts:
     name: "verify-policy-$CI_COMMIT_REF_NAME-release"
