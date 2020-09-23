@@ -76,6 +76,7 @@ release_build_release:
     BUILD_TYPE: RelWithDebInfo
     PACKAGE: 1
     UPLOAD: 1
+    SYMBOL_TARGET: verify-policy
     PULP3_REPO_NAME: tsg-stable-x86_64.el7
     PULP3_DIST_NAME: tsg-stable-x86_64.el7
   extends: .build_by_travis
