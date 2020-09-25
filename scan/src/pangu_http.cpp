@@ -798,7 +798,7 @@ size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_polic
 		goto decide;
 	}
 
-	if (protocol_field == PXY_CTRL_APP_ID || protocol_field == PXY_SECURITY_APP_ID)
+	if (protocol_field == PXY_CTRL_APP_ID)
 	{
 		int scan_val=atoi(value);
 		scan_ret=Maat_scan_intval(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], scan_val, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);

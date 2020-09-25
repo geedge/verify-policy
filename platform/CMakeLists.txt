@@ -12,5 +12,7 @@ target_link_libraries(verify-policy pthread dl
 		MESA_handle_logger
 		MESA_prof_load
 		gperftools-static
-		cjson)
+		breakpad-client-static
+		cjson
+		${SYSTEMD_LIBRARIES})
 

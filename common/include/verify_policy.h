@@ -11,6 +11,8 @@
 #include <event2/event.h>
 #include "verify_policy_utils.h"
 
+struct breakpad_instance;
+
 enum verify_policy_type
 {
     PXY_TABLE_SECURITY,
@@ -51,6 +53,7 @@ enum security_scan_table
 	PXY_SECURITY_HTTP_RES_HDR,
 	PXY_SECURITY_HTTP_RES_BODY,
 	PXY_SECURITY_SUBSCRIBE_ID,
+    PXY_SECURITY_APP_ID,
     PXY_SECURITY_HTTPS_SNI,
     PXY_SECURITY_HTTPS_CN,
     PXY_SECURITY_HTTPS_SAN,
@@ -66,7 +69,6 @@ enum security_scan_table
     PXY_SECURITY_FTP_URI,
     PXY_SECURITY_FTP_CONTENT,
     PXY_SECURITY_FTP_ACCOUNT,
-    PXY_SECURITY_APP_ID,
     PXY_SECURITY_IP_SRC_ASN,
     PXY_SECURITY_IP_DST_ASN,
     PXY_SECURITY_IP_SRC_LOCATION,
@@ -114,6 +116,7 @@ struct verify_policy
 	unsigned int log_level;
 	unsigned int nr_work_threads;
 	unsigned int listen_port;
+    struct breakpad_instance * breakpad;
 	struct verify_policy_thread *work_threads[VERIFY_ARRAY_MAX];
 };
 
