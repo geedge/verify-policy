@@ -47,6 +47,8 @@ const char * version()
 	return git_ver;
 }
 
+static int signals[] = {SIGHUP, SIGPIPE, SIGUSR1};
+
 extern int pangu_policy_init(struct verify_policy * verify, const char* profile_path);
 
 static int verify_policy_init(struct verify_policy * verify, const char *profile)
@@ -824,6 +826,24 @@ struct breakpad_instance * breakpad_init(const char * profile)
 	return instance;
 }
 
+void __signal_handler_cb(int sig)
+{
+	switch (sig)
+	{
+		case SIGHUP:
+			mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Reload log config");
+            MESA_handle_runtime_log_reconstruction(NULL);
+            break;
+		case SIGPIPE:
+			break;
+		case SIGUSR1:
+		case SIGINT:
+			break;
+		default:
+			break;
+	}
+}
+
 int main(int argc, char * argv[])
 {
 	const char * main_profile = "./conf/verify_policy.conf";
@@ -869,6 +889,11 @@ int main(int argc, char * argv[])
 
 	g_verify_proxy->breakpad = breakpad_init(main_profile);
 	CHECK_OR_EXIT(g_verify_proxy->breakpad, "Failed at starting breakpad. Exit.");
+
+	for (size_t i = 0; i < (sizeof(signals) / sizeof(int)); i++)
+	{
+		signal(signals[i], __signal_handler_cb);
+	}
 
 	ret = pangu_policy_work_thread_run(g_verify_proxy);
 
