@@ -89,7 +89,7 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_str, char *buff, char **p)
 {
 	const char * table_name[__SECURITY_TABLE_MAX] ={0};
-	size_t max = type != PXY_TABLE_MANIPULATION ? (int)PXY_SECURITY_APP_ID : (int)PXY_CTRL_DOH_HOST;
+	size_t max = type != PXY_TABLE_MANIPULATION ? (int)PXY_SECURITY_FTP_ACCOUNT : (int)PXY_CTRL_DOH_HOST;
 
 	switch(type)
 	{
