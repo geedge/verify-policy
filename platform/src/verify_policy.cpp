@@ -49,7 +49,7 @@ const char * version()
 
 static int signals[] = {SIGHUP, SIGPIPE, SIGUSR1};
 
-extern int pangu_policy_init(struct verify_policy * verify, const char* profile_path);
+extern int proxy_policy_init(struct verify_policy * verify, const char* profile_path);
 
 static int verify_policy_init(struct verify_policy * verify, const char *profile)
 {
@@ -327,7 +327,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					{
 						goto free;
 					}
-					hit_cnt = http_policy_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
+					hit_cnt = verify_policy_scan(verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
 					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
 					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
 					{
@@ -873,7 +873,7 @@ int main(int argc, char * argv[])
 	ret = verify_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at loading profile %s, Exit.", main_profile);
 
-	ret = pangu_policy_init(g_verify_proxy, main_profile);
+	ret = proxy_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
 
 	clock_gettime(CLOCK_REALTIME, &(end_time));

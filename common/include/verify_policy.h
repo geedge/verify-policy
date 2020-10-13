@@ -148,7 +148,7 @@ void * pangu_http_ctx_new(unsigned int thread_id);
 
 void pangu_http_ctx_free(void * pme);
 
-size_t http_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
+size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
 
 void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme);
 

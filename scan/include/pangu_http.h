@@ -8,6 +8,6 @@
 #ifndef _PANGGU_HTTP_H
 #define _PANGGU_HTTP_H
 
-extern int pangu_policy_init(struct verify_policy * verify, const char* profile_path);
+extern int proxy_policy_init(struct verify_policy * verify, const char* profile_path);
 
 #endif
