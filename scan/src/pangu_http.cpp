@@ -561,6 +561,54 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	return prior_action;
 }
 
+int http_table_in_fqdn(int protocol_field, int policy_type)
+{
+
+	if(policy_type == PXY_TABLE_SECURITY &&(protocol_field == PXY_SECURITY_HTTP_FQDN ||
+	   protocol_field == PXY_SECURITY_HTTPS_SNI || protocol_field==PXY_SECURITY_HTTPS_CN || protocol_field==PXY_SECURITY_HTTPS_SAN ||
+       protocol_field==PXY_SECURITY_DNS_QNAME || protocol_field == PXY_SECURITY_QUIC_SNI))
+	{
+		return 1;
+	}
+
+	if(policy_type == PXY_TABLE_MANIPULATION &&(protocol_field == PXY_CTRL_HTTP_FQDN ||
+			protocol_field == PXY_CTRL_DOH_QNAME || protocol_field==PXY_CTRL_DOH_HOST))
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+void http_get_fqdn_cat_id(struct verify_policy_query_obj *query_obj, int type, cJSON *attributeObj)
+{
+	int i=0;
+	cJSON *sniCategory=NULL;
+
+	if(!http_table_in_fqdn(query_obj->protocol_field, type))
+	{
+		return;
+	}
+
+	sniCategory=cJSON_CreateArray();
+	cJSON_AddItemToObject(attributeObj, "sniCategory", sniCategory);
+
+	cJSON *fqdnObj=NULL;
+	for(i=0; i<query_obj->category_user_num; i++)
+	{
+		fqdnObj=cJSON_CreateObject();
+		cJSON_AddItemToArray(sniCategory, fqdnObj);
+		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->category_id_user[i]);
+	}
+
+	for(i=0; i<query_obj->category_built_num; i++)
+	{
+		fqdnObj=cJSON_CreateObject();
+		cJSON_AddItemToArray(sniCategory, fqdnObj);
+		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->category_id_built[i]);
+	}
+}
+
 void http_get_location_status(cJSON *attributes, cJSON *attributeObj, struct ip_data_ctx *ip_ctx )
 {
 	int i=0;
@@ -610,9 +658,9 @@ void http_get_location_status(cJSON *attributes, cJSON *attributeObj, struct ip_
 	return;
 }
 
-void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme)
+void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
-	int i=0;
+	int i=0, j=0;
 	cJSON *attributeObj=NULL,*hitPaths=NULL;
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
@@ -626,24 +674,29 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attr
 	cJSON *histObj=NULL;
 	for(i=0; i< ctx->n_read; i++)
 	{
-		if (query_obj->nth_scan == ctx->hit_path[i].Nth_scan)
+		for(j=0; j<=query_obj->nth_scan_num; j++)
 		{
-			histObj=cJSON_CreateObject();
-			cJSON_AddItemToArray(hitPaths, histObj);
-			cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
-			cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
-			if (ctx->hit_path[i].top_group_id < 0)
+			if (query_obj->nth_scan[j] == ctx->hit_path[i].Nth_scan)
 			{
-				ctx->hit_path[i].top_group_id = ctx->hit_path[i].sub_group_id;
-			}
-			cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
-			if(ctx->hit_path[i].compile_id > 0)
-			{
-				cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
+				histObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(hitPaths, histObj);
+				cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
+				cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
+				if (ctx->hit_path[i].top_group_id < 0)
+				{
+					ctx->hit_path[i].top_group_id = ctx->hit_path[i].sub_group_id;
+				}
+				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
+				if(ctx->hit_path[i].compile_id > 0)
+				{
+					cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
+				}
 			}
 		}
+
 	}
 	http_get_location_status(attributes, attributeObj, &ctx->ip_ctx);
+	http_get_fqdn_cat_id(query_obj, type, attributeObj);
 }
 
 static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data_obj, void *pme)
@@ -688,7 +741,6 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
 					succeeded = true;
 				}
-
 			}
 			if (succeeded == false)
 			{
@@ -848,11 +900,11 @@ int http_ip_asn_scan(struct Maat_rule_t *result, struct ip_address* sip, struct 
 	return hit_cnt_ip;
 }
 
-int verify_get_fqdn_category_id(struct Maat_rule_t *result, const char *fqdn, int protocol_field, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type, struct pangu_http_ctx * ctx)
+int verify_get_fqdn_category_id(struct Maat_rule_t *result, const char *fqdn, int protocol_field, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type,
+								struct pangu_http_ctx * ctx, struct verify_policy_query_obj *query_obj)
 {
+	int n_read=0, hit_path_cnt=0;
 	int i=0,ret=0, hit_cnt_fqdn=0;
-	int category_user_num, category_built_num;
-	unsigned int category_id_user[8], category_id_built[8];
 	struct fqdn_category_t *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
 
 	ret=Maat_fqdn_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_FQDN_CAT_USER_DEFINED], fqdn, (void **)fqdn_cat_user, 8);
@@ -860,49 +912,64 @@ int verify_get_fqdn_category_id(struct Maat_rule_t *result, const char *fqdn, in
 	{
 		if(i < 8)
 		{
-			category_id_user[i] = fqdn_cat_user[i]->category_id;
+			query_obj->category_id_user[i] = fqdn_cat_user[i]->category_id;
 		}
 		fqdn_cat_table_free(fqdn_cat_user[i]);
 	}
-	category_user_num = i< 8 ? i : 8;
+	query_obj->category_user_num = i< 8 ? i : 8;
 
 	ret=Maat_fqdn_plugin_get_EX_data(g_pangu_rt->maat[PXY_TABLE_SECURITY], g_pangu_rt->plolicy_table_id[POLICY_FQDN_CAT_BUILT_IN], fqdn, (void **)fqdn_cat_built, 8);
 	for(i=0; i <ret; i++)
 	{
 		if(i < 8)
 		{
-			category_id_built[i] = fqdn_cat_built[i]->category_id;
+			query_obj->category_id_built[i] = fqdn_cat_built[i]->category_id;
 		}
 		fqdn_cat_table_free(fqdn_cat_built[i]);
 	}
-	category_built_num = i< 8 ? i : 8;
+	query_obj->category_built_num = i< 8 ? i : 8;
 
-	if(category_user_num > 0)
+	if(query_obj->category_user_num > 0)
 	{
-		for(i=0; i<category_user_num; i++)
+		for(i=0; i<query_obj->category_user_num; i++)
 		{
-			ret=Maat_scan_intval(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], category_id_user[i],
+			ret=Maat_scan_intval(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], query_obj->category_id_user[i],
 							result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &(ctx->scan_mid),(int) thread_id);
 			if(ret>0)
 			{
 				hit_cnt_fqdn+=ret;
+			}
+			n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+			if(ret == -2 || ret >0)
+			{
+				query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
+				ctx->n_read=n_read;
+				hit_path_cnt++;
 			}
 		}
 		goto finish;
 	}
-	if (category_built_num > 0)
+	if (query_obj->category_built_num > 0)
 	{
-		for(i=0; i<category_built_num; i++)
+		for(i=0; i<query_obj->category_built_num; i++)
 		{
-			ret=Maat_scan_intval(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], category_id_built[i],
+			ret=Maat_scan_intval(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field], query_obj->category_id_built[i],
 							result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &(ctx->scan_mid),(int) thread_id);
 			if(ret>0)
 			{
 				hit_cnt_fqdn+=ret;
 			}
+			n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+			if(ret == -2 || ret >0)
+			{
+				query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
+				ctx->n_read=n_read;
+				hit_path_cnt++;
+			}
 		}
 	}
 finish:
+	query_obj->nth_scan_num = hit_path_cnt;
 	return hit_cnt_fqdn;
 }
 
@@ -944,7 +1011,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 			hit_cnt += scan_ret;
 		}
 		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 		goto decide;
 	}
@@ -958,7 +1025,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 			hit_cnt+=scan_ret;
 		}
 		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 		goto decide;
 	}
@@ -982,7 +1049,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 			}
 		}
 		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 		goto decide;
 
@@ -992,27 +1059,21 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 	   protocol_field == PXY_SECURITY_HTTPS_SNI || protocol_field==PXY_SECURITY_HTTPS_CN || protocol_field==PXY_SECURITY_HTTPS_SAN ||
        protocol_field==PXY_SECURITY_DNS_QNAME || protocol_field == PXY_SECURITY_QUIC_SNI))
 	{
-		scan_ret = verify_get_fqdn_category_id(ctx->result, value, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx);
+		scan_ret = verify_get_fqdn_category_id(ctx->result, value, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx, query_obj);
 		if(scan_ret>0)
 		{
 			hit_cnt+=scan_ret;
 		}
-		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
-		ctx->n_read=n_read;
 	}
 
 	if(policy_type == PXY_TABLE_MANIPULATION &&(protocol_field == PXY_CTRL_HTTP_FQDN ||
 			protocol_field == PXY_CTRL_DOH_QNAME || protocol_field==PXY_CTRL_DOH_HOST))
 	{
-		scan_ret = verify_get_fqdn_category_id(ctx->result, value, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx);
+		scan_ret = verify_get_fqdn_category_id(ctx->result, value, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx, query_obj);
 		if(scan_ret>0)
 		{
 			hit_cnt+=scan_ret;
 		}
-		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
-		ctx->n_read=n_read;
 	}
 	scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
 									CHARSET_UTF8, value, strlen(value),
@@ -1025,7 +1086,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 	n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
 	if(scan_ret == -2 || scan_ret >0)
 	{
-		query_obj->nth_scan = ctx->hit_path[ctx->n_read].Nth_scan;
+		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 	}
 decide:

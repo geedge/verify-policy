@@ -342,7 +342,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					http_get_scan_status(&verify_policy->verify_object[item], attributes,data_obj, ctx);
+					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->type, attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}

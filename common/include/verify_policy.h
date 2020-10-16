@@ -131,9 +131,15 @@ struct verify_policy_query_obj
 
 	char *subscriberid;
 
-    int nth_scan;
+    int nth_scan[8];
+    int nth_scan_num;
     cJSON* attributes;
 
+    int category_user_num;
+    unsigned int category_id_user[8];
+
+    int category_built_num;
+    unsigned int category_id_built[8];
 };
 
 struct verify_policy_query
@@ -150,7 +156,7 @@ void pangu_http_ctx_free(void * pme);
 
 size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
 
-void http_get_scan_status(struct verify_policy_query_obj *query_obj, cJSON *attributes, cJSON  *data_obj, void *pme);
+void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
 
 int security_policy_init(struct verify_policy * verify, const char* profile_path);
 
