@@ -699,13 +699,30 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 	http_get_fqdn_cat_id(query_obj, type, attributeObj);
 }
 
-static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data_obj, void *pme)
+int http_hit_policy_match(int result_config[], int cnt, int config)
+{
+	int i = 0;
+
+	for(i=0; i<cnt; i++)
+	{
+		if(result_config[i] == config)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJSON *data_obj, void *pme)
 {
 	bool succeeded = false;
-	size_t rules=0, i=0;
+	size_t rules=0, i=0, j = 0;
+	int result_config[MAX_SCAN_RESULT] = {0};
 
+	Maat_feather_t maat = g_pangu_rt->maat[policy_type];
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
+	hit_cnt = ctx->hit_cnt;
 	if (hit_cnt <= 0)
 	{
 		return 0;
@@ -713,13 +730,6 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 
 	if (hit_cnt >= MAX_SCAN_RESULT)	hit_cnt = MAX_SCAN_RESULT;
 
-#if 0
-	ret = Maat_rule_sort_by_evaluation_order(maat, ctx->result, hit_cnt);
-	if (ret != hit_cnt)
-	{
-		return 0;
-	}
-#endif
 	ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
 	ctx->hit_cnt = hit_cnt;
 	cJSON  *hit_obj=NULL, *policy_obj=NULL;
@@ -729,6 +739,10 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
+			if(http_hit_policy_match(result_config, i, ctx->result[i].config_id))
+			{
+				continue;
+			}
 			succeeded = false;
 			policy_obj=cJSON_CreateObject();
 			cJSON_AddNumberToObject(policy_obj, "policyId",ctx->result[i].config_id);
@@ -747,6 +761,7 @@ static int http_hit_policy_list(Maat_feather_t maat, size_t hit_cnt, cJSON *data
 				cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", false);
 			}
 			cJSON_AddItemToArray(hit_obj, policy_obj);
+			result_config[i] = ctx->result[i].config_id;
 		}
 	}
 	return 0;
@@ -976,7 +991,7 @@ finish:
 size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
-	size_t hit_cnt=0;
+	//size_t hit_cnt=0;
 
 	struct http_field_name req_fields[]={	{"User-Agent", TFE_HTTP_USER_AGENT},
 									        {"Cookie", TFE_HTTP_COOKIE}};
@@ -985,6 +1000,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 											{"Content-Type", TFE_HTTP_CONT_TYPE}};
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
+	size_t hit_cnt = ctx->hit_cnt;
 
 	int protocol_field = query_obj->protocol_field;
 	const char *value = query_obj->keyword;
@@ -1090,7 +1106,8 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 		ctx->n_read=n_read;
 	}
 decide:
-	http_hit_policy_list(g_pangu_rt->maat[policy_type], hit_cnt, data_obj, (void *)ctx);
+	ctx->hit_cnt = hit_cnt;
+	//http_hit_policy_list(g_pangu_rt->maat[policy_type], hit_cnt, data_obj, (void *)ctx);
 	return hit_cnt;
 }
 

@@ -275,7 +275,7 @@ finish:
 cJSON *get_query_from_request(const char *data, int thread_id)
 {
 	int i = 0;
-	int hit_cnt = -1;
+	int hit_cnt = 0, xret =0;
 	struct verify_policy_query *verify_policy = NULL;
 
 	cJSON* data_json = cJSON_Parse(data);
@@ -322,8 +322,8 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 				{
-					hit_cnt = get_attribute_from_json(i, subchild, verify_policy);
-					if (hit_cnt < 0)
+					xret = get_attribute_from_json(i, subchild, verify_policy);
+					if (xret < 0)
 					{
 						goto free;
 					}
@@ -335,6 +335,8 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					}
 					i++;
 				}
+				http_hit_policy_list(verify_policy->type, hit_cnt, data_obj, ctx);
+
 				int item = 0;
 				cJSON *verfifySession = cJSON_CreateObject();
 				cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
