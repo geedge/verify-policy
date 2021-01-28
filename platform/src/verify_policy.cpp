@@ -73,6 +73,7 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[PXY_TABLE_SECURITY] = "tsg_security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
+	policy_name[PXY_TABLE_WANNAT] = "pxy_wannat";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
@@ -88,8 +89,8 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 
 int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_str, char *buff, char **p)
 {
+	size_t scan_table_max=0;
 	const char * table_name[__SECURITY_TABLE_MAX] ={0};
-	size_t max = type != PXY_TABLE_MANIPULATION ? (int)PXY_SECURITY_FTP_ACCOUNT : (int)PXY_CTRL_DOH_HOST;
 
 	switch(type)
 	{
@@ -106,6 +107,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
 			table_name[PXY_CTRL_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
 			table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
+			scan_table_max = PXY_CTRL_DOH_HOST;
 			break;
 		case PXY_TABLE_SECURITY:
 			table_name[PXY_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
@@ -117,6 +119,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
 			table_name[PXY_SECURITY_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_CONTENT";
 			table_name[PXY_SECURITY_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
+			table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
 			table_name[PXY_SECURITY_HTTPS_SNI] = "TSG_FIELD_SSL_SNI";
 			table_name[PXY_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
 			table_name[PXY_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
@@ -132,7 +135,12 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 			table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
 			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
-			table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
+			scan_table_max = PXY_SECURITY_FTP_ACCOUNT;
+			break;
+		case PXY_TABLE_WANNAT:
+			table_name[PXY_WANNAT_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
+			table_name[PXY_WANNAT_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
+			scan_table_max = PXY_WANNAT_DESTINATION_ADDR;
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -140,7 +148,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			break;
 	}
 	size_t i = 0;
-	for (i = 0; i <= max; i++)
+	for (i = 0; i <= scan_table_max; i++)
 	{
 		if (0 == strcasecmp(action_str, table_name[i]))
 			break;
@@ -877,6 +885,9 @@ int main(int argc, char * argv[])
 
 	ret = proxy_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
+
+	ret = wannat_policy_init(g_verify_proxy, main_profile);
+	CHECK_OR_EXIT(ret == 0, "Failed at init wannat module, Exit.");
 
 	clock_gettime(CLOCK_REALTIME, &(end_time));
 	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);

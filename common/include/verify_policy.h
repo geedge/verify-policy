@@ -17,8 +17,15 @@ enum verify_policy_type
 {
     PXY_TABLE_SECURITY,
     PXY_TABLE_MANIPULATION,
+    PXY_TABLE_WANNAT,
     PXY_TABLE_DEFENCE,
     __SCAN_POLICY_MAX
+};
+
+enum common_scan_table
+{
+    PXY_COMMON_SOURCE_ADDR,
+    PXY_COMMON_DESTINATION_ADDR
 };
 
 enum manipulate_sacn_table
@@ -75,6 +82,14 @@ enum security_scan_table
     PXY_SECURITY_IP_DST_LOCATION,
 	__SECURITY_TABLE_MAX
 };
+
+enum wannat_scan_table
+{
+    PXY_WANNAT_SOURCE_ADDR,
+    PXY_WANNAT_DESTINATION_ADDR,
+	__WANNAT_TABLE_MAX
+};
+
 
 enum http_ev_bit_number
 {
@@ -159,6 +174,8 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
 
 int security_policy_init(struct verify_policy * verify, const char* profile_path);
+
+int wannat_policy_init(struct verify_policy * verify, const char* profile_path);
 
 int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJSON *data_obj, void *pme);
 

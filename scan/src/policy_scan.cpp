@@ -1,5 +1,5 @@
 /*************************************************************************
-	> File Name: pangu_http.cpp
+	> File Name: policy_scan.cpp
 	> Author:
 	> Mail:
 	> Created Time: 2019年08月23日 星期五 16时53分25秒
@@ -24,27 +24,27 @@
 
 #define	MAX_SCAN_RESULT				16
 
-enum pangu_action //Bigger action number is prior.
+enum pangu_action
 {
 	PG_ACTION_NONE = 0x00,
 	PG_ACTION_MONIT = 0x01,
-	PG_ACTION_FORWARD = 0x02,    /* N/A */
+	PG_ACTION_INTERCEPT = 0x02,    /* N/A */
+	PG_ACTION_ACTIVE_DEFENCE = 0x04,
+	PG_ACTION_WANNAT = 0x08,
 	PG_ACTION_REJECT = 0x10,
-	PG_ACTION_DROP = 0x20,    /* N/A */
 	PG_ACTION_MANIPULATE = 0x30,
-	PG_ACTION_RATELIMIT = 0x40,    /* N/A */
-	PG_ACTION_LOOP = 0x60,    /* N/A */
+	PG_ACTION_INLINE_DEVICE = 0x60,
 	PG_ACTION_WHITELIST = 0x80,
 	__PG_ACTION_MAX
 };
 
-enum tfe_http_std_field
+enum http_std_field
 {
-	TFE_HTTP_UNKNOWN_FIELD = 0,
-	TFE_HTTP_USER_AGENT,
-	TFE_HTTP_COOKIE,
-	TFE_HTTP_SET_COOKIE,
-	TFE_HTTP_CONT_TYPE,
+	HTTP_UNKNOWN_FIELD = 0,
+	HTTP_USER_AGENT,
+	HTTP_COOKIE,
+	HTTP_SET_COOKIE,
+	HTTP_CONT_TYPE,
 };
 
 enum verify_profile_table
@@ -77,7 +77,7 @@ struct ip_data_table
 struct http_field_name
 {
 	const char * field_name;
-	enum tfe_http_std_field field_id;
+	enum http_std_field field_id;
 };
 
 struct ip_data_ctx
@@ -176,9 +176,10 @@ void __pangu_action_weight_init()
 {
 	pangu_action_weight[PG_ACTION_NONE] = 0;
 	pangu_action_weight[PG_ACTION_MONIT] = 1;
-	pangu_action_weight[PG_ACTION_MANIPULATE] = 2;
-	pangu_action_weight[PG_ACTION_REJECT] = 3;
-	pangu_action_weight[PG_ACTION_WHITELIST] = 4;
+	pangu_action_weight[PG_ACTION_INTERCEPT] = 2;
+	pangu_action_weight[PG_ACTION_MANIPULATE] = 3;
+	pangu_action_weight[PG_ACTION_REJECT] = 4;
+	pangu_action_weight[PG_ACTION_WHITELIST] = 5;
 }
 
 static inline int action_cmp(enum pangu_action a1, enum pangu_action a2)
@@ -716,10 +717,9 @@ int http_hit_policy_match(int result_config[], int cnt, int config)
 int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJSON *data_obj, void *pme)
 {
 	bool succeeded = false;
-	size_t rules=0, i=0, j = 0;
+	size_t rules=0, i=0;
 	int result_config[MAX_SCAN_RESULT] = {0};
 
-	Maat_feather_t maat = g_pangu_rt->maat[policy_type];
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 
 	hit_cnt = ctx->hit_cnt;
@@ -993,11 +993,11 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 	int scan_ret=0, n_read;
 	//size_t hit_cnt=0;
 
-	struct http_field_name req_fields[]={	{"User-Agent", TFE_HTTP_USER_AGENT},
-									        {"Cookie", TFE_HTTP_COOKIE}};
+	struct http_field_name req_fields[]={	{"User-Agent", HTTP_USER_AGENT},
+									        {"Cookie", HTTP_COOKIE}};
 
-	struct http_field_name resp_fields[]={	{"Set-Cookie", TFE_HTTP_SET_COOKIE},
-											{"Content-Type", TFE_HTTP_CONT_TYPE}};
+	struct http_field_name resp_fields[]={	{"Set-Cookie", HTTP_SET_COOKIE},
+											{"Content-Type", HTTP_CONT_TYPE}};
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 	size_t hit_cnt = ctx->hit_cnt;
@@ -1005,7 +1005,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 	int protocol_field = query_obj->protocol_field;
 	const char *value = query_obj->keyword;
 
-	if ((protocol_field == PXY_CTRL_SOURCE_ADDR || protocol_field == PXY_CTRL_DESTINATION_ADDR) && query_obj->ip_addr != NULL)
+	if ((protocol_field == PXY_COMMON_SOURCE_ADDR || protocol_field == PXY_COMMON_DESTINATION_ADDR) && query_obj->ip_addr != NULL)
 	{
 		struct ip_address dest_ip, source_ip;
 		verify_ip_addr_to_address(query_obj->ip_addr, &dest_ip, &source_ip);
@@ -1248,6 +1248,34 @@ void subscribe_id_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA* to, MAAT_PLUGIN_EX_D
 {
 	*to = strdup((char*)*from);
 	return;
+}
+
+int wannat_policy_init(struct verify_policy * verify, const char* profile_path)
+{
+	int ret = -1;
+
+	g_pangu_rt->maat[PXY_TABLE_WANNAT] = create_maat_feather("static", profile_path, "MAAT", "table_info_wannat", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
+	if (!g_pangu_rt->maat[PXY_TABLE_WANNAT])
+	{
+		goto error_out;
+	}
+	const char * table_name[__WANNAT_TABLE_MAX];
+	table_name[PXY_WANNAT_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
+	table_name[PXY_WANNAT_DESTINATION_ADDR] = "TSG_SECURITY_DESTINATION_ADDR";
+
+	for (int i = 0; i < __WANNAT_TABLE_MAX; i++)
+	{
+		g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_WANNAT], table_name[i]);
+		if (g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i] < 0)
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Wannat policy maat table %s register failed.", table_name[i]);
+			goto error_out;
+		}
+		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Wannat policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_WANNAT], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i]);
+	}
+	ret = 0;
+error_out:
+	return ret;
 }
 
 int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
