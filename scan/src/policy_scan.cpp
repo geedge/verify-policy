@@ -1382,6 +1382,8 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 	table_name[PXY_SECURITY_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[PXY_SECURITY_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
 	table_name[PXY_SECURITY_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
+	table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_FROM";
+	table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_TO";
 
 	for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 	{
