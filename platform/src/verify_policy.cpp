@@ -135,8 +135,8 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
 			table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
 			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
-			table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_FROM";
-			table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_TO";
+			table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
+			table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
 			scan_table_max = PXY_SECURITY_SIP_TO;
 			break;
 		case PXY_TABLE_WANNAT:
