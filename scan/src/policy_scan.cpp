@@ -991,13 +991,6 @@ finish:
 size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
-	//size_t hit_cnt=0;
-
-	struct http_field_name req_fields[]={	{"User-Agent", HTTP_USER_AGENT},
-									        {"Cookie", HTTP_COOKIE}};
-
-	struct http_field_name resp_fields[]={	{"Set-Cookie", HTTP_SET_COOKIE},
-											{"Content-Type", HTTP_CONT_TYPE}};
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
 	size_t hit_cnt = ctx->hit_cnt;
@@ -1048,11 +1041,9 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 
 	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || protocol_field == PXY_CTRL_HTTP_RES_HDR)
 	{
-		struct http_field_name *field_name = (protocol_field == PXY_CTRL_HTTP_REQ_HDR) ? req_fields : resp_fields;
-
-		for(size_t i=0;i<sizeof(req_fields)/sizeof(struct http_field_name);i++)
+		if(query_obj->district != NULL)
 		{
-			const char * str_field_name = field_name[i].field_name;
+			const char * str_field_name = query_obj->district;
 			scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
 					   str_field_name, strlen(str_field_name));
 			assert(scan_ret == 0);
@@ -1063,12 +1054,10 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 			{
 				hit_cnt += scan_ret;
 			}
+			n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+			query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
+			ctx->n_read=n_read;
 		}
-		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
-		ctx->n_read=n_read;
-		goto decide;
-
 	}
 
 	if(policy_type == PXY_TABLE_SECURITY &&(protocol_field == PXY_SECURITY_HTTP_FQDN ||

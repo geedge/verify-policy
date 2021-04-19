@@ -269,7 +269,16 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name);
 		goto end;
 	}
+
+	item = cJSON_GetObjectItem(attributeValue,"district");
+	if(item!=NULL)
+	{
+		policy_query->verify_object[curr_id].district = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->verify_object[curr_id].district);
+	}
+
 	item = cJSON_GetObjectItem(attributeValue,"string");
+	if(item!=NULL)
 	{
 		policy_query->verify_object[curr_id].keyword = item->valuestring;
 		p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);

@@ -142,6 +142,7 @@ struct verify_policy_query_obj
 	int protocol_field;
 
 	char *keyword;
+    char *district;
 	char *attri_name;
 
 	struct ipaddr *ip_addr;
