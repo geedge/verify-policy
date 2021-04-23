@@ -1298,8 +1298,8 @@ int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 	table_name[PXY_CTRL_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[PXY_CTRL_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
 	table_name[PXY_CTRL_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
-	table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_PHONE_NUMBER";
-	table_name[PXY_CTRL_PHONE_NUMBER]="TSG_OBJ_PHONE_NUMBER";
+	table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_IMSI";
+	table_name[PXY_CTRL_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
 	table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
