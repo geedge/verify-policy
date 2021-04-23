@@ -107,7 +107,10 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
 			table_name[PXY_CTRL_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
 			table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
-			scan_table_max = PXY_CTRL_DOH_HOST;
+			table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_IMSI";
+			table_name[PXY_CTRL_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
+			table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
+			scan_table_max = PXY_CTRL_APN;
 			break;
 		case PXY_TABLE_SECURITY:
 			table_name[PXY_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
@@ -137,7 +140,10 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
 			table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
 			table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
-			scan_table_max = PXY_SECURITY_SIP_TO;
+			table_name[PXY_SECURITY_IMSI]="TSG_FILED_GTP_PHONE_NUMBER";
+			table_name[PXY_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
+			table_name[PXY_SECURITY_APN]="TSG_FILED_GTP_APN";
+			scan_table_max = PXY_SECURITY_APN;
 			break;
 		case PXY_TABLE_WANNAT:
 			table_name[PXY_WANNAT_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";

@@ -1298,6 +1298,9 @@ int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 	table_name[PXY_CTRL_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[PXY_CTRL_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
 	table_name[PXY_CTRL_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
+	table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_PHONE_NUMBER";
+	table_name[PXY_CTRL_PHONE_NUMBER]="TSG_OBJ_PHONE_NUMBER";
+	table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
 	for (int i = 0; i < __SCAN_TABLE_MAX; i++)
 	{
 		g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i]);
@@ -1373,6 +1376,9 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 	table_name[PXY_SECURITY_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
 	table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
 	table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
+	table_name[PXY_SECURITY_IMSI]="TSG_FILED_GTP_IMSI";
+	table_name[PXY_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
+	table_name[PXY_SECURITY_APN]="TSG_FILED_GTP_APN";
 
 	for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 	{
