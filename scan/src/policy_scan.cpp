@@ -335,8 +335,8 @@ const char *table_name_map[] = {"TSG_IP_ASN_USER_DEFINED",
 								"TSG_IP_ASN_BUILT_IN",
 								"TSG_IP_LOCATION_USER_DEFINED",
 								"TSG_IP_LOCATION_BUILT_IN",
-								"TSG_FQDN_CATEGORY_BUILT_IN",
-								"TSG_FQDN_CATEGORY_USER_DEFINED"};
+								"TSG_FQDN_CATEGORY_USER_DEFINED",
+								"TSG_FQDN_CATEGORY_BUILT_IN"};
 
 int maat_fqdn_cat_table_init(int profile_idx,
 							 Maat_plugin_EX_new_func_t* new_func,
@@ -659,9 +659,26 @@ void http_get_location_status(cJSON *attributes, cJSON *attributeObj, struct ip_
 	return;
 }
 
+
+/*In the case of multiple hits, the hit path is append behavior to obtain the last hit path force***/
+int http_hit_policy_match(int result_config[], int cnt, int config)
+{
+	int i = 0;
+
+	for(i=0; i<cnt; i++)
+	{
+		if(result_config[i] == config)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme)
 {
-	int i=0, j=0;
+	int i=0, j=0, k=0;
+	int result_hit_nth[MAX_SCAN_RESULT] = {-1};
 	cJSON *attributeObj=NULL,*hitPaths=NULL;
 
 	struct pangu_http_ctx * ctx = (struct pangu_http_ctx *) pme;
@@ -679,6 +696,11 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 		{
 			if (query_obj->nth_scan[j] == ctx->hit_path[i].Nth_scan)
 			{
+				if(http_hit_policy_match(result_hit_nth, k, ctx->hit_path[i].compile_id))
+				{
+					continue;
+				}
+
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
 				cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
@@ -690,6 +712,8 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
 				if(ctx->hit_path[i].compile_id > 0)
 				{
+					result_hit_nth[k] = ctx->hit_path[i].compile_id;
+					k++;
 					cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
 				}
 			}
@@ -698,20 +722,6 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 	}
 	http_get_location_status(attributes, attributeObj, &ctx->ip_ctx);
 	http_get_fqdn_cat_id(query_obj, type, attributeObj);
-}
-
-int http_hit_policy_match(int result_config[], int cnt, int config)
-{
-	int i = 0;
-
-	for(i=0; i<cnt; i++)
-	{
-		if(result_config[i] == config)
-		{
-			return 1;
-		}
-	}
-	return 0;
 }
 
 int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJSON *data_obj, void *pme)
