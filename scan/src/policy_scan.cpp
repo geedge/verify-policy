@@ -492,7 +492,7 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 }
 #endif
 
-static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules, size_t n_hit, struct Maat_rule_t ** enforce_rules, size_t * n_enforce)
+static enum pangu_action decide_ctrl_action(enum verify_policy_type policy_type, const struct Maat_rule_t * hit_rules, size_t n_hit, struct Maat_rule_t ** enforce_rules, size_t * n_enforce)
 {
 	size_t n_monit = 0, exist_enforce_num = 0, i = 0;
 	const struct Maat_rule_t * prior_rule = hit_rules;
@@ -538,6 +538,12 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 		return PG_ACTION_WHITELIST;
 	}
 
+	size_t monit_enable=1;
+	if(policy_type == PXY_TABLE_SECURITY && n_monit != n_hit)
+	{
+		monit_enable=0;
+	}
+
 	exist_enforce_num = *n_enforce;
 	if (prior_action == PG_ACTION_MONIT)
 	{
@@ -549,7 +555,7 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	}
 
 	*enforce_rules = (struct Maat_rule_t *) realloc(*enforce_rules, sizeof(struct Maat_rule_t) * (*n_enforce));
-	if (prior_action == PG_ACTION_MONIT)
+	if (prior_action == PG_ACTION_MONIT && monit_enable)
 	{
 		memcpy(*enforce_rules + exist_enforce_num, monit_rule, n_monit * sizeof(struct Maat_rule_t));
 	}
@@ -557,7 +563,10 @@ static enum pangu_action decide_ctrl_action(const struct Maat_rule_t * hit_rules
 	{
 		memmove(*enforce_rules+1, *enforce_rules, exist_enforce_num*sizeof(struct Maat_rule_t));
 		memcpy(*enforce_rules, prior_rule, sizeof(struct Maat_rule_t));
-		memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+		if(monit_enable)
+		{
+			memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct Maat_rule_t));
+		}
 	}
 	return prior_action;
 }
@@ -740,7 +749,7 @@ int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJ
 
 	if (hit_cnt >= MAX_SCAN_RESULT)	hit_cnt = MAX_SCAN_RESULT;
 
-	ctx->action = decide_ctrl_action(ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
+	ctx->action = decide_ctrl_action(policy_type, ctx->result, hit_cnt, &ctx->enforce_rules, &ctx->n_enforce);
 	ctx->hit_cnt = hit_cnt;
 	cJSON  *hit_obj=NULL, *policy_obj=NULL;
 	hit_obj=cJSON_CreateArray();
