@@ -831,7 +831,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_server!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s", ip_location_server->city_full,ip_location_server->country_full);
+		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->city_full, ip_location_server->province_full, ip_location_server->country_full);
 		ctx->ip_ctx.location_server=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_LOCATION : (int)PXY_CTRL_IP_DST_LOCATION;
@@ -850,7 +850,7 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_client!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s", ip_location_client->city_full, ip_location_client->country_full);
+		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->city_full, ip_location_client->province_full, ip_location_client->country_full);
 		ctx->ip_ctx.location_client=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_LOCATION : (int)PXY_CTRL_IP_SRC_LOCATION;
