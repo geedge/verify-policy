@@ -87,11 +87,11 @@ release_build_release:
   only:
     - tags
 
-release_build_release_devel:
+release_build_debug:
   stage: build
   variables:
+    BUILD_TYPE: Debug
     BUILD_TYPE: RelWithDebInfo
-    ENABLE_DEVEL_SWITCH: "ON"
     PACKAGE: 1
     UPLOAD: 1
     SYMBOL_TARGET: verify-policy
@@ -99,7 +99,7 @@ release_build_release_devel:
     PULP3_DIST_NAME: tsg-stable-x86_64.el7
   extends: .build_by_travis
   artifacts:
-    name: "verify-policy-$CI_COMMIT_REF_NAME-release"
+    name: "verify-policy-$CI_COMMIT_REF_NAME-debug"
     paths:
       - build/*.rpm
   only:
