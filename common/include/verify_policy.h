@@ -84,6 +84,7 @@ enum security_scan_table
     PXY_SECURITY_IMSI,
     PXY_SECURITY_PHONE_NUMBER,
     PXY_SECURITY_APN,
+    PXY_SECURITY_EXCLUSION_SSL_SNI,
     PXY_SECURITY_IP_SRC_ASN,
     PXY_SECURITY_IP_DST_ASN,
     PXY_SECURITY_IP_SRC_LOCATION,
@@ -110,7 +111,7 @@ enum http_ev_bit_number
 	SUBSCRIBE_ID
 };
 
-enum tfe_http_event
+enum policy_http_event
 {
 	EV_HTTP_IP = 1ULL << IP_BITNUM,
 	EV_HTTP_URL = 1ULL << URL_BITNUM,

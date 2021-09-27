@@ -143,7 +143,8 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_IMSI]="TSG_FILED_GTP_IMSI";
 			table_name[PXY_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
 			table_name[PXY_SECURITY_APN]="TSG_FILED_GTP_APN";
-			scan_table_max = PXY_SECURITY_APN;
+			table_name[PXY_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
+			scan_table_max = PXY_SECURITY_EXCLUSION_SSL_SNI;
 			break;
 		case PXY_TABLE_WANNAT:
 			table_name[PXY_WANNAT_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
