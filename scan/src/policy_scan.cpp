@@ -766,7 +766,8 @@ int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJ
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
-			if(http_hit_policy_match(result_config, i, ctx->result[i].config_id))
+			if(http_hit_policy_match(result_config, i, ctx->result[i].config_id) ||
+			   ctx->result[i].config_id == 1)
 			{
 				continue;
 			}
