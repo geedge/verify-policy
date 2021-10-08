@@ -730,7 +730,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 				{
 					if(ctx->hit_path[i].region_id == ctx->region_id)
 					{
-						cJSON_AddNumberToObject(histObj, "policyId", 1);
+						cJSON_AddNumberToObject(histObj, "isExclusion", 1);
 					}
 				}
 			}
