@@ -726,13 +726,6 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 					k++;
 					cJSON_AddNumberToObject(histObj, "policyId", ctx->hit_path[i].compile_id);
 				}
-				if(ctx->region_id >0)
-				{
-					if(ctx->hit_path[i].region_id == ctx->region_id)
-					{
-						cJSON_AddNumberToObject(histObj, "isExclusion", 1);
-					}
-				}
 			}
 		}
 
@@ -1019,7 +1012,6 @@ finish:
 static int verify_intercept_exclusion(struct Maat_rule_t *result, const char *value, int protocol_field, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type,
 								struct pangu_http_ctx * ctx, struct verify_policy_query_obj *query_obj)
 {
-	int i=0;
 	int hit_cnt_fqdn=0,hit_path_cnt=0;
 	int ret=0, n_read=0;
 
@@ -1031,13 +1023,6 @@ static int verify_intercept_exclusion(struct Maat_rule_t *result, const char *va
 		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
 		if(ret >0)
 		{
-			for(i=ctx->n_read; i<n_read; i++)
-			{
-				if(ctx->hit_path[i].compile_id > 0)
-				{
-					ctx->region_id = ctx->hit_path[i].region_id;
-				}
-			}
 			query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
 			ctx->n_read=n_read;
 			hit_path_cnt++;
