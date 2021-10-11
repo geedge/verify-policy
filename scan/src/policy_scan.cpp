@@ -113,7 +113,7 @@ struct pangu_http_ctx
 	int n_read;
 	struct Maat_hit_path_t hit_path[2048];
 
-	int region_id;
+	int isExclusion;
 	struct ip_data_ctx ip_ctx;
 	int thread_id;
 };
@@ -759,8 +759,7 @@ int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJ
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
-			if(http_hit_policy_match(result_config, i, ctx->result[i].config_id) ||
-			   ctx->result[i].config_id == 1)
+			if(http_hit_policy_match(result_config, i, ctx->result[i].config_id))
 			{
 				continue;
 			}
@@ -771,10 +770,21 @@ int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJ
 
 			for (rules = 0; rules < ctx->n_enforce; rules++)
 			{
-				if (ctx->enforce_rules[rules].config_id == ctx->result[i].config_id)
+				if (ctx->enforce_rules[rules].action == PG_ACTION_INTERCEPT)
 				{
-					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
-					succeeded = true;
+					if (ctx->isExclusion != 1)
+					{
+						cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+						succeeded = true;
+					}
+				}
+				else
+				{
+					if (ctx->enforce_rules[rules].config_id == ctx->result[i].config_id)
+					{
+						cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+						succeeded = true;
+					}
 				}
 			}
 			if (succeeded == false)
@@ -1009,28 +1019,25 @@ finish:
 	return hit_cnt_fqdn;
 }
 
-static int verify_intercept_exclusion(struct Maat_rule_t *result, const char *value, int protocol_field, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type,
-								struct pangu_http_ctx * ctx, struct verify_policy_query_obj *query_obj)
+static int verify_intercept_exclusion(const char *value, unsigned int thread_id, enum verify_policy_type policy_type, struct pangu_http_ctx * ctx)
 {
-	int hit_cnt_fqdn=0,hit_path_cnt=0;
-	int ret=0, n_read=0;
+	int ret=0;
+	scan_status_t scan_mid=NULL;
+	struct Maat_rule_t result;
 
 	ret=Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][PXY_SECURITY_EXCLUSION_SSL_SNI],
-					       CHARSET_UTF8, value, strlen(value), result+hit_cnt+hit_cnt_fqdn, NULL, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &(ctx->scan_mid),(int) thread_id);
+					       CHARSET_UTF8, value, strlen(value), &result, NULL, 1, &scan_mid,(int) thread_id);
 	if(ret>0)
 	{
-		hit_cnt_fqdn+=ret;
-		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-		if(ret >0)
-		{
-			query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
-			ctx->n_read=n_read;
-			hit_path_cnt++;
-		}
+		ctx->isExclusion = 1;
 	}
 
-	query_obj->nth_scan_num = hit_path_cnt;
-	return hit_cnt_fqdn;
+	if(scan_mid!=NULL)
+	{
+		Maat_clean_status(&scan_mid);
+		scan_mid=NULL;
+	}
+	return 0;
 }
 
 size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
@@ -1107,7 +1114,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 
 	if(policy_type == PXY_TABLE_SECURITY &&(protocol_field == PXY_SECURITY_HTTPS_SNI || protocol_field == PXY_SECURITY_HTTP_FQDN))
 	{
-		scan_ret = verify_intercept_exclusion(ctx->result, value, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx, query_obj);
+		scan_ret = verify_intercept_exclusion(value, ctx->thread_id, policy_type, ctx);
 		if(scan_ret>0)
 		{
 			hit_cnt+=scan_ret;
