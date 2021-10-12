@@ -1152,7 +1152,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 	n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
 	if(scan_ret == -2 || scan_ret >0)
 	{
-		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
+		query_obj->nth_scan[query_obj->nth_scan_num] = ctx->hit_path[ctx->n_read].Nth_scan;
 		ctx->n_read=n_read;
 	}
 decide:
