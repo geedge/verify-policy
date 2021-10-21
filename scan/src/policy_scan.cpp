@@ -18,6 +18,10 @@
 
 #include <cjson/cJSON.h>
 
+#include <event2/listener.h>
+#include <event2/http.h>
+#include <event2/buffer.h>
+
 #include "verify_policy.h"
 #include "verify_policy_utils.h"
 #include "verify_policy_logging.h"
@@ -706,7 +710,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 		{
 			if (query_obj->nth_scan[j] == ctx->hit_path[i].Nth_scan)
 			{
-				if(http_hit_policy_match(result_hit_nth, k, ctx->hit_path[i].compile_id))
+				if(http_hit_policy_match(result_hit_nth, k, ctx->hit_path[i].compile_id) && query_obj->district == NULL)
 				{
 					continue;
 				}
@@ -1040,6 +1044,82 @@ static int verify_intercept_exclusion(const char *value, unsigned int thread_id,
 	return 0;
 }
 
+static void evutil_rtrim_lws_(char *str)
+{
+	char *cp;
+
+	if (str == NULL)
+		return;
+
+	if ((cp = strchr(str, '\0')) == NULL || (cp == str))
+		return;
+
+	--cp;
+
+	while (*cp == ' ' || *cp == '\t') {
+		*cp = '\0';
+		if (cp == str)
+			break;
+		--cp;
+	}
+}
+
+int verify_policy_parse_headers(struct Maat_rule_t *result, const char *district, int protocol_field, int hit_cnt, unsigned int thread_id, enum verify_policy_type policy_type,
+								struct pangu_http_ctx * ctx, struct verify_policy_query_obj *query_obj)
+{
+	char *line;
+	int scan_ret=0,n_read=0;
+	struct evbuffer* evbuf_body=NULL;
+	int hit_cnt_header=0,hit_path_cnt=0;
+
+	evbuf_body = evbuffer_new();
+	evbuffer_add(evbuf_body, district, strlen(district));
+
+	size_t line_length;
+	while ((line = evbuffer_readln(evbuf_body, &line_length, EVBUFFER_EOL_CRLF))
+	       != NULL) {
+		char *str_field_name, *str_field_value;
+
+		if (*line == '\0')
+		{
+			break;
+		}
+
+		if (*line == ' ' || *line == '\t')
+		{
+			continue;
+		}
+		str_field_value = line;
+		str_field_name = strsep(&str_field_value, ":");
+		if (str_field_value == NULL)
+		{
+			goto finish;
+		}
+		str_field_value += strspn(str_field_value, " ");
+		evutil_rtrim_lws_(str_field_value);
+
+		scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT, str_field_name, strlen(str_field_name));
+		assert(scan_ret == 0);
+		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
+		CHARSET_UTF8, str_field_value, strlen(str_field_value),	ctx->result + hit_cnt + hit_cnt_header, NULL, MAX_SCAN_RESULT - hit_cnt - hit_cnt_header, &(ctx->scan_mid), ctx->thread_id);
+		if(scan_ret > 0)
+		{
+			hit_cnt_header+=scan_ret;
+		}
+
+		n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+		if(scan_ret == -2 || scan_ret >0)
+		{
+			query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
+			ctx->n_read=n_read;
+			hit_path_cnt++;
+		}
+	}
+finish:
+	query_obj->nth_scan_num = hit_path_cnt;
+	return hit_cnt_header;
+}
+
 size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme)
 {
 	int scan_ret=0, n_read;
@@ -1093,23 +1173,16 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 
 	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || protocol_field == PXY_CTRL_HTTP_RES_HDR)
 	{
-		if(query_obj->district != NULL)
+		if(query_obj->district == NULL)
 		{
-			const char * str_field_name = query_obj->district;
-			scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
-					   str_field_name, strlen(str_field_name));
-			assert(scan_ret == 0);
-			scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][protocol_field],
-				CHARSET_UTF8, value, strlen(value),
-				ctx->result + hit_cnt, NULL, MAX_SCAN_RESULT - hit_cnt, &(ctx->scan_mid), ctx->thread_id);
-			if (scan_ret > 0)
-			{
-				hit_cnt += scan_ret;
-			}
-			n_read=Maat_get_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
-			query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
-			ctx->n_read=n_read;
+			goto decide;
 		}
+		scan_ret = verify_policy_parse_headers(ctx->result, query_obj->district, protocol_field, hit_cnt, ctx->thread_id, policy_type, ctx, query_obj);
+		if(scan_ret>0)
+		{
+			hit_cnt+=scan_ret;
+		}
+		goto decide;
 	}
 
 	if(policy_type == PXY_TABLE_SECURITY &&(protocol_field == PXY_SECURITY_HTTPS_SNI || protocol_field == PXY_SECURITY_HTTP_FQDN))

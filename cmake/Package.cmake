@@ -26,7 +26,7 @@ set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/cmake/PreUninstall.i
 set(CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX /opt/tsg)
 
 install(PROGRAMS build/platform/verify-policy DESTINATION ./bin)
-install(DIRECTORY ./conf DESTINATION ${CMAKE_INSTALL_PREFIX}/)
+install(FILES ./conf/verify_policy.conf DESTINATION ${CMAKE_INSTALL_PREFIX}/conf)
 install(DIRECTORY ./resource DESTINATION ${CMAKE_INSTALL_PREFIX}/)
 
 install(FILES script/service/verify-policy.service DESTINATION /usr/lib/systemd/system/)
