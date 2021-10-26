@@ -975,7 +975,7 @@ int verify_get_fqdn_category_id(struct Maat_rule_t *result, const char *fqdn, in
 	{
 		if(i < 8)
 		{
-			if(http_hit_policy_match((int *)query_obj->category_id_user, k, (int)fqdn_cat_user[i]->category_id))
+			if(http_hit_policy_match((int *)query_obj->category_id_built, k, (int)fqdn_cat_built[i]->category_id))
 			{
 				continue;
 			}
