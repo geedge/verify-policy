@@ -1104,7 +1104,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 
 	if ((protocol_field == PXY_CTRL_HTTP_REQ_HDR) || protocol_field == PXY_CTRL_HTTP_RES_HDR)
 	{
-		if(query_obj->district != NULL)
+		if(query_obj->district != NULL && value != NULL)
 		{
 			const char * str_field_name = query_obj->district;
 			scan_ret = Maat_set_scan_status(g_pangu_rt->maat[policy_type], &(ctx->scan_mid), MAAT_SET_SCAN_DISTRICT,
@@ -1121,6 +1121,7 @@ size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_pol
 			query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 			ctx->n_read=n_read;
 		}
+		goto decide;
 	}
 
 	if(policy_type == PXY_TABLE_SECURITY &&(protocol_field == PXY_SECURITY_HTTPS_SNI || protocol_field == PXY_SECURITY_HTTP_FQDN))
