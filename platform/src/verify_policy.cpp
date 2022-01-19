@@ -73,7 +73,6 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[PXY_TABLE_SECURITY] = "tsg_security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
-	policy_name[PXY_TABLE_WANNAT] = "pxy_wannat";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
@@ -145,11 +144,6 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_SECURITY_APN]="TSG_FILED_GTP_APN";
 			table_name[PXY_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
 			scan_table_max = PXY_SECURITY_EXCLUSION_SSL_SNI;
-			break;
-		case PXY_TABLE_WANNAT:
-			table_name[PXY_WANNAT_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
-			table_name[PXY_WANNAT_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-			scan_table_max = PXY_WANNAT_DESTINATION_ADDR;
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -903,9 +897,6 @@ int main(int argc, char * argv[])
 
 	ret = proxy_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
-
-	ret = wannat_policy_init(g_verify_proxy, main_profile);
-	CHECK_OR_EXIT(ret == 0, "Failed at init wannat module, Exit.");
 
 	clock_gettime(CLOCK_REALTIME, &(end_time));
 	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);

@@ -1311,34 +1311,6 @@ void subscribe_id_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA* to, MAAT_PLUGIN_EX_D
 	return;
 }
 
-int wannat_policy_init(struct verify_policy * verify, const char* profile_path)
-{
-	int ret = -1;
-
-	g_pangu_rt->maat[PXY_TABLE_WANNAT] = create_maat_feather("static", profile_path, "MAAT", "table_info_wannat", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
-	if (!g_pangu_rt->maat[PXY_TABLE_WANNAT])
-	{
-		goto error_out;
-	}
-	const char * table_name[__WANNAT_TABLE_MAX];
-	table_name[PXY_WANNAT_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
-	table_name[PXY_WANNAT_DESTINATION_ADDR] = "TSG_SECURITY_DESTINATION_ADDR";
-
-	for (int i = 0; i < __WANNAT_TABLE_MAX; i++)
-	{
-		g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i] = Maat_table_register(g_pangu_rt->maat[PXY_TABLE_WANNAT], table_name[i]);
-		if (g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i] < 0)
-		{
-			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Wannat policy maat table %s register failed.", table_name[i]);
-			goto error_out;
-		}
-		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Wannat policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_WANNAT], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_WANNAT][i]);
-	}
-	ret = 0;
-error_out:
-	return ret;
-}
-
 int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1;
