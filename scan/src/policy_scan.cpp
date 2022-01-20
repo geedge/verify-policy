@@ -121,8 +121,6 @@ struct pangu_http_ctx
 struct pangu_rt
 {
 	Maat_feather_t maat[__SCAN_POLICY_MAX];
-	Maat_feather_t dyn_maat;
-	int subscriber_id_table_id;
 	void * local_logger;
 	int log_level;
 	int thread_num;
@@ -1258,59 +1256,6 @@ error_out:
 	return NULL;
 }
 
-static int get_column_pos(const char* line, int column_seq, size_t *offset, size_t *len)
-{
-	const char* seps=" \t";
-	char* saveptr=NULL, *subtoken=NULL, *str=NULL;
-	char* dup_line=strdup(line);
-	int i=0, ret=-1;
-	for (str = dup_line; ; str = NULL)
-	{
-		subtoken = strtok_r(str, seps, &saveptr);
-		if (subtoken == NULL)
-			break;
-		if(i==column_seq-1)
-		{
-			*offset=subtoken-dup_line;
-			*len=strlen(subtoken);
-			ret=0;
-			break;
-		}
-		i++;
-	}
-	free(dup_line);
-	return ret;
-}
-
-void subscribe_id_new_cb(int table_id, const char* key, const char* table_line, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
-{
-	int ret=0;
-	size_t subscribe_id_offset, len;
-	ret=get_column_pos(table_line, 4, &subscribe_id_offset, &len);
-	if(ret<0)
-	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Add subscribe ID faild: %s", table_line);
-		return;
-	}
-	*ad=ALLOC(char, len+1);
-	memcpy(*ad, table_line+subscribe_id_offset, len);
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Add subscribe ID: %s", (char*)*ad);
-	return;
-}
-
-void subscribe_id_free_cb(int table_id, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
-{
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Delete subscribe ID: %s", (char*)*ad);
-	free(*ad);
-	*ad=NULL;
-}
-
-void subscribe_id_dup_cb(int table_id, MAAT_PLUGIN_EX_DATA* to, MAAT_PLUGIN_EX_DATA* from, long argl, void* argp)
-{
-	*to = strdup((char*)*from);
-	return;
-}
-
 int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1;
@@ -1354,25 +1299,6 @@ int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 			goto error_out;
 		}
 		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Pangu policy register maat %p, table name %s, table id %d", g_pangu_rt->maat[PXY_TABLE_MANIPULATION], table_name[i], g_pangu_rt->scan_table_id[PXY_TABLE_MANIPULATION][i]);
-	}
-	g_pangu_rt->dyn_maat = create_maat_feather("dyn", profile_path, "DYNAMIC_MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
-	if (!g_pangu_rt->dyn_maat)
-	{
-		goto error_out;
-	}
-	g_pangu_rt->subscriber_id_table_id=Maat_table_register(g_pangu_rt->dyn_maat, "TSG_DYN_SUBSCRIBER_IP");
-	ret=Maat_plugin_EX_register(g_pangu_rt->dyn_maat,
-							g_pangu_rt->subscriber_id_table_id,
-							subscribe_id_new_cb,
-							subscribe_id_free_cb,
-							subscribe_id_dup_cb,
-							NULL,
-							0,
-							NULL);
-	if(ret!=0)
-	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Pangu HTTP Dynamic Maat  TSG_DYN_SUBSCRIBER_IP EX data register failed.");
-		goto error_out;
 	}
 	ret = 0;
 error_out:
