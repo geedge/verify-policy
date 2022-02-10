@@ -70,6 +70,7 @@ struct ip_data_table
 	char *country_full;
 	char *province_full;
 	char *city_full;
+	char *subdivision_addr;
 
 	pthread_mutex_t lock;
 };
@@ -127,6 +128,9 @@ struct pangu_rt
 	int plolicy_table_id[POLICY_PROFILE_TABLE_MAX];
 	int scan_table_id[__SCAN_POLICY_MAX][__SECURITY_TABLE_MAX];
 };
+
+static int ip_location_column_num =0;
+
 struct pangu_rt * g_pangu_rt;
 
 #define MAAT_INPUT_JSON			0
@@ -250,6 +254,23 @@ void ip_asn_table_new_cb(int table_id, const char* key, const char* table_line, 
 	*ad = ip_asn;
 }
 
+static int get_column_num(const char* line)
+{
+	const char* seps=" \t";
+	char* saveptr=NULL, *subtoken=NULL, *str=NULL;
+	char* dup_line=strdup(line);
+	int i=0;
+	for (str = dup_line; ; str = NULL)
+	{
+		subtoken = strtok_r(str, seps, &saveptr);
+		if (subtoken == NULL)
+			break;
+		i++;
+	}
+	free(dup_line);
+	return i;
+}
+
 void ip_location_table_new_cb(int table_id, const char* key, const char* table_line, MAAT_PLUGIN_EX_DATA* ad, long argl, void* argp)
 {
 	int ret=0,profile_id=0,is_valid=0;
@@ -259,28 +280,58 @@ void ip_location_table_new_cb(int table_id, const char* key, const char* table_l
 	char continent_abbr[VERIFY_ARRAY_MAX],continent_full[VERIFY_ARRAY_MAX];
 	char country_abbr[VERIFY_ARRAY_MAX],province_abbr[VERIFY_ARRAY_MAX], time_zone[VERIFY_ARRAY_MAX];
 	char country_full[VERIFY_ARRAY_MAX],province_full[VERIFY_ARRAY_MAX], city_full[VERIFY_ARRAY_MAX];
+	char subdivision_addr[VERIFY_ARRAY_MAX];
 
-	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
+	if(ip_location_column_num == 0)
+	{
+		ip_location_column_num = get_column_num(table_line);
+	}
+
+	if(ip_location_column_num == 20)
+	{
+		ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
 			   &addr_type, start_ip,end_ip,&latitude,&longitude,&coords,language,
 			   continent_abbr,continent_full, country_abbr,country_full,province_abbr,province_full,
-			   city_full,time_zone,&is_valid);
+			   city_full, time_zone,&is_valid);
 
-	if(ret!=18)
-	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
-		return;
+		if(ret!=18)
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
+			return;
+		}
 	}
+	else
+	{
+		ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
+			   &addr_type, start_ip,end_ip,&latitude,&longitude,&coords,language,
+			   continent_abbr,continent_full, country_abbr,country_full,province_abbr,province_full,
+			   city_full, subdivision_addr, time_zone,&is_valid);
+
+		if(ret!=19)
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
+			return;
+		}
+	}
+
 	verify_unescape(continent_full);
 	verify_unescape(country_full);
 	verify_unescape(province_full);
 	verify_unescape(city_full);
-
+	if(ip_location_column_num != 20)
+	{
+		verify_unescape(subdivision_addr);
+	}
 	struct ip_data_table* ip_asn=ALLOC(struct ip_data_table, 1);
 	memset(ip_asn, 0, sizeof(struct ip_data_table));
 	ip_asn->profile_id=profile_id;
 	ip_asn->country_full=strdup(country_full);
 	ip_asn->province_full=strdup(province_full);
 	ip_asn->city_full=strdup(city_full);
+	if(ip_location_column_num != 20)
+	{
+		ip_asn->subdivision_addr=strdup(subdivision_addr);
+	}
 	ip_asn->ref_cnt=1;
 	pthread_mutex_init(&(ip_asn->lock), NULL);
 	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Policy table add success %d", profile_id);
@@ -319,6 +370,7 @@ void ip_table_free_cb(int table_id, MAAT_PLUGIN_EX_DATA* ad, long argl, void* ar
 	if(ip_asn->country_full) FREE(&ip_asn->country_full);
 	if(ip_asn->province_full) FREE(&ip_asn->province_full);
 	if(ip_asn->city_full) FREE(&ip_asn->city_full);
+	if(ip_asn->subdivision_addr) FREE(&ip_asn->subdivision_addr);
 
 	FREE(&ip_asn);
 	*ad=NULL;
@@ -841,12 +893,28 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_server!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->city_full, ip_location_server->province_full, ip_location_server->country_full);
+		if(ip_location_server->subdivision_addr == NULL)
+		{
+			snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full);
+		}
+		else
+		{
+			snprintf(buff, sizeof(buff), "%s,%s,%s,%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
+		}
 		ctx->ip_ctx.location_server=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_DST_LOCATION : (int)PXY_CTRL_IP_DST_LOCATION;
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_server->country_full, ip_location_server->city_full);
+
+		if(ip_location_server->subdivision_addr == NULL)
+		{
+			snprintf(buff, sizeof(buff), "%s.%s.", ip_location_server->country_full, ip_location_server->city_full);
+		}
+		else
+		{
+			snprintf(buff, sizeof(buff),"%s.%s.%s.%s.", ip_location_server->country_full,ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
+		}
+
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
 										 CHARSET_GBK, buff, strlen(buff),
 										 result+hit_cnt+hit_cnt_ip, NULL, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
@@ -860,13 +928,28 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 	if(ip_location_client!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->city_full, ip_location_client->province_full, ip_location_client->country_full);
+		if(ip_location_client->subdivision_addr == NULL)
+		{
+			snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full);
+		}
+		else
+		{
+			snprintf(buff, sizeof(buff), "%s,%s,%s,%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
+		}
+
 		ctx->ip_ctx.location_client=strdup(buff);
 
 		ip_location_table = (policy_type == PXY_TABLE_SECURITY) ? (int)PXY_SECURITY_IP_SRC_LOCATION : (int)PXY_CTRL_IP_SRC_LOCATION;
 
 		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
+		if(ip_location_client->subdivision_addr == NULL)
+		{
+			snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
+		}
+		else
+		{
+			snprintf(buff, sizeof(buff),"%s.%s.%s.%s.", ip_location_client->country_full,ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
+		}
 		scan_ret = Maat_full_scan_string(g_pangu_rt->maat[policy_type], g_pangu_rt->scan_table_id[policy_type][ip_location_table],
 										 CHARSET_GBK, buff, strlen(buff),
 										 result+hit_cnt+hit_cnt_ip, NULL, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
