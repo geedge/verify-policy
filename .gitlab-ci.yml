@@ -47,7 +47,7 @@ branch_build_debug_for_centos7:
     BUILD_TYPE: Debug
   except:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
     - tags
 
 branch_build_release_for_centos7:
@@ -56,7 +56,7 @@ branch_build_release_for_centos7:
   extends: .build_by_travis_for_centos7
   except:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
     - tags
 
 develop_build_debug_for_centos7:
@@ -75,7 +75,7 @@ develop_build_debug_for_centos7:
       - build/*.rpm
   only:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
 
 develop_build_release_for_centos7:
   extends: .build_by_travis_for_centos7
@@ -93,7 +93,7 @@ develop_build_release_for_centos7:
       - build/*.rpm
   only:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
 
 release_build_debug_for_centos7:
   variables:
@@ -136,7 +136,7 @@ branch_build_debug_for_centos8:
     BUILD_TYPE: Debug
   except:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
     - tags
 
 branch_build_release_for_centos8:
@@ -145,7 +145,7 @@ branch_build_release_for_centos8:
   extends: .build_by_travis_for_centos8
   except:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
     - tags
 
 develop_build_debug_for_centos8:
@@ -164,7 +164,7 @@ develop_build_debug_for_centos8:
       - build/*.rpm
   only:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
 
 develop_build_release_for_centos8:
   extends: .build_by_travis_for_centos8
@@ -182,7 +182,7 @@ develop_build_release_for_centos8:
       - build/*.rpm
   only:
     - /^develop-.*$/i
-    - /^master-.*$/i
+    - /^master.*$/i
 
 release_build_debug_for_centos8:
   variables:
