@@ -27,7 +27,7 @@ typedef struct RTLogInit2Data_ {
 extern RTLogInit2Data logging_sc_lid;
 
 /* The maximum length of the log message */
-#define RT_LOG_MAX_LOG_MSG_LEN 2048
+#define RT_LOG_MAX_LOG_MSG_LEN 4096
 
 extern void mesa_logging_print(int log_level, const char *module, const char *msg);
 
