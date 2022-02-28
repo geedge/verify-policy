@@ -42,7 +42,7 @@ void * verify_syslog_init(const char *config)
 		goto finish;
 	}
 
-    logging_sc_lid.run_log_handle = MESA_create_runtime_log_handle("./logs", RLOG_LV_DEBUG);
+    logging_sc_lid.run_log_handle = MESA_create_runtime_log_handle("verify_policy", RLOG_LV_DEBUG);
     if(logging_sc_lid.run_log_handle == NULL){
         mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Create log runtime_log_handle error, init failed!");
         goto finish;

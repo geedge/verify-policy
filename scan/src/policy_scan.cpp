@@ -1342,12 +1342,19 @@ error_out:
 int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1;
+	void *local_logger = NULL;
 
 	g_pangu_rt = ALLOC(struct pangu_rt, 1);
 
-	g_pangu_rt->thread_num = verify->nr_work_threads;
+    local_logger = MESA_create_runtime_log_handle("proxy_policy_maat", RLOG_LV_DEBUG);
+    if(local_logger == NULL)
+	{
+		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Create log runtime_log_handle error, init failed!");
+    }
+
 	g_pangu_rt->local_logger = verify->logger;
-	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
+	g_pangu_rt->thread_num = verify->nr_work_threads;
+	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_MANIPULATION])
 	{
 		goto error_out;
@@ -1392,7 +1399,13 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 {
 	int ret = -1;
 
-	g_pangu_rt->maat[PXY_TABLE_SECURITY] = create_maat_feather("static", profile_path, "MAAT", "table_info_tsg", g_pangu_rt->thread_num, g_pangu_rt->local_logger);
+	void *local_logger = MESA_create_runtime_log_handle("security_policy_maat", RLOG_LV_DEBUG);
+    if(local_logger == NULL)
+	{
+		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Create log runtime_log_handle error, init failed!");
+    }
+
+	g_pangu_rt->maat[PXY_TABLE_SECURITY] = create_maat_feather("static", profile_path, "MAAT", "table_info_tsg", g_pangu_rt->thread_num, local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_SECURITY])
 	{
 		goto error_out;
