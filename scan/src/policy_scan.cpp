@@ -1256,7 +1256,7 @@ decide:
 static Maat_feather_t create_maat_feather(const char * instance_name, const char * profile, const char * section, const char *table_name, int max_thread, void * logger)
 {
 	Maat_feather_t target;
-	int input_mode = 0, maat_perf_on = 0;
+	int input_mode = 0, maat_perf_on = 0, maat_stat_on = 0;
 	int ret = 0, scan_detail = 0, effect_interval = 60;
 	char table_info[VERIFY_STRING_MAX] = {0}, inc_cfg_dir[VERIFY_STRING_MAX] = {0}, ful_cfg_dir[VERIFY_STRING_MAX] = {0};
 	char redis_server[VERIFY_STRING_MAX] = {0};
@@ -1265,11 +1265,12 @@ static Maat_feather_t create_maat_feather(const char * instance_name, const char
 	int redis_port_begin=0, redis_port_end=0;
 	int redis_port_select=0;
 	int redis_db_idx = 0;
-	char json_cfg_file[VERIFY_STRING_MAX] = {0};
+	char json_cfg_file[VERIFY_STRING_MAX] = {0}, maat_stat_file[VERIFY_STRING_MAX] = {0};
 	MESA_load_profile_int_def(profile, section, "maat_input_mode", &(input_mode), 0);
 	MESA_load_profile_int_def(profile, section, "perf_switch", &(maat_perf_on), 1);
 
 	MESA_load_profile_string_def(profile, section, table_name, table_info, sizeof(table_info), "");
+    MESA_load_profile_int_def(profile, section, "stat_switch", &(maat_stat_on), 1);
 	MESA_load_profile_string_def(profile, section, "accept_tags", accept_tags, sizeof(accept_tags), "");
 
 	MESA_load_profile_string_def(profile, section, "json_cfg_file", json_cfg_file, sizeof(json_cfg_file), "");
@@ -1321,6 +1322,21 @@ static Maat_feather_t create_maat_feather(const char * instance_name, const char
 			break;
 	}
 
+	if(strcasecmp(table_name, "table_info_proxy") == 0)
+	{
+		MESA_load_profile_string_def(profile, section, "proxy_stat_file", maat_stat_file, sizeof(maat_stat_file), "");
+	}
+	if(strcasecmp(table_name, "table_info_security") ==0)
+	{
+		MESA_load_profile_string_def(profile, section, "security_stat_file", maat_stat_file, sizeof(maat_stat_file), "");
+	}
+
+	if(strlen(maat_stat_file) > 0 && maat_stat_on)
+	{
+		Maat_set_feather_opt(target, MAAT_OPT_STAT_FILE_PATH, maat_stat_file, strlen(maat_stat_file) + 1);
+        Maat_set_feather_opt(target, MAAT_OPT_STAT_ON, NULL, 0);
+	}
+
 	Maat_set_feather_opt(target, MAAT_OPT_FOREIGN_CONT_DIR, "./pangu_files", strlen("./pangu_files")+1);
 
 	Maat_set_feather_opt(target, MAAT_OPT_EFFECT_INVERVAL_MS, &effect_interval, sizeof(effect_interval));
@@ -1354,7 +1370,7 @@ int proxy_policy_init(struct verify_policy * verify, const char* profile_path)
 
 	g_pangu_rt->local_logger = verify->logger;
 	g_pangu_rt->thread_num = verify->nr_work_threads;
-	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info", g_pangu_rt->thread_num, local_logger);
+	g_pangu_rt->maat[PXY_TABLE_MANIPULATION] = create_maat_feather("static", profile_path, "MAAT", "table_info_proxy", g_pangu_rt->thread_num, local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_MANIPULATION])
 	{
 		goto error_out;
@@ -1405,7 +1421,7 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Create log runtime_log_handle error, init failed!");
     }
 
-	g_pangu_rt->maat[PXY_TABLE_SECURITY] = create_maat_feather("static", profile_path, "MAAT", "table_info_tsg", g_pangu_rt->thread_num, local_logger);
+	g_pangu_rt->maat[PXY_TABLE_SECURITY] = create_maat_feather("static", profile_path, "MAAT", "table_info_security", g_pangu_rt->thread_num, local_logger);
 	if (!g_pangu_rt->maat[PXY_TABLE_SECURITY])
 	{
 		goto error_out;
