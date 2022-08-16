@@ -895,11 +895,11 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 		memset(buff,0,sizeof(buff));
 		if(ip_location_server->subdivision_addr == NULL)
 		{
-			snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full);
+			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full);
 		}
 		else
 		{
-			snprintf(buff, sizeof(buff), "%s,%s,%s,%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
+			snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
 		}
 		ctx->ip_ctx.location_server=strdup(buff);
 
@@ -930,11 +930,11 @@ int http_ip_location_scan(struct Maat_rule_t *result, struct ip_address *sip, st
 		memset(buff,0,sizeof(buff));
 		if(ip_location_client->subdivision_addr == NULL)
 		{
-			snprintf(buff, sizeof(buff), "%s,%s,%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full);
+			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full);
 		}
 		else
 		{
-			snprintf(buff, sizeof(buff), "%s,%s,%s,%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
+			snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
 		}
 
 		ctx->ip_ctx.location_client=strdup(buff);
