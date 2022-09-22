@@ -112,38 +112,39 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			scan_table_max = PXY_CTRL_APN;
 			break;
 		case PXY_TABLE_SECURITY:
-			table_name[PXY_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
-			table_name[PXY_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-			table_name[PXY_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
-			table_name[PXY_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
-			table_name[PXY_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
-			table_name[PXY_SECURITY_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
-			table_name[PXY_SECURITY_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
-			table_name[PXY_SECURITY_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
-			table_name[PXY_SECURITY_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
-			table_name[PXY_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
-			table_name[PXY_SECURITY_HTTPS_SNI] = "TSG_FIELD_SSL_SNI";
-			table_name[PXY_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
-			table_name[PXY_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
-			table_name[PXY_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
-			table_name[PXY_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
-			table_name[PXY_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
-			table_name[PXY_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
-			table_name[PXY_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
-			table_name[PXY_SECURITY_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
-			table_name[PXY_SECURITY_MAIL_CONTENT] = "TSG_FIELD_MAIL_CONTENT";
-			table_name[PXY_SECURITY_MAIL_ATT_NAME] = "TSG_FIELD_MAIL_ATT_NAME";
-			table_name[PXY_SECURITY_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
-			table_name[PXY_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
-			table_name[PXY_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
-			table_name[PXY_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
-			table_name[PXY_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
-			table_name[PXY_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
-			table_name[PXY_SECURITY_IMSI]="TSG_FILED_GTP_IMSI";
-			table_name[PXY_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
-			table_name[PXY_SECURITY_APN]="TSG_FILED_GTP_APN";
-			table_name[PXY_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
-			scan_table_max = PXY_SECURITY_EXCLUSION_SSL_SNI;
+			table_name[TSG_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
+			table_name[TSG_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
+			table_name[TSG_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
+			table_name[TSG_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
+			table_name[TSG_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
+			table_name[TSG_SECURITY_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
+			table_name[TSG_SECURITY_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
+			table_name[TSG_SECURITY_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
+			table_name[TSG_SECURITY_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
+			table_name[TSG_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
+			table_name[TSG_SECURITY_HTTPS_SNI] = "TSG_FIELD_SSL_SNI";
+			table_name[TSG_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
+			table_name[TSG_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
+			table_name[TSG_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
+			table_name[TSG_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
+			table_name[TSG_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
+			table_name[TSG_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
+			table_name[TSG_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
+			table_name[TSG_SECURITY_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
+			table_name[TSG_SECURITY_MAIL_CONTENT] = "TSG_FIELD_MAIL_CONTENT";
+			table_name[TSG_SECURITY_MAIL_ATT_NAME] = "TSG_FIELD_MAIL_ATT_NAME";
+			table_name[TSG_SECURITY_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
+			table_name[TSG_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
+			table_name[TSG_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
+			table_name[TSG_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
+			table_name[TSG_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
+			table_name[TSG_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
+			table_name[TSG_SECURITY_IMSI]="TSG_FILED_GTP_IMSI";
+			table_name[TSG_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
+			table_name[TSG_SECURITY_APN]="TSG_FILED_GTP_APN";
+			table_name[TSG_SECURITY_TUNNEL]="TSG_SECURITY_TUNNEL";
+			table_name[TSG_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
+			scan_table_max = TSG_SECURITY_EXCLUSION_SSL_SNI;
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -190,6 +191,28 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 	return ip_addr;
 }
 
+struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
+{
+	struct ipaddr *ip_addr = ALLOC(struct ipaddr, 1);
+	if(addr_type == 4)
+	{
+		struct stream_tuple4_v4 *v4_addr = ALLOC(struct stream_tuple4_v4, 1);
+		ip_addr->addrtype=ADDR_TYPE_IPV4;
+		inet_pton(AF_INET,Ip,&(v4_addr->saddr));
+		ip_addr->v4=v4_addr;
+	}
+	if(addr_type == 6)
+	{
+		struct stream_tuple4_v6 *v6_addr = ALLOC(struct stream_tuple4_v6, 1);
+		ip_addr->addrtype=ADDR_TYPE_IPV6;
+		inet_pton(AF_INET6,Ip,&(v6_addr->saddr));
+		ip_addr->v6=v6_addr;
+	}
+	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
+
+	return ip_addr;
+}
+
 void ipaddr_free(struct ipaddr *ip_addr)
 {
 	if(ip_addr->addrtype==ADDR_TYPE_IPV4)
@@ -204,7 +227,7 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue, char *attributeName)
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName)
 {
 	cJSON* item = NULL;
 	int addr_type=0, __attribute__((__unused__))protocol=0;
@@ -268,6 +291,13 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "destination"))
 	{
 		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name);
+		goto end;
+	}
+
+	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "tunnel_endpointa") ||
+	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "tunnel_endpointb"))
+	{
+		policy_query->verify_object[curr_id].endpoint = get_ip_from_json(attributeValue, "source");
 		goto end;
 	}
 
@@ -353,6 +383,12 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					{
 						ipaddr_free(verify_policy->verify_object[i].ip_addr);
 					}
+					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointa") ||
+					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointb"))
+					{
+						ipaddr_free(verify_policy->verify_object[i].endpoint);
+					}
+
 					i++;
 				}
 				http_hit_policy_list(verify_policy->type, hit_cnt, data_obj, ctx);
