@@ -129,6 +129,7 @@ struct verify_policy_scan_ctx
 	int n_read;
 	struct Maat_hit_path_t hit_path[2048];
 
+	int tunnel_hit_hath;
 	int bool_id_array_idx;
     unsigned long long bool_id_array[128];
 
@@ -929,7 +930,20 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 
 	struct verify_policy_scan_ctx * ctx = (struct verify_policy_scan_ctx *) pme;
 
+	if(ctx->tunnel_hit_hath)
+	{
+		return;
+	}
+
 	attributeObj=query_obj->attributes;
+	if(type == PXY_TABLE_SECURITY && query_obj->protocol_field == TSG_SECURITY_TUNNEL)
+	{
+		attributeObj=query_obj->attributes;
+		cJSON_DeleteItemFromObject(attributeObj, "attributeName");
+		cJSON_AddStringToObject(attributeObj, "attributeName", "tunnel_endpoint_object");
+		cJSON_DeleteItemFromObject(attributeObj, "attributeValue");
+		ctx->tunnel_hit_hath=1;
+	}
 	cJSON_AddItemToArray(attributes, attributeObj);
 
 	hitPaths=cJSON_CreateArray();
@@ -1306,7 +1320,6 @@ int verify_tunnle_id_scan(struct Maat_rule_t *result, struct ip_address *sip, in
 	int i=0,ret=0,n_read=0;
 	int scan_ret=0, hit_cnt_tunnel=0;
 	int hit_path_cnt=0;
-	//unsigned long long bool_id_array[TUNNEL_BOOL_ID_MAX]={0};
 	struct tunnel_data_ctx *endpoint_data[TUNNEL_BOOL_ID_MAX];
 
 	ret=Maat_ip_plugin_get_EX_data(g_policy_rt->maat[policy_type], g_policy_rt->plolicy_table_id[POLICY_TUNNEL_ENDPOINT], sip, (void **)&endpoint_data, TUNNEL_BOOL_ID_MAX);
@@ -1334,8 +1347,9 @@ int verify_tunnle_id_scan(struct Maat_rule_t *result, struct ip_address *sip, in
 			ctx->n_read=n_read;
 			hit_path_cnt++;
 		}
-		tunnel_table_free(tunnel_catalog[i]);
 	}
+	tunnel_table_free(tunnel_catalog[i]);
+	query_obj->nth_scan_num = hit_path_cnt;
 	return hit_cnt_tunnel;
 }
 
