@@ -372,6 +372,23 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 				{
+					item = cJSON_GetObjectItem(subchild, "attributeName");
+					if(item && item->type==cJSON_String)
+					{
+						if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+						{
+							verify_policy_tunnle_add(ctx);
+						}
+
+						if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
+						{
+							verify_policy_tunnle_add(ctx);
+						}
+					}
+				}
+
+				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+				{
 					xret = get_attribute_from_json(i, subchild, verify_policy);
 					if (xret < 0)
 					{

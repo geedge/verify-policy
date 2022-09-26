@@ -149,7 +149,7 @@ struct verify_policy_query_obj
 
 	char *subscriberid;
 
-    int nth_scan[8];
+    int nth_scan[256];
     int nth_scan_num;
     cJSON* attributes;
 
@@ -179,5 +179,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 int security_policy_init(struct verify_policy * verify, const char* profile_path);
 
 int http_hit_policy_list(enum verify_policy_type policy_type, size_t hit_cnt, cJSON *data_obj, void *pme);
+
+void verify_policy_tunnle_add(void * pme);
 
 #endif

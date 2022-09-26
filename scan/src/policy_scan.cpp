@@ -129,7 +129,7 @@ struct verify_policy_scan_ctx
 	int n_read;
 	struct Maat_hit_path_t hit_path[2048];
 
-	int tunnel_hit_hath;
+	int tunnel_endpoint_x;
 	int bool_id_array_idx;
     unsigned long long bool_id_array[128];
 
@@ -155,6 +155,13 @@ struct verify_policy_rt * g_policy_rt;
 #define MAAT_INPUT_JSON			0
 #define MAAT_INPUT_REDIS    	1
 #define MAAT_INPUT_FILE        	2
+
+void verify_policy_tunnle_add(void * pme)
+{
+	struct verify_policy_scan_ctx * ctx = (struct verify_policy_scan_ctx *) pme;
+	ctx->tunnel_endpoint_x++;
+}
+
 
 void * pangu_http_ctx_new(unsigned int thread_id)
 {
@@ -927,22 +934,30 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, c
 	int i=0, j=0, k=0;
 	int result_hit_nth[MAX_SCAN_RESULT] = {-1};
 	cJSON *attributeObj=NULL,*hitPaths=NULL;
+	cJSON *item = NULL;
 
 	struct verify_policy_scan_ctx * ctx = (struct verify_policy_scan_ctx *) pme;
 
-	if(ctx->tunnel_hit_hath)
+	attributeObj=query_obj->attributes;
+
+	if(ctx->tunnel_endpoint_x == 2)
 	{
-		return;
+		item = cJSON_GetObjectItem(attributeObj, "attributeName");
+		if(item && item->type==cJSON_String)
+		{
+			if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+			{
+				return;
+			}
+		}
 	}
 
-	attributeObj=query_obj->attributes;
 	if(type == PXY_TABLE_SECURITY && query_obj->protocol_field == TSG_SECURITY_TUNNEL)
 	{
 		attributeObj=query_obj->attributes;
 		cJSON_DeleteItemFromObject(attributeObj, "attributeName");
 		cJSON_AddStringToObject(attributeObj, "attributeName", "tunnel_endpoint_object");
 		cJSON_DeleteItemFromObject(attributeObj, "attributeValue");
-		ctx->tunnel_hit_hath=1;
 	}
 	cJSON_AddItemToArray(attributes, attributeObj);
 
@@ -1347,8 +1362,8 @@ int verify_tunnle_id_scan(struct Maat_rule_t *result, struct ip_address *sip, in
 			ctx->n_read=n_read;
 			hit_path_cnt++;
 		}
+		tunnel_table_free(tunnel_catalog[i]);
 	}
-	tunnel_table_free(tunnel_catalog[i]);
 	query_obj->nth_scan_num = hit_path_cnt;
 	return hit_cnt_tunnel;
 }
