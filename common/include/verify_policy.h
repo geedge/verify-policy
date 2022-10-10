@@ -13,6 +13,8 @@
 
 struct breakpad_instance;
 
+#define TRAFFIC_VSYS_ID_MAX 255
+
 enum verify_policy_type
 {
     PXY_TABLE_SECURITY,
@@ -162,6 +164,7 @@ struct verify_policy_query_obj
 
 struct verify_policy_query
 {
+    int vsys_id;
 	enum verify_policy_type type;
 	struct verify_policy_query_obj verify_object[32];
 };
@@ -172,7 +175,7 @@ void * pangu_http_ctx_new(unsigned int thread_id);
 
 void pangu_http_ctx_free(void * pme);
 
-size_t verify_policy_scan(enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
+size_t verify_policy_scan(int vsys_id, enum verify_policy_type policy_type, struct verify_policy_query_obj *query_obj, cJSON *data_obj, void *pme);
 
 void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
 
