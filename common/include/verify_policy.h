@@ -87,6 +87,7 @@ enum security_scan_table
     TSG_SECURITY_APN,
     TSG_SECURITY_TUNNEL,
     TSG_SECURITY_EXCLUSION_SSL_SNI,
+    TSG_SECURITY_FLAG,
     TSG_SECURITY_IP_SRC_ASN,
     TSG_SECURITY_IP_DST_ASN,
     TSG_SECURITY_IP_SRC_LOCATION,
@@ -142,6 +143,7 @@ struct verify_policy_query_obj
 {
 	int protocol_field;
 
+    int numeric;
 	char *keyword;
     char *district;
 	char *attri_name;

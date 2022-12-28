@@ -144,7 +144,8 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[TSG_SECURITY_APN]="TSG_FILED_GTP_APN";
 			table_name[TSG_SECURITY_TUNNEL]="TSG_SECURITY_TUNNEL";
 			table_name[TSG_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
-			scan_table_max = TSG_SECURITY_EXCLUSION_SSL_SNI;
+			table_name[TSG_SECURITY_FLAG]="TSG_SECURITY_FLAG";
+			scan_table_max = TSG_SECURITY_FLAG;
 			break;
 		case PXY_TABLE_DEFENCE:
 			break;
@@ -308,11 +309,24 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->verify_object[curr_id].district);
 	}
 
-	item = cJSON_GetObjectItem(attributeValue,"string");
-	if(item!=NULL)
+	if(policy_query->verify_object[curr_id].protocol_field == PXY_CTRL_APP_ID ||
+	   policy_query->verify_object[curr_id].protocol_field == TSG_SECURITY_FLAG)
 	{
-		policy_query->verify_object[curr_id].keyword = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
+		item = cJSON_GetObjectItem(attributeValue, "numeric");
+		if(item && item->type==cJSON_Number)
+		{
+			policy_query->verify_object[curr_id].numeric = item->valueint;
+			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %d", policy_query->verify_object[curr_id].numeric);
+		}
+	}
+	else
+	{
+		item = cJSON_GetObjectItem(attributeValue, "string");
+		if(item!=NULL)
+		{
+			policy_query->verify_object[curr_id].keyword = item->valuestring;
+			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
+		}
 	}
 	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
 	memset(buff, 0, VERIFY_STRING_MAX);

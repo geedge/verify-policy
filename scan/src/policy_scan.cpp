@@ -1398,6 +1398,7 @@ size_t verify_policy_scan(int vsys_id, enum verify_policy_type policy_type, stru
 
 	int protocol_field = query_obj->protocol_field;
 	const char *value = query_obj->keyword;
+	int numeric = query_obj->numeric;
 
 	if ((protocol_field == PXY_COMMON_SOURCE_ADDR || protocol_field == PXY_COMMON_DESTINATION_ADDR) && query_obj->ip_addr != NULL)
 	{
@@ -1442,8 +1443,23 @@ size_t verify_policy_scan(int vsys_id, enum verify_policy_type policy_type, stru
 
 	if (protocol_field == PXY_CTRL_APP_ID)
 	{
-		int scan_val=atoi(value);
+		int scan_val=numeric;
 		scan_ret=Maat_scan_intval(g_policy_rt->maat[vsys_id][policy_type], g_policy_rt->scan_table_id[policy_type][protocol_field], scan_val, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
+		if(scan_ret>0)
+		{
+			hit_cnt+=scan_ret;
+		}
+		n_read=Maat_get_scan_status(g_policy_rt->maat[vsys_id][policy_type], &(ctx->scan_mid), MAAT_GET_SCAN_HIT_PATH, ctx->hit_path, sizeof(ctx->hit_path));
+		query_obj->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
+		ctx->n_read=n_read;
+		goto decide;
+	}
+
+	if (protocol_field == TSG_SECURITY_FLAG)
+	{
+		int flag=numeric;
+
+		scan_ret=Maat_scan_flag(g_policy_rt->maat[vsys_id][policy_type], g_policy_rt->scan_table_id[policy_type][protocol_field], flag, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &(ctx->scan_mid), ctx->thread_id);
 		if(scan_ret>0)
 		{
 			hit_cnt+=scan_ret;
@@ -1535,7 +1551,8 @@ static Maat_feather_t create_maat_feather(const char * instance_name, const char
 	char accept_tags[VERIFY_STRING_MAX] = {0};
 	int redis_port_begin=0, redis_port_end=0;
 	int redis_port_select=0;
-	char json_cfg_file[VERIFY_STRING_MAX] = {0}, maat_stat_file[VERIFY_STRING_MAX] = {0};
+	char json_cfg_file[VERIFY_STRING_MAX] = {0}, maat_stat_file[VERIFY_PATH_MAX] = {0};
+	char maat_stat_db_file[VERIFY_PATH_MAX] = {0};
 	MESA_load_profile_int_def(profile, section, "maat_input_mode", &(input_mode), 0);
 	MESA_load_profile_int_def(profile, section, "perf_switch", &(maat_perf_on), 1);
 
@@ -1603,7 +1620,8 @@ static Maat_feather_t create_maat_feather(const char * instance_name, const char
 
 	if(strlen(maat_stat_file) > 0 && maat_stat_on)
 	{
-		Maat_set_feather_opt(target, MAAT_OPT_STAT_FILE_PATH, maat_stat_file, strlen(maat_stat_file) + 1);
+		snprintf(maat_stat_db_file, VERIFY_PATH_MAX, "%s.%d", maat_stat_file, db_index);
+		Maat_set_feather_opt(target, MAAT_OPT_STAT_FILE_PATH, maat_stat_db_file, strlen(maat_stat_db_file) + 1);
         Maat_set_feather_opt(target, MAAT_OPT_STAT_ON, NULL, 0);
 	}
 
@@ -1739,7 +1757,8 @@ int security_policy_init(struct verify_policy * verify, const char* profile_path
 		table_name[TSG_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
 		table_name[TSG_SECURITY_APN]="TSG_FILED_GTP_APN";
 		table_name[TSG_SECURITY_TUNNEL]="TSG_SECURITY_TUNNEL",
-		table_name[TSG_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
+		table_name[TSG_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI",
+		table_name[TSG_SECURITY_FLAG]="TSG_SECURITY_FLAG";
 
 		for (int i = 0; i < __SECURITY_TABLE_MAX; i++)
 		{
