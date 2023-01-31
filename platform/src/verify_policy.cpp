@@ -71,9 +71,10 @@ static int verify_policy_init(struct verify_policy * verify, const char *profile
 enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
-	policy_name[PXY_TABLE_SECURITY] = "tsg_security";
+	policy_name[TSG_TABLE_SECURITY] = "tsg_security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
+	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 
 	size_t i = 0;
 
@@ -111,7 +112,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
 			scan_table_max = PXY_CTRL_APN;
 			break;
-		case PXY_TABLE_SECURITY:
+		case TSG_TABLE_SECURITY:
 			table_name[TSG_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
 			table_name[TSG_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
 			table_name[TSG_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
@@ -277,7 +278,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	{
 		policy_query->verify_object[curr_id].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
 		if ((policy_query->type == PXY_TABLE_MANIPULATION && policy_query->verify_object[curr_id].protocol_field == __SCAN_TABLE_MAX)
-			|| (policy_query->type == PXY_TABLE_SECURITY && policy_query->verify_object[curr_id].protocol_field == __SECURITY_TABLE_MAX))
+			|| (policy_query->type == TSG_TABLE_SECURITY && policy_query->verify_object[curr_id].protocol_field == __SECURITY_TABLE_MAX))
 		{
 			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
 			goto finish;
@@ -368,6 +369,11 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 			if(item && item->type==cJSON_String)
 			{
 				verify_policy->type = tsg_policy_type_str2idx(item->valuestring);
+				if(verify_policy->type == TSG_TRAFFIC_SHAPING)
+				{
+					verify_policy->shaping=1;
+					verify_policy->type = TSG_TABLE_SECURITY;
+				}
 				if (verify_policy->type >= __SCAN_POLICY_MAX)
 				{
 					mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy type error, policy id = %d", verify_policy->type);
@@ -412,7 +418,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 					i++;
 				}
-				http_hit_policy_list(verify_policy->type, hit_cnt, data_obj, ctx);
+				http_hit_policy_list(verify_policy->type, verify_policy->shaping, hit_cnt, data_obj, ctx);
 
 				int item = 0;
 				cJSON *verfifySession = cJSON_CreateObject();
@@ -421,7 +427,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->type, attributes,data_obj, ctx);
+					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->type, verify_policy->shaping, attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}
