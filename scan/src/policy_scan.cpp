@@ -754,6 +754,10 @@ static enum policy_action decide_ctrl_action(enum verify_policy_type policy_type
 		{
 			continue;
 		}
+		if (shaping == 0 && __action == PG_ACTION_SHAPING)
+		{
+			continue;
+		}
 		if (__action == PG_ACTION_MONIT)
 		{
 			memcpy(monit_rule + n_monit, hit_rules + i, sizeof(struct Maat_rule_t));
@@ -934,15 +938,23 @@ int http_hit_policy_match(int result_config[], int cnt, int config)
 	return 0;
 }
 
-int verify_shaping_policy_filter(struct Maat_rule_t *enforce_rules, size_t n_enforce, int config)
+int verify_shaping_policy_filter(struct verify_policy_scan_ctx * ctx, int shaping, int config)
 {
 	size_t i=0;
 
-	for(i=0; i<n_enforce; i++)
+	for (i = 0; i < ctx->hit_cnt; i++)
 	{
-		if(enforce_rules[i].config_id == config)
+		if (ctx->result[i].config_id == config)
 		{
-			return 1;
+			if(shaping == 1 && ctx->result[i].action == PG_ACTION_SHAPING)
+			{
+				return 1;
+			}
+			if(shaping == 0 && ctx->result[i].action != PG_ACTION_SHAPING)
+			{
+				return 1;
+			}
+
 		}
 	}
 	return 0;
@@ -994,11 +1006,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, i
 				{
 					continue;
 				}
-				//*Shaping Policy filtering  */
-				if(shaping == 1 && verify_shaping_policy_filter(ctx->enforce_rules, ctx->n_enforce, ctx->hit_path[i].compile_id) != 1)
-				{
-					continue;
-				}
+
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
 				cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].region_id);
@@ -1008,7 +1016,7 @@ void http_get_scan_status(struct verify_policy_query_obj *query_obj, int type, i
 					ctx->hit_path[i].top_group_id = ctx->hit_path[i].sub_group_id;
 				}
 				cJSON_AddNumberToObject(histObj, "topObjectId", ctx->hit_path[i].top_group_id);
-				if(ctx->hit_path[i].compile_id > 0)
+				if(ctx->hit_path[i].compile_id > 0 && verify_shaping_policy_filter(ctx, shaping, ctx->hit_path[i].compile_id) == 1)
 				{
 					result_hit_nth[k] = ctx->hit_path[i].compile_id;
 					k++;
@@ -1048,6 +1056,10 @@ int http_hit_policy_list(enum verify_policy_type policy_type, int shaping, size_
 		for (i = 0; i < ctx->hit_cnt; i++)
 		{
 			if(shaping == 1 && ctx->result[i].action != PG_ACTION_SHAPING)
+			{
+				continue;
+			}
+			if(shaping == 0 && ctx->result[i].action == PG_ACTION_SHAPING)
 			{
 				continue;
 			}
