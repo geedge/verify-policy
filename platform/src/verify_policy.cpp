@@ -75,6 +75,7 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
+	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
 
 	size_t i = 0;
 
@@ -372,6 +373,11 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				if(verify_policy->type == TSG_TRAFFIC_SHAPING)
 				{
 					verify_policy->shaping=1;
+					verify_policy->type = TSG_TABLE_SECURITY;
+				}
+				if(verify_policy->type == TSG_SERVICE_CHAINGNG)
+				{
+					verify_policy->shaping=2;
 					verify_policy->type = TSG_TABLE_SECURITY;
 				}
 				if (verify_policy->type >= __SCAN_POLICY_MAX)

@@ -34,6 +34,7 @@ enum policy_action
 	PG_ACTION_REJECT = 0x10,
 	PG_ACTION_SHAPING = 0x20,
 	PG_ACTION_MANIPULATE = 0x30,
+	PG_ACTION_SERVICE_CHAINING = 0x40,
 	PG_ACTION_INLINE_DEVICE = 0x60,
 	PG_ACTION_WHITELIST = 0x80,
 	__PG_ACTION_MAX
@@ -754,7 +755,11 @@ static enum policy_action decide_ctrl_action(enum verify_policy_type policy_type
 		{
 			continue;
 		}
-		if (shaping == 0 && __action == PG_ACTION_SHAPING)
+		if (shaping ==2 && __action != PG_ACTION_SERVICE_CHAINING)
+		{
+			continue;
+		}
+		if (shaping == 0 && (__action == PG_ACTION_SHAPING || __action == PG_ACTION_SERVICE_CHAINING))
 		{
 			continue;
 		}
@@ -950,7 +955,11 @@ int verify_shaping_policy_filter(struct verify_policy_scan_ctx * ctx, int shapin
 			{
 				return 1;
 			}
-			if(shaping == 0 && ctx->result[i].action != PG_ACTION_SHAPING)
+			if(shaping == 2 && ctx->result[i].action == PG_ACTION_SERVICE_CHAINING)
+			{
+				return 1;
+			}
+			if(shaping == 0 && (ctx->result[i].action != PG_ACTION_SHAPING || ctx->result[i].action != PG_ACTION_SERVICE_CHAINING))
 			{
 				return 1;
 			}
@@ -1059,7 +1068,11 @@ int http_hit_policy_list(enum verify_policy_type policy_type, int shaping, size_
 			{
 				continue;
 			}
-			if(shaping == 0 && ctx->result[i].action == PG_ACTION_SHAPING)
+			if(shaping == 2 && ctx->result[i].action != PG_ACTION_SERVICE_CHAINING)
+			{
+				continue;
+			}
+			if(shaping == 0 && (ctx->result[i].action == PG_ACTION_SHAPING || ctx->result[i].action == PG_ACTION_SERVICE_CHAINING))
 			{
 				continue;
 			}
