@@ -49,33 +49,31 @@ const char * version()
 
 static int signals[] = {SIGHUP, SIGPIPE, SIGUSR1};
 
-extern int proxy_policy_init(struct verify_policy * verify, const char* profile_path);
-
-static int verify_policy_init(struct verify_policy * verify, const char *profile)
+static int load_system_conf(struct verify_policy * verify, const char *profile)
 {
     int xret = -1;
 
     xret = MESA_load_profile_uint_nodef(profile, "CONFIG", "thread-nu", &(verify->nr_work_threads));
     if (xret < 0){
-        mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Reading the number of running threads failed");
+        mesa_runtime_log(RLOG_LV_FATAL, "Reading the number of running threads failed");
     }
 	xret = MESA_load_profile_short_nodef(profile, "LISTEN", "port", (short *)&(verify->listen_port));
 	if (xret < 0){
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Listen Port invalid");
+		mesa_runtime_log(RLOG_LV_FATAL, "Listen Port invalid");
 	}
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "The Threads", verify->nr_work_threads);
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "Libevent Port", verify->listen_port);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "The Threads", verify->nr_work_threads);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "Libevent Port", verify->listen_port);
     return xret;
 }
 
-enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
+enum compile_table_typle tsg_policy_type_str2idx(const char *action_str, int *table_id)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[TSG_TABLE_SECURITY] = "tsg_security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
-	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
+	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
 
@@ -84,11 +82,17 @@ enum verify_policy_type tsg_policy_type_str2idx(const char *action_str)
 		if (0 == strcasecmp(action_str, policy_name[i]))
 			break;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]   policyType= %s", action_str);
-	return (enum verify_policy_type)i;
+	mesa_runtime_log(RLOG_LV_DEBUG, "[I]   policyType= %s", action_str);
+
+	*table_id = i;
+	if(i == TSG_TRAFFIC_SHAPING || i == TSG_SERVICE_CHAINGNG)
+	{
+		i = TSG_TABLE_SECURITY;
+	}
+	return (enum compile_table_typle)i;
 }
 
-int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_str, char *buff, char **p)
+int protoco_field_type_str2idx(enum compile_table_typle type, const char *action_str, char *buff, char **p)
 {
 	size_t scan_table_max=0;
 	const char * table_name[__SECURITY_TABLE_MAX] ={0};
@@ -98,8 +102,9 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 		case PXY_TABLE_MANIPULATION:
 			table_name[PXY_CTRL_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
 			table_name[PXY_CTRL_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-			table_name[PXY_CTRL_HTTP_URL] = "TSG_FIELD_HTTP_URL";
-			table_name[PXY_CTRL_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
+			table_name[PXY_CTRL_HTTP_URL] ="TSG_FIELD_HTTP_URL";
+			table_name[PXY_CTRL_HTTP_HOST] = "TSG_FIELD_HTTP_HOST";
+			table_name[PXY_CTRL_HTTP_HOST_CAT] = "TSG_FIELD_HTTP_HOST_CAT";
 			table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
 			table_name[PXY_CTRL_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
 			table_name[PXY_CTRL_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
@@ -108,6 +113,7 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
 			table_name[PXY_CTRL_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
 			table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
+			table_name[PXY_CTRL_DOH_HOST_CAT]="TSG_FIELD_DOH_HOST_CAT";
 			table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_IMSI";
 			table_name[PXY_CTRL_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
 			table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
@@ -117,18 +123,23 @@ int protoco_field_type_str2idx(enum verify_policy_type type, const char *action_
 			table_name[TSG_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
 			table_name[TSG_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
 			table_name[TSG_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
-			table_name[TSG_SECURITY_HTTP_FQDN] = "TSG_FIELD_HTTP_HOST";
+			table_name[TSG_SECURITY_HTTP_HOST] = "TSG_FIELD_HTTP_HOST";
+			table_name[TSG_SECURITY_HTTP_HOST_CAT] = "TSG_FIELD_HTTP_HOST_CAT";
 			table_name[TSG_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
 			table_name[TSG_SECURITY_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
 			table_name[TSG_SECURITY_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
 			table_name[TSG_SECURITY_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
 			table_name[TSG_SECURITY_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
 			table_name[TSG_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
-			table_name[TSG_SECURITY_HTTPS_SNI] = "TSG_FIELD_SSL_SNI";
-			table_name[TSG_SECURITY_HTTPS_CN] = "TSG_FIELD_SSL_CN";
-			table_name[TSG_SECURITY_HTTPS_SAN] = "TSG_FIELD_SSL_SAN";
+			table_name[TSG_SECURITY_SSL_SNI] = "TSG_FIELD_SSL_SNI";
+			table_name[TSG_SECURITY_SSL_SNI_CAT] = "TSG_FIELD_SSL_SNI_CAT";
+			table_name[TSG_SECURITY_SSL_CN] = "TSG_FIELD_SSL_CN";
+			table_name[TSG_SECURITY_SSL_CN_CAT] = "TSG_FIELD_SSL_CN_CAT";
+			table_name[TSG_SECURITY_SSL_SAN] = "TSG_FIELD_SSL_SAN";
+			table_name[TSG_SECURITY_SSL_SAN_CAT] = "TSG_FIELD_SSL_SAN_CAT";
 			table_name[TSG_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
 			table_name[TSG_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
+			table_name[TSG_SECURITY_QUIC_SNI_CAT] = "TSG_FIELD_QUIC_SNI";
 			table_name[TSG_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
 			table_name[TSG_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
 			table_name[TSG_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
@@ -188,7 +199,7 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=htons(serverPort1);
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    attributeName = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
+	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    attributeName = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
 		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
 
 	return ip_addr;
@@ -211,7 +222,7 @@ struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
 		inet_pton(AF_INET6,Ip,&(v6_addr->saddr));
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
+	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
 
 	return ip_addr;
 }
@@ -277,11 +288,11 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	item = cJSON_GetObjectItem(subchild, "tableName");
 	if(item && item->type==cJSON_String)
 	{
-		policy_query->verify_object[curr_id].protocol_field = protoco_field_type_str2idx(policy_query->type, item->valuestring, buff, &p);
-		if ((policy_query->type == PXY_TABLE_MANIPULATION && policy_query->verify_object[curr_id].protocol_field == __SCAN_TABLE_MAX)
-			|| (policy_query->type == TSG_TABLE_SECURITY && policy_query->verify_object[curr_id].protocol_field == __SECURITY_TABLE_MAX))
+		policy_query->verify_object[curr_id].table_id = protoco_field_type_str2idx(policy_query->table_typle, item->valuestring, buff, &p);
+		if ((policy_query->table_typle == PXY_TABLE_MANIPULATION && policy_query->verify_object[curr_id].table_id == __SCAN_TABLE_MAX)
+			|| (policy_query->table_typle == TSG_TABLE_SECURITY && policy_query->verify_object[curr_id].table_id == __SECURITY_TABLE_MAX))
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy table name error, table name = %s", item->valuestring);
+			mesa_runtime_log(RLOG_LV_FATAL, "policy table name error, table name = %s", item->valuestring);
 			goto finish;
 		}
 	}
@@ -294,6 +305,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "destination"))
 	{
 		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name);
+		policy_query->verify_object[curr_id].protocol= cJSON_GetObjectItem(attributeValue , "protocol")->valueint;
 		goto end;
 	}
 
@@ -311,8 +323,8 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->verify_object[curr_id].district);
 	}
 
-	if(policy_query->verify_object[curr_id].protocol_field == PXY_CTRL_APP_ID ||
-	   policy_query->verify_object[curr_id].protocol_field == TSG_SECURITY_FLAG)
+	if(policy_query->verify_object[curr_id].table_id == PXY_CTRL_APP_ID ||
+	   policy_query->verify_object[curr_id].table_id == TSG_SECURITY_FLAG)
 	{
 		item = cJSON_GetObjectItem(attributeValue, "numeric");
 		if(item && item->type==cJSON_Number)
@@ -330,7 +342,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
 		}
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[I]    %s", buff);
+	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    %s", buff);
 	memset(buff, 0, VERIFY_STRING_MAX);
 end:
 	xret = 1;
@@ -347,7 +359,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "invalid policy parameter");
+		mesa_runtime_log(RLOG_LV_FATAL, "invalid policy parameter");
 		return NULL;
 	}
 	cJSON  *policy_obj=NULL, *data_obj=NULL;
@@ -365,24 +377,15 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
+			int compile_table_id=0;
 			verify_policy = ALLOC(struct verify_policy_query, 1);
 			item = cJSON_GetObjectItem(subitem,"policyType");
 			if(item && item->type==cJSON_String)
 			{
-				verify_policy->type = tsg_policy_type_str2idx(item->valuestring);
-				if(verify_policy->type == TSG_TRAFFIC_SHAPING)
+				verify_policy->table_typle = tsg_policy_type_str2idx(item->valuestring, &compile_table_id);
+				if (verify_policy->table_typle >= __SCAN_POLICY_MAX)
 				{
-					verify_policy->shaping=1;
-					verify_policy->type = TSG_TABLE_SECURITY;
-				}
-				if(verify_policy->type == TSG_SERVICE_CHAINGNG)
-				{
-					verify_policy->shaping=2;
-					verify_policy->type = TSG_TABLE_SECURITY;
-				}
-				if (verify_policy->type >= __SCAN_POLICY_MAX)
-				{
-					mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "policy type error, policy id = %d", verify_policy->type);
+					mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->table_typle);
 					goto free;
 				}
 			}
@@ -398,10 +401,11 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 			{
 				goto free;
 			}
+
 			attributes = cJSON_GetObjectItem(item,"attributes");
 			if(attributes && attributes->type==cJSON_Array)
 			{
-				void *ctx = pangu_http_ctx_new(thread_id);
+				void *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->table_typle, compile_table_id);
 
 				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 				{
@@ -410,7 +414,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					{
 						goto free;
 					}
-					hit_cnt = verify_policy_scan(verify_policy->vsys_id, verify_policy->type, &verify_policy->verify_object[i], data_obj, ctx);
+					hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->table_typle, &verify_policy->verify_object[i], data_obj, ctx);
 					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
 					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
 					{
@@ -424,7 +428,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 					i++;
 				}
-				http_hit_policy_list(verify_policy->type, verify_policy->shaping, hit_cnt, data_obj, ctx);
+				http_hit_policy_list(verify_policy->vsys_id, verify_policy->table_typle, compile_table_id, hit_cnt, data_obj, ctx);
 
 				int item = 0;
 				cJSON *verfifySession = cJSON_CreateObject();
@@ -433,7 +437,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->type, verify_policy->shaping, attributes,data_obj, ctx);
+					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->table_typle, attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}
@@ -495,13 +499,13 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 
 	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
 	{
-		mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "FAILED (post type)");
+		mesa_runtime_log(RLOG_LV_DEBUG, "FAILED (post type)");
 		goto error;
 	}
 	evbuf_body = evhttp_request_get_input_buffer(evh_req);
 	if (!evbuf_body || 0==(inputlen = evbuffer_get_length(evbuf_body)) ||!(input = (char *)evbuffer_pullup(evbuf_body,inputlen)))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Failed to get post data information.");
+		mesa_runtime_log(RLOG_LV_FATAL, "Failed to get post data information.");
 		goto error;
 	}
 
@@ -512,7 +516,7 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 	}
 
 	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "[O]   %s", policy_payload);
+	mesa_runtime_log(RLOG_LV_DEBUG, "[O]   %s", policy_payload);
 	evhttp_socket_send(evh_req, policy_payload);
 
 	cJSON_Delete(policy_obj);
@@ -534,13 +538,13 @@ void * verify_policy_thread_func(void * arg)
     thread_ctx->base = event_base_new();
 	if (! thread_ctx->base)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Can'thread_ctx allocate event base");
+        mesa_runtime_log(RLOG_LV_FATAL, "Can'thread_ctx allocate event base");
         goto finish;
     }
     thread_ctx->http = evhttp_new(thread_ctx->base);
 	if (!thread_ctx->http)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "couldn'thread_ctx create evhttp. Exiting.");
+        mesa_runtime_log(RLOG_LV_FATAL, "couldn'thread_ctx create evhttp. Exiting.");
 		goto error;
 	}
 
@@ -549,10 +553,10 @@ void * verify_policy_thread_func(void * arg)
 	bound = evhttp_accept_socket_with_handle(thread_ctx->http, thread_ctx->accept_fd);
 	if (bound != NULL)
 	{
-		mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Bound(%p) to port %d - Awaiting connections ... ", bound,
+		mesa_runtime_log(RLOG_LV_INFO, "Bound(%p) to port %d - Awaiting connections ... ", bound,
 						g_verify_proxy->listen_port);
 	}
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Work thread %u is run...", thread_ctx->id);
+	mesa_runtime_log(RLOG_LV_INFO, "Work thread %u is run...", thread_ctx->id);
 
 	event_base_dispatch(thread_ctx->base);
 error:
@@ -655,7 +659,7 @@ err:
 	return fd;
 }
 
-int pangu_policy_work_thread_run(struct verify_policy * verify)
+int verify_policy_work_thread_run(struct verify_policy * verify)
 {
 	int xret = 0;
 	unsigned int tid = 0;
@@ -668,7 +672,7 @@ int pangu_policy_work_thread_run(struct verify_policy * verify)
     evutil_socket_t accept_fd = evhttp_listen_socket_byuser((struct sockaddr*)&sin, sizeof(struct sockaddr_in),LEV_OPT_REUSEABLE_PORT|LEV_OPT_CLOSE_ON_FREE, -1);
     if (accept_fd < 0)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Could not create a listen!");
+        mesa_runtime_log(RLOG_LV_FATAL, "Could not create a listen!");
         goto finish;
     }
 
@@ -682,18 +686,15 @@ int pangu_policy_work_thread_run(struct verify_policy * verify)
 
 		if (pthread_create(&thread_ctx->pid, thread_ctx->attr, thread_ctx->routine, thread_ctx))
 		{
-            mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "%s", strerror(errno));
+            mesa_runtime_log(RLOG_LV_FATAL, "%s", strerror(errno));
 			goto finish;
 		}
 		if (pthread_detach(thread_ctx->pid))
 		{
-            mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "%s", strerror(errno));
+            mesa_runtime_log(RLOG_LV_FATAL, "%s", strerror(errno));
 			goto finish;
 		}
 	}
-    FOREVER{
-        sleep(1);
-    }
 finish:
     return xret;
 }
@@ -749,14 +750,14 @@ int breakpad_init_minidump_upload(struct breakpad_instance * instance, const cha
 
 	if (unlikely(ret < 0))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "breakpad_upload_url is necessary, failed. ");
+		mesa_runtime_log(RLOG_LV_FATAL, "breakpad_upload_url is necessary, failed. ");
 		goto errout;
 	}
 
 	ret = readlink("/proc/self/exe", execpath, sizeof(execpath));
 	if(unlikely(ret < 0))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Failed at readlink /proc/self/exec: %s", strerror(errno));
+		mesa_runtime_log(RLOG_LV_FATAL, "Failed at readlink /proc/self/exec: %s", strerror(errno));
 		/* after log, reset errno */
 		errno = 0;
 		goto errout;
@@ -857,7 +858,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
+			mesa_runtime_log(RLOG_LV_FATAL, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
 			/* after log, reset errno */
 			errno = 0;
 		}
@@ -866,7 +867,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 	MESA_load_profile_uint_def(profile, "system", "enable_breakpad", &instance->en_breakpad, 1);
 	if (instance->en_breakpad <= 0)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Breakpad Crash Reporting System is disabled. ");
+		mesa_runtime_log(RLOG_LV_FATAL, "Breakpad Crash Reporting System is disabled. ");
 		return instance;
 	}
 
@@ -885,7 +886,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = breakpad_init_minidump_upload(instance, profile);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Breakpad upload init failed, using local breakpad dumpfile");
+			mesa_runtime_log(RLOG_LV_FATAL, "Breakpad upload init failed, using local breakpad dumpfile");
 			instance->en_breakpad_upload = 0;
 		}
 
@@ -894,7 +895,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
+			mesa_runtime_log(RLOG_LV_FATAL, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
 			/* after log, reset errno */
 			errno = 0;
 		}
@@ -912,8 +913,8 @@ struct breakpad_instance * breakpad_init(const char * profile)
 			google_breakpad::MinidumpDescriptor(instance->minidump_dir_prefix), NULL,
 			tfe_breakpad_dump_to_file, NULL, true, -1);
 	}
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Breakpad Crash Report is enable. ");
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Minidump Dir: %s", instance->minidump_dir_prefix);
+	mesa_runtime_log(RLOG_LV_INFO, "Breakpad Crash Report is enable. ");
+	mesa_runtime_log(RLOG_LV_INFO, "Minidump Dir: %s", instance->minidump_dir_prefix);
 	return instance;
 }
 
@@ -922,7 +923,7 @@ void __signal_handler_cb(int sig)
 	switch (sig)
 	{
 		case SIGHUP:
-			mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Reload log config");
+			mesa_runtime_log(RLOG_LV_INFO, "Reload log config");
             MESA_handle_runtime_log_reconstruction(NULL);
             break;
 		case SIGPIPE:
@@ -961,21 +962,21 @@ int main(int argc, char * argv[])
 	g_verify_proxy->logger = verify_syslog_init(main_profile);
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
-	ret = verify_policy_init(g_verify_proxy, main_profile);
+	ret = load_system_conf(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at loading profile %s, Exit.", main_profile);
 
 	ret = proxy_policy_init(g_verify_proxy, main_profile);
-	CHECK_OR_EXIT(ret == 0, "Failed at init panggu module, Exit.");
+	CHECK_OR_EXIT(ret == 0, "Failed at init proxy module, Exit.");
 
 	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
 	printf("Read table_info_proxy.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	clock_gettime(CLOCK_REALTIME, &(start_time));
 	ret = security_policy_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init security module, Exit.");
 	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_DEBUG, MODULE_NAME, "Read table_info_security.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info_security.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
 	printf("Read table_info_security.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	g_verify_proxy->breakpad = breakpad_init(main_profile);
@@ -986,7 +987,11 @@ int main(int argc, char * argv[])
 		signal(signals[i], __signal_handler_cb);
 	}
 
-	ret = pangu_policy_work_thread_run(g_verify_proxy);
+	ret = verify_policy_work_thread_run(g_verify_proxy);
+
+	FOREVER{
+        sleep(1);
+    }
 
 	return ret;
 }

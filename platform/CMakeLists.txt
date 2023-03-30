@@ -2,11 +2,11 @@ if(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
-add_executable(verify-policy src/verify_policy.cpp)
+add_executable(verify-policy src/verify_policy.cpp src/verify_matcher.cpp)
 
 #target_include_directories(verify-policy PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 
-target_link_libraries(verify-policy common policy_scan)
+target_link_libraries(verify-policy common cjson maatframe)
 target_link_libraries(verify-policy pthread dl
 		libevent-static
 		MESA_handle_logger

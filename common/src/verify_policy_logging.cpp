@@ -19,14 +19,7 @@
 #include <MESA/MESA_prof_load.h>
 #include <MESA/MESA_handle_logger.h>
 
-
 RTLogInit2Data logging_sc_lid;
-
-void mesa_logging_print(int log_level, const char *module, const char *msg)
-{
-    MESA_handle_runtime_log(logging_sc_lid.run_log_handle, log_level, (const char *)module, msg);
-    return;
-}
 
 void * verify_syslog_init(const char *config)
 {
@@ -44,14 +37,14 @@ void * verify_syslog_init(const char *config)
 
     logging_sc_lid.run_log_handle = MESA_create_runtime_log_handle("verify_policy", RLOG_LV_DEBUG);
     if(logging_sc_lid.run_log_handle == NULL){
-        mesa_runtime_log(RLOG_LV_FATAL, MODULE_NAME, "Create log runtime_log_handle error, init failed!");
+        mesa_runtime_log(RLOG_LV_FATAL, "Create log runtime_log_handle error, init failed!");
         goto finish;
     }else{
-        mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "Log module initialization");
+        mesa_runtime_log(RLOG_LV_INFO, "Log module initialization");
     }
 
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%d", "Log level", logging_sc_lid.run_log_level);
-	mesa_runtime_log(RLOG_LV_INFO, MODULE_NAME, "%s:%s", "Log Directory", logging_sc_lid.run_log_path);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "Log level", logging_sc_lid.run_log_level);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%s", "Log Directory", logging_sc_lid.run_log_path);
 
 	return logging_sc_lid.run_log_handle;
 finish:

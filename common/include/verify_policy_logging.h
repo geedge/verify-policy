@@ -29,9 +29,7 @@ extern RTLogInit2Data logging_sc_lid;
 /* The maximum length of the log message */
 #define RT_LOG_MAX_LOG_MSG_LEN 4096
 
-extern void mesa_logging_print(int log_level, const char *module, const char *msg);
-
-#define mesa_log(x, y, z, ...)         do {                                       \
+#define mesa_log(x, y, ...)         do {                                       \
                                   char _sc_log_msg[RT_LOG_MAX_LOG_MSG_LEN] = ""; \
                                   char *_sc_log_temp = _sc_log_msg;      \
                                   if ( !x )                       \
@@ -40,11 +38,11 @@ extern void mesa_logging_print(int log_level, const char *module, const char *ms
                                                (RT_LOG_MAX_LOG_MSG_LEN - \
                                                 (_sc_log_temp - _sc_log_msg)), \
                                                __VA_ARGS__);             \
-                                      mesa_logging_print(y, z, _sc_log_msg); \
+                                      MESA_handle_runtime_log(logging_sc_lid.run_log_handle, y, __FUNCTION__, _sc_log_msg); \
                                   }                                      \
                               } while(0)
 
-#define mesa_runtime_log(level, module, ...)   mesa_log(logging_sc_lid.debug_switch, level, module, __VA_ARGS__)
+#define mesa_runtime_log(level, ...)   mesa_log(logging_sc_lid.debug_switch, level, __VA_ARGS__)
 
 extern void * verify_syslog_init(const char *config);
 

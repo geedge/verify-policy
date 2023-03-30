@@ -53,4 +53,4 @@ enable_testing()
 add_subdirectory(vendor)
 add_subdirectory(common)
 add_subdirectory(platform)
-add_subdirectory(scan)
+
