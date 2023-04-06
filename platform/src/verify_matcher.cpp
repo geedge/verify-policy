@@ -190,6 +190,7 @@ void pangu_http_ctx_free(void * pme)
 
 	if(ctx->enforce_rules)
 		FREE(&ctx->enforce_rules);
+
 	if(ctx->hit_rules)
 		FREE(&ctx->hit_rules);
 
@@ -1568,7 +1569,7 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 	int table_id = request->table_id;
 	const char *value = request->keyword;
 	const char * str_field_name = request->district;
-	scan_ret = maat_state_set_scan_district(ctx->scan_mid, str_field_name, strlen(str_field_name));
+	scan_ret = maat_state_set_scan_district(ctx->scan_mid, g_policy_rt->scan_table_id[compile_type][table_id], str_field_name, strlen(str_field_name));
 	assert(scan_ret == 0);
 	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id][compile_type], g_policy_rt->scan_table_id[compile_type][table_id],
 								value, strlen(value), ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
