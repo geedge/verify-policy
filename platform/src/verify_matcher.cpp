@@ -223,6 +223,7 @@ void __policy_action_weight_init()
 	policy_action_weight[PG_ACTION_MANIPULATE] = 3;
 	policy_action_weight[PG_ACTION_REJECT] = 4;
 	policy_action_weight[PG_ACTION_WHITELIST] = 5;
+	policy_action_weight[PX_ACTION_SHUNT] = 6;
 }
 
 static inline int action_cmp(enum policy_action a1, enum policy_action a2)
