@@ -395,8 +395,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 			{
 				verify_policy->vsys_id = item->valueint;
 			}
-			mesa_runtime_log(RLOG_LV_DEBUG, "[I]   vsysId= %d", verify_policy->vsys_id);
-
+			mesa_runtime_log(RLOG_LV_DEBUG, " [I]   vsysId= %d", verify_policy->vsys_id);
 			item = cJSON_GetObjectItem(subitem,"verifySession");
 			if(item == NULL || item->type!=cJSON_Object)
 			{

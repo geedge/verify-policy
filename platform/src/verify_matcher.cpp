@@ -22,6 +22,7 @@
 #include "verify_policy_utils.h"
 #include "verify_policy_logging.h"
 
+#define HIT_PATH_SIZE           	2048
 #define	MAX_SCAN_RESULT				16
 
 enum policy_action
@@ -1348,7 +1349,7 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			if(ret >0)
 			{
 				query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
@@ -1369,7 +1370,7 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			if(ret>0)
 			{
 				query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
@@ -1414,7 +1415,7 @@ int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit
 		{
 			hit_cnt_tunnel+=n_hit_result;
 		}
-		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 		if(ret >0)
 		{
 			query_obj->nth_scan[hit_path_cnt] = ctx->hit_path[ctx->n_read].Nth_scan;
@@ -1528,7 +1529,7 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 	{
 		hit_cnt_app_id+=n_hit_result;
 	}
-	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 	ctx->n_read=n_read;
 	return hit_cnt_app_id;
@@ -1550,7 +1551,7 @@ static int policy_verify_scan_flag(struct request_query_obj *request, struct pol
 	{
 		hit_cnt_flag+=n_hit_result;
 	}
-	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 	ctx->n_read=n_read;
 	return hit_cnt_flag;
@@ -1579,7 +1580,7 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 	{
 		hit_cnt_hdr += n_hit_result;
 	}
-	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 	ctx->n_read=n_read;
 	return hit_cnt_hdr;
@@ -1618,7 +1619,7 @@ static int policy_verify_scan_ip_addr(struct request_query_obj *request, struct 
 		}
 		if(scan_ret >= MAAT_SCAN_HALF_HIT)
 		{
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			request->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 			ctx->n_read=n_read;
 		}
@@ -1647,7 +1648,7 @@ static int policy_verify_scan_ip_addr(struct request_query_obj *request, struct 
 		}
 		if(scan_ret >= MAAT_SCAN_HALF_HIT)
 		{
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			request->nth_scan[0] = ctx->hit_path[ctx->n_read].Nth_scan;
 			ctx->n_read=n_read;
 		}
@@ -1767,7 +1768,7 @@ size_t policy_verify_scan(int vsys_id, enum compile_table_typle compile_type, st
 	{
 		hit_cnt+=n_hit_result;
 	}
-	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, sizeof(ctx->hit_path));
+	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	if(scan_ret >0)
 	{
 		request->nth_scan[request->nth_scan_num] = ctx->hit_path[ctx->n_read].Nth_scan;
