@@ -35,6 +35,7 @@ enum policy_action
 	PG_ACTION_REJECT = 0x10,
 	PG_ACTION_SHAPING = 0x20,
 	PG_ACTION_MANIPULATE = 0x30,
+	PG_ACTION_SERVICE_CHAINING=0x40,
 	PG_ACTION_WHITELIST = 0x60,
 	PX_ACTION_SHUNT = 0x80,
 	__PG_ACTION_MAX
@@ -769,6 +770,18 @@ void compile_dup_data(int table_id, void **to, void **from, long argl, void* arg
 	return;
 }
 
+static inline int multiple_hit_actions(enum policy_action __action)
+{
+	if (__action == PG_ACTION_MONIT || __action == PG_ACTION_SHAPING || __action == PG_ACTION_SERVICE_CHAINING)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 static enum policy_action decide_ctrl_action(int vsys_id, enum compile_table_typle policy_type, int compile_table_id, long long *results, size_t n_hit,
 											struct rule_data_ctx ** enforce_rules, size_t * n_enforce, struct rule_data_ctx **hit_rules)
 {
@@ -804,7 +817,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, enum compile_table_typ
 	{
 		unsigned char __expand_action = (unsigned char) hit_rules_ex[i].action;
 		enum policy_action __action = (enum policy_action) __expand_action;
-		if (__action == PG_ACTION_MONIT)
+		if (multiple_hit_actions(__action))
 		{
 			memcpy(monit_rule + n_monit, hit_rules_ex + i, sizeof(struct rule_data_ctx));
 			n_monit++;
@@ -845,7 +858,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, enum compile_table_typ
 	}
 
 	exist_enforce_num = *n_enforce;
-	if (prior_action == PG_ACTION_MONIT)
+	if (multiple_hit_actions(prior_action))
 	{
 		*n_enforce += n_monit;
 	}
@@ -855,7 +868,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, enum compile_table_typ
 	}
 
 	*enforce_rules = (struct rule_data_ctx  *) realloc(*enforce_rules, sizeof(struct rule_data_ctx ) * (*n_enforce));
-	if (prior_action == PG_ACTION_MONIT && monit_enable)
+	if (multiple_hit_actions(prior_action) && monit_enable)
 	{
 		memcpy(*enforce_rules + exist_enforce_num, monit_rule, n_monit * sizeof(struct rule_data_ctx ));
 	}
