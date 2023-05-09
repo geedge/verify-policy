@@ -66,13 +66,14 @@ static int load_system_conf(struct verify_policy * verify, const char *profile)
     return xret;
 }
 
-enum compile_table_typle tsg_policy_type_str2idx(const char *action_str, int *table_id)
+int tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[TSG_TABLE_SECURITY] = "tsg_security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
+	policy_name[PXY_TABLE_INTERCEPT] = "pxy_intercept";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
@@ -83,90 +84,60 @@ enum compile_table_typle tsg_policy_type_str2idx(const char *action_str, int *ta
 			break;
 	}
 	mesa_runtime_log(RLOG_LV_DEBUG, "[I]   policyType= %s", action_str);
-
-	*table_id = i;
-	if(i == TSG_TRAFFIC_SHAPING || i == TSG_SERVICE_CHAINGNG)
-	{
-		i = TSG_TABLE_SECURITY;
-	}
-	return (enum compile_table_typle)i;
+	return i;
 }
 
-int protoco_field_type_str2idx(enum compile_table_typle type, const char *action_str, char *buff, char **p)
+int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 {
-	size_t scan_table_max=0;
-	const char * table_name[__SECURITY_TABLE_MAX] ={0};
+	const char * table_name[__TSG_OBJ_MAX] ={0};
 
-	switch(type)
-	{
-		case PXY_TABLE_MANIPULATION:
-			table_name[PXY_CTRL_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
-			table_name[PXY_CTRL_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-			table_name[PXY_CTRL_HTTP_URL] ="TSG_FIELD_HTTP_URL";
-			table_name[PXY_CTRL_HTTP_HOST] = "TSG_FIELD_HTTP_HOST";
-			table_name[PXY_CTRL_HTTP_HOST_CAT] = "TSG_FIELD_HTTP_HOST_CAT";
-			table_name[PXY_CTRL_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
-			table_name[PXY_CTRL_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
-			table_name[PXY_CTRL_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
-			table_name[PXY_CTRL_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
-			table_name[PXY_CTRL_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
-			table_name[PXY_CTRL_APP_ID] = "TSG_OBJ_APP_ID";
-			table_name[PXY_CTRL_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
-			table_name[PXY_CTRL_DOH_HOST]="TSG_FIELD_DOH_HOST";
-			table_name[PXY_CTRL_DOH_HOST_CAT]="TSG_FIELD_DOH_HOST_CAT";
-			table_name[PXY_CTRL_IMSI]="TSG_FILED_GTP_IMSI";
-			table_name[PXY_CTRL_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
-			table_name[PXY_CTRL_APN]="TSG_FILED_GTP_APN";
-			scan_table_max = PXY_CTRL_APN;
-			break;
-		case TSG_TABLE_SECURITY:
-			table_name[TSG_SECURITY_SOURCE_ADDR]="TSG_SECURITY_SOURCE_ADDR";
-			table_name[TSG_SECURITY_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-			table_name[TSG_SECURITY_HTTP_URL] = "TSG_FIELD_HTTP_URL";
-			table_name[TSG_SECURITY_HTTP_HOST] = "TSG_FIELD_HTTP_HOST";
-			table_name[TSG_SECURITY_HTTP_HOST_CAT] = "TSG_FIELD_HTTP_HOST_CAT";
-			table_name[TSG_SECURITY_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
-			table_name[TSG_SECURITY_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
-			table_name[TSG_SECURITY_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
-			table_name[TSG_SECURITY_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
-			table_name[TSG_SECURITY_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
-			table_name[TSG_SECURITY_APP_ID] = "TSG_OBJ_APP_ID";
-			table_name[TSG_SECURITY_SSL_SNI] = "TSG_FIELD_SSL_SNI";
-			table_name[TSG_SECURITY_SSL_SNI_CAT] = "TSG_FIELD_SSL_SNI_CAT";
-			table_name[TSG_SECURITY_SSL_CN] = "TSG_FIELD_SSL_CN";
-			table_name[TSG_SECURITY_SSL_CN_CAT] = "TSG_FIELD_SSL_CN_CAT";
-			table_name[TSG_SECURITY_SSL_SAN] = "TSG_FIELD_SSL_SAN";
-			table_name[TSG_SECURITY_SSL_SAN_CAT] = "TSG_FIELD_SSL_SAN_CAT";
-			table_name[TSG_SECURITY_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
-			table_name[TSG_SECURITY_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
-			table_name[TSG_SECURITY_QUIC_SNI_CAT] = "TSG_FIELD_QUIC_SNI";
-			table_name[TSG_SECURITY_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
-			table_name[TSG_SECURITY_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
-			table_name[TSG_SECURITY_MAIL_TO] = "TSG_FIELD_MAIL_TO";
-			table_name[TSG_SECURITY_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
-			table_name[TSG_SECURITY_MAIL_CONTENT] = "TSG_FIELD_MAIL_CONTENT";
-			table_name[TSG_SECURITY_MAIL_ATT_NAME] = "TSG_FIELD_MAIL_ATT_NAME";
-			table_name[TSG_SECURITY_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
-			table_name[TSG_SECURITY_FTP_URI] = "TSG_FIELD_FTP_URI";
-			table_name[TSG_SECURITY_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
-			table_name[TSG_SECURITY_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
-			table_name[TSG_SECURITY_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
-			table_name[TSG_SECURITY_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
-			table_name[TSG_SECURITY_IMSI]="TSG_FILED_GTP_IMSI";
-			table_name[TSG_SECURITY_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
-			table_name[TSG_SECURITY_APN]="TSG_FILED_GTP_APN";
-			table_name[TSG_SECURITY_TUNNEL]="TSG_SECURITY_TUNNEL";
-			table_name[TSG_SECURITY_EXCLUSION_SSL_SNI]="TSG_DECYPTION_EXCLUSION_SSL_SNI";
-			table_name[TSG_SECURITY_FLAG]="TSG_SECURITY_FLAG";
-			scan_table_max = TSG_SECURITY_FLAG;
-			break;
-		case PXY_TABLE_DEFENCE:
-			break;
-		default:
-			break;
-	}
+	table_name[TSG_OBJ_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
+	table_name[TSG_OBJ_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
+	table_name[TSG_OBJ_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
+	table_name[TSG_OBJ_APP_ID] = "TSG_OBJ_APP_ID";
+	table_name[TSG_OBJ_HTTP_URL] = "TSG_FIELD_HTTP_URL";
+	table_name[TSG_OBJ_HTTP_HOST] = "TSG_FIELD_HTTP_HOST";
+	table_name[TSG_OBJ_HTTP_HOST_CAT] ="TSG_FIELD_HTTP_HOST_CAT";
+	table_name[TSG_OBJ_HTTP_REQ_HDR] = "TSG_FIELD_HTTP_REQ_HDR";
+	table_name[TSG_OBJ_HTTP_REQ_BODY] = "TSG_FIELD_HTTP_REQ_BODY";
+	table_name[TSG_OBJ_HTTP_RES_HDR] = "TSG_FIELD_HTTP_RES_HDR";
+	table_name[TSG_OBJ_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
+	table_name[TSG_OBJ_SSL_SNI] = "TSG_FIELD_SSL_SNI";
+	table_name[TSG_OBJ_SSL_SNI_CAT] = "TSG_FIELD_SSL_SNI_CAT";
+	table_name[TSG_OBJ_SSL_CN] = "TSG_FIELD_SSL_CN";
+	table_name[TSG_OBJ_SSL_CN_CAT] = "TSG_FIELD_SSL_CN_CAT";
+	table_name[TSG_OBJ_SSL_SAN] = "TSG_FIELD_SSL_SAN";
+	table_name[TSG_OBJ_SSL_SAN_CAT] = "TSG_FIELD_SSL_SAN_CAT";
+	table_name[TSG_OBJ_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
+	table_name[TSG_OBJ_DOH_HOST]="TSG_FIELD_DOH_HOST";
+	table_name[TSG_OBJ_DOH_HOST_CAT]="TSG_FIELD_DOH_HOST_CAT";
+	table_name[TSG_OBJ_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
+	table_name[TSG_OBJ_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
+	table_name[TSG_OBJ_QUIC_SNI_CAT] = "TSG_FIELD_QUIC_SNI_CAT";
+	table_name[TSG_OBJ_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
+	table_name[TSG_OBJ_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
+	table_name[TSG_OBJ_MAIL_TO] = "TSG_FIELD_MAIL_TO";
+	table_name[TSG_OBJ_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
+	table_name[TSG_OBJ_MAIL_CONTENT] = "TSG_FIELD_MAIL_CONTENT";
+	table_name[TSG_OBJ_MAIL_ATT_NAME] = "TSG_FIELD_MAIL_ATT_NAME";
+	table_name[TSG_OBJ_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
+	table_name[TSG_OBJ_FTP_URI] = "TSG_FIELD_FTP_URI";
+	table_name[TSG_OBJ_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
+	table_name[TSG_OBJ_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
+	table_name[TSG_OBJ_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
+	table_name[TSG_OBJ_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
+	table_name[TSG_OBJ_IMSI]="TSG_FILED_GTP_IMSI";
+	table_name[TSG_OBJ_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
+	table_name[TSG_OBJ_APN]="TSG_FILED_GTP_APN";
+	table_name[TSG_OBJ_TUNNEL]="TSG_SECURITY_TUNNEL",
+	table_name[TSG_OBJ_FLAG]="TSG_SECURITY_FLAG";
+	table_name[TSG_OBJ_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
+	table_name[TSG_OBJ_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
+	table_name[TSG_OBJ_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
+	table_name[TSG_OBJ_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
+
 	size_t i = 0;
-	for (i = 0; i <= scan_table_max; i++)
+	for (i = 0; i < __TSG_OBJ_MAX; i++)
 	{
 		if (0 == strcasecmp(action_str, table_name[i]))
 			break;
@@ -288,14 +259,9 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	item = cJSON_GetObjectItem(subchild, "tableName");
 	if(item && item->type==cJSON_String)
 	{
-		policy_query->verify_object[curr_id].table_id = protoco_field_type_str2idx(policy_query->table_typle, item->valuestring, buff, &p);
-		if ((policy_query->table_typle == PXY_TABLE_MANIPULATION && policy_query->verify_object[curr_id].table_id == __SCAN_TABLE_MAX)
-			|| (policy_query->table_typle == TSG_TABLE_SECURITY && policy_query->verify_object[curr_id].table_id == __SECURITY_TABLE_MAX))
-		{
-			mesa_runtime_log(RLOG_LV_FATAL, "policy table name error, table name = %s", item->valuestring);
-			goto finish;
-		}
+		policy_query->verify_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
 	}
+
 	attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
 	if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
 	{
@@ -323,8 +289,8 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->verify_object[curr_id].district);
 	}
 
-	if(policy_query->verify_object[curr_id].table_id == PXY_CTRL_APP_ID ||
-	   policy_query->verify_object[curr_id].table_id == TSG_SECURITY_FLAG)
+	if(policy_query->verify_object[curr_id].table_id == TSG_OBJ_APP_ID ||
+	   policy_query->verify_object[curr_id].table_id == TSG_OBJ_FLAG)
 	{
 		item = cJSON_GetObjectItem(attributeValue, "numeric");
 		if(item && item->type==cJSON_Number)
@@ -377,15 +343,14 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			int compile_table_id=0;
 			verify_policy = ALLOC(struct verify_policy_query, 1);
 			item = cJSON_GetObjectItem(subitem,"policyType");
 			if(item && item->type==cJSON_String)
 			{
-				verify_policy->table_typle = tsg_policy_type_str2idx(item->valuestring, &compile_table_id);
-				if (verify_policy->table_typle >= __SCAN_POLICY_MAX)
+				verify_policy->compile_table_id = tsg_policy_type_str2idx(item->valuestring);
+				if (verify_policy->compile_table_id >= __SCAN_POLICY_MAX)
 				{
-					mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->table_typle);
+					mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->compile_table_id);
 					goto free;
 				}
 			}
@@ -405,7 +370,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 			attributes = cJSON_GetObjectItem(item,"attributes");
 			if(attributes && attributes->type==cJSON_Array)
 			{
-				void *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->table_typle, compile_table_id);
+				void *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->compile_table_id);
 
 				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 				{
@@ -431,7 +396,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 					{
 						goto free;
 					}
-					hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->table_typle, &verify_policy->verify_object[i], data_obj, ctx);
+					hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], data_obj, ctx);
 					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
 					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
 					{
@@ -445,7 +410,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 
 					i++;
 				}
-				http_hit_policy_list(verify_policy->vsys_id, verify_policy->table_typle, compile_table_id, hit_cnt, data_obj, ctx);
+				http_hit_policy_list(verify_policy->vsys_id, verify_policy->compile_table_id, hit_cnt, data_obj, ctx);
 
 				int item = 0;
 				cJSON *verfifySession = cJSON_CreateObject();
@@ -454,7 +419,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 				for (item = 0; item < i; item++)
 				{
-					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->table_typle, attributes,data_obj, ctx);
+					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
 				}
 				pangu_http_ctx_free(ctx);
 			}
@@ -974,27 +939,18 @@ int main(int argc, char * argv[])
 	assert(g_verify_proxy);
 	strcpy(g_verify_proxy->name, "verify_policy");
 
-	clock_gettime(CLOCK_REALTIME, &(start_time));
-
 	g_verify_proxy->logger = verify_syslog_init(main_profile);
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
 	ret = load_system_conf(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at loading profile %s, Exit.", main_profile);
 
-	ret = proxy_policy_init(g_verify_proxy, main_profile);
-	CHECK_OR_EXIT(ret == 0, "Failed at init proxy module, Exit.");
-
-	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info_proxy.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
-	printf("Read table_info_proxy.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
-
 	clock_gettime(CLOCK_REALTIME, &(start_time));
-	ret = security_policy_init(g_verify_proxy, main_profile);
-	CHECK_OR_EXIT(ret == 0, "Failed at init security module, Exit.");
+	ret = maat_table_init(g_verify_proxy, main_profile);
+	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
 	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info_security.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
-	printf("Read table_info_security.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
+	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	printf("Read table_info.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	g_verify_proxy->breakpad = breakpad_init(main_profile);
 	CHECK_OR_EXIT(g_verify_proxy->breakpad, "Failed at starting breakpad. Exit.");
