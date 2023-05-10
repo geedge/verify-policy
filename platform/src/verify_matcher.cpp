@@ -326,7 +326,7 @@ void ip_location_table_new_cb(const char *table_name, int table_id, const char* 
 	char continent_abbr[VERIFY_ARRAY_MAX],continent_full[VERIFY_ARRAY_MAX];
 	char country_abbr[VERIFY_ARRAY_MAX],province_abbr[VERIFY_ARRAY_MAX], time_zone[VERIFY_ARRAY_MAX];
 	char country_full[VERIFY_ARRAY_MAX],province_full[VERIFY_ARRAY_MAX], city_full[VERIFY_ARRAY_MAX];
-	char subdivision_addr[VERIFY_ARRAY_MAX];
+	char subdivision_addr[VERIFY_STRING_MAX];
 
 	if(ip_location_column_num == 0)
 	{
@@ -1158,7 +1158,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 {
 	size_t n_hit_result=0;
 	int scan_ret=0, hit_cnt_ip=0;
-	char buff[VERIFY_ARRAY_MAX]={0};
+	char buff[VERIFY_STRING_MAX * 2]={0};
 	struct maat_hit_path hit_path[2048];
 	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
 
