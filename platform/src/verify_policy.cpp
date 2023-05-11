@@ -316,11 +316,167 @@ finish:
 	return xret;
 }
 
-cJSON *get_query_from_request(const char *data, int thread_id)
+enum verify_type get_verify_type(cJSON* data_json)
+{
+	cJSON *item = NULL;
+	enum verify_type q_type = VERIFY_TYPE_POLICY;
+
+	item = cJSON_GetObjectItem(data_json,"verifyType");
+	if(item && item->type==cJSON_String)
+	{
+		if(0 == strcasecmp(item->valuestring, "policy"))
+		{
+			q_type = VERIFY_TYPE_POLICY;
+		}
+
+		if(0 == strcasecmp(item->valuestring, "regex"))
+		{
+			q_type = VERIFY_TYPE_REGEX;
+		}
+	}
+	return q_type;
+}
+
+static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
+{
+	int cur_id=0, i=0, is_valid[32]={0};
+	cJSON *regexstr_obj[32];
+	cJSON *item = NULL, *subchild = NULL;
+	cJSON *attributes=NULL;
+
+	attributes = cJSON_GetObjectItem(verifylist_array_item, "verifyRegex");
+	if(attributes==NULL || attributes->type != cJSON_Array)
+	{
+		return -1;
+	}
+
+	for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+	{
+		item = cJSON_GetObjectItem(subchild, "regexStr");
+		if(item && item->type==cJSON_String)
+		{
+			is_valid[cur_id] = policy_verify_regex_expression(item->valuestring);
+		}
+		regexstr_obj[cur_id]=cJSON_Duplicate(item, 1);
+		cur_id++;
+	}
+
+	cJSON *verify_regex_obj=NULL;
+
+	cJSON *verifyRegex=cJSON_CreateArray();
+	cJSON_AddItemToObject(data_obj, "attributes", verifyRegex);
+	for (i = 0; i < cur_id; i++)
+	{
+		verify_regex_obj=cJSON_CreateObject();
+		cJSON_AddItemToObject(verify_regex_obj, "regexStr", regexstr_obj[i]);
+		cJSON_AddNumberToObject(verify_regex_obj, "isValid", is_valid[i]);
+		cJSON_AddItemToArray(verifyRegex, verify_regex_obj);
+	}
+	return 1;
+}
+
+int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 {
 	int i = 0;
 	int hit_cnt = 0, xret =0;
+	cJSON *item = NULL, *subchild = NULL, *attributes=NULL;
 	struct verify_policy_query *verify_policy = NULL;
+
+	verify_policy = ALLOC(struct verify_policy_query, 1);
+	item = cJSON_GetObjectItem(subitem,"policyType");
+	if(item && item->type==cJSON_String)
+	{
+		verify_policy->compile_table_id = tsg_policy_type_str2idx(item->valuestring);
+		if (verify_policy->compile_table_id >= __SCAN_POLICY_MAX)
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->compile_table_id);
+			goto free;
+		}
+	}
+
+	item = cJSON_GetObjectItem(subitem, "vsysId");
+	if(item && item->type==cJSON_Number)
+	{
+		verify_policy->vsys_id = item->valueint;
+	}
+	mesa_runtime_log(RLOG_LV_DEBUG, " [I]   vsysId= %d", verify_policy->vsys_id);
+
+	item = cJSON_GetObjectItem(subitem,"verifySession");
+	if(item == NULL || item->type!=cJSON_Object)
+	{
+		goto free;
+	}
+
+	attributes = cJSON_GetObjectItem(item,"attributes");
+	if(attributes && attributes->type==cJSON_Array)
+	{
+		void *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->compile_table_id);
+
+		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+		{
+			item = cJSON_GetObjectItem(subchild, "attributeName");
+			if(item && item->type==cJSON_String)
+			{
+				if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+				{
+					verify_policy_tunnle_add(ctx);
+				}
+
+				if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
+				{
+					verify_policy_tunnle_add(ctx);
+				}
+			}
+		}
+
+		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+		{
+			xret = get_attribute_from_json(i, subchild, verify_policy);
+			if (xret < 0)
+			{
+				goto free;
+			}
+			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], data_obj, ctx);
+			if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
+			   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
+			{
+				ipaddr_free(verify_policy->verify_object[i].ip_addr);
+			}
+			if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointa") ||
+			   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointb"))
+			{
+				ipaddr_free(verify_policy->verify_object[i].endpoint);
+			}
+
+			i++;
+		}
+		http_hit_policy_list(verify_policy->vsys_id, verify_policy->compile_table_id, hit_cnt, data_obj, ctx);
+
+		int item = 0;
+		cJSON *verfifySession = cJSON_CreateObject();
+		cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
+		cJSON *attributes=cJSON_CreateArray();
+		cJSON_AddItemToObject(verfifySession, "attributes", attributes);
+		for (item = 0; item < i; item++)
+		{
+			http_get_scan_status(&verify_policy->verify_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
+		}
+		policy_scan_ctx_free(ctx);
+	}
+
+	i=0;
+free:
+	if (verify_policy)
+	{
+		FREE(&verify_policy);
+	}
+
+	return hit_cnt;
+}
+
+cJSON *get_query_from_request(const char *data, int thread_id)
+{
+	int hit_cnt = 0;
 
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
@@ -337,103 +493,24 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	data_obj = cJSON_CreateObject();
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
-	cJSON* item = NULL, *subitem = NULL, *subchild = NULL, *attributes=NULL;
+	int verify_type=get_verify_type(data_json);
+	cJSON *item = NULL, *subitem = NULL;
+
 	item = cJSON_GetObjectItem(data_json,"verifyList");
 	if(item && item->type==cJSON_Array)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			verify_policy = ALLOC(struct verify_policy_query, 1);
-			item = cJSON_GetObjectItem(subitem,"policyType");
-			if(item && item->type==cJSON_String)
+			if(verify_type == VERIFY_TYPE_REGEX)
 			{
-				verify_policy->compile_table_id = tsg_policy_type_str2idx(item->valuestring);
-				if (verify_policy->compile_table_id >= __SCAN_POLICY_MAX)
-				{
-					mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->compile_table_id);
-					goto free;
-				}
+				hit_cnt = get_query_result_regex(subitem, data_obj);
 			}
 
-			item = cJSON_GetObjectItem(subitem, "vsysId");
-			if(item && item->type==cJSON_Number)
+			if(verify_type == VERIFY_TYPE_POLICY)
 			{
-				verify_policy->vsys_id = item->valueint;
+				hit_cnt = get_query_result_policy(subitem, data_obj, thread_id);
 			}
-			mesa_runtime_log(RLOG_LV_DEBUG, " [I]   vsysId= %d", verify_policy->vsys_id);
-			item = cJSON_GetObjectItem(subitem,"verifySession");
-			if(item == NULL || item->type!=cJSON_Object)
-			{
-				goto free;
-			}
-
-			attributes = cJSON_GetObjectItem(item,"attributes");
-			if(attributes && attributes->type==cJSON_Array)
-			{
-				void *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->compile_table_id);
-
-				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
-				{
-					item = cJSON_GetObjectItem(subchild, "attributeName");
-					if(item && item->type==cJSON_String)
-					{
-						if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
-						{
-							verify_policy_tunnle_add(ctx);
-						}
-
-						if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
-						{
-							verify_policy_tunnle_add(ctx);
-						}
-					}
-				}
-
-				for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
-				{
-					xret = get_attribute_from_json(i, subchild, verify_policy);
-					if (xret < 0)
-					{
-						goto free;
-					}
-					hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], data_obj, ctx);
-					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
-					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
-					{
-						ipaddr_free(verify_policy->verify_object[i].ip_addr);
-					}
-					if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointa") ||
-					   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointb"))
-					{
-						ipaddr_free(verify_policy->verify_object[i].endpoint);
-					}
-
-					i++;
-				}
-				http_hit_policy_list(verify_policy->vsys_id, verify_policy->compile_table_id, hit_cnt, data_obj, ctx);
-
-				int item = 0;
-				cJSON *verfifySession = cJSON_CreateObject();
-				cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
-				cJSON *attributes=cJSON_CreateArray();
-				cJSON_AddItemToObject(verfifySession, "attributes", attributes);
-				for (item = 0; item < i; item++)
-				{
-					http_get_scan_status(&verify_policy->verify_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
-				}
-				pangu_http_ctx_free(ctx);
-			}
-
-			i=0;
-			FREE(&verify_policy);
 		}
-		goto end;
-free:
-		if (verify_policy)
-		{
-			FREE(&verify_policy);
-		}
-end:
 		if (hit_cnt >= 0)
 		{
 			cJSON_AddBoolToObject(policy_obj, "success", true);
@@ -538,7 +615,7 @@ void * verify_policy_thread_func(void * arg)
 		mesa_runtime_log(RLOG_LV_INFO, "Bound(%p) to port %d - Awaiting connections ... ", bound,
 						g_verify_proxy->listen_port);
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "Work thread %u is run...", thread_ctx->id);
+	mesa_runtime_log(RLOG_LV_FATAL, "Work thread %u is run...", thread_ctx->id);
 
 	event_base_dispatch(thread_ctx->base);
 error:
@@ -949,7 +1026,7 @@ int main(int argc, char * argv[])
 	ret = maat_table_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
 	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_DEBUG, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+	mesa_runtime_log(RLOG_LV_FATAL, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
 	printf("Read table_info.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	g_verify_proxy->breakpad = breakpad_init(main_profile);

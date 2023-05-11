@@ -187,7 +187,7 @@ void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table
 	return (void *)ctx;
 }
 
-void pangu_http_ctx_free(void * pme)
+void policy_scan_ctx_free(void * pme)
 {
 	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *) pme;
 
@@ -1066,6 +1066,11 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 	}
 	http_get_location_status(attributes, attributeObj, &ctx->ip_ctx);
 	http_get_fqdn_cat_id(query_obj, compile_table_id, attributeObj);
+}
+
+int policy_verify_regex_expression(const char *expression)
+{
+	return maat_helper_verify_regex_expression(expression);
 }
 
 int http_hit_policy_list(int vsys_id,  int compile_table_id, size_t hit_cnt, cJSON *data_obj, void *pme)
