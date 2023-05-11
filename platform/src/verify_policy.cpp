@@ -340,9 +340,8 @@ enum verify_type get_verify_type(cJSON* data_json)
 static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
 {
 	int cur_id=0, i=0, is_valid[32]={0};
-	cJSON *regexstr_obj[32];
+	cJSON *regexstr_obj[32],*attributes=NULL;
 	cJSON *item = NULL, *subchild = NULL;
-	cJSON *attributes=NULL;
 
 	attributes = cJSON_GetObjectItem(verifylist_array_item, "verifyRegex");
 	if(attributes==NULL || attributes->type != cJSON_Array)
@@ -364,7 +363,7 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
 	cJSON *verify_regex_obj=NULL;
 
 	cJSON *verifyRegex=cJSON_CreateArray();
-	cJSON_AddItemToObject(data_obj, "attributes", verifyRegex);
+	cJSON_AddItemToObject(data_obj, "verifyRegex", verifyRegex);
 	for (i = 0; i < cur_id; i++)
 	{
 		verify_regex_obj=cJSON_CreateObject();
@@ -494,6 +493,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
 	int verify_type=get_verify_type(data_json);
+	mesa_runtime_log(RLOG_LV_DEBUG, " [I]   verifyType= %d", verify_type);
 	cJSON *item = NULL, *subitem = NULL;
 
 	item = cJSON_GetObjectItem(data_json,"verifyList");
@@ -503,6 +503,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 		{
 			if(verify_type == VERIFY_TYPE_REGEX)
 			{
+				mesa_runtime_log(RLOG_LV_DEBUG, " [I]   data= %s", data);
 				hit_cnt = get_query_result_regex(subitem, data_obj);
 			}
 
