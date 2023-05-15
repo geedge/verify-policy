@@ -141,7 +141,7 @@ struct policy_scan_ctx
 	size_t n_enforce;
 	struct rule_data_ctx * enforce_rules;
 	int n_read;
-	struct maat_hit_path hit_path[2048];
+	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 
 	int tunnel_endpoint_x;
 	int bool_id_array_idx;
@@ -1164,7 +1164,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 	size_t n_hit_result=0;
 	int scan_ret=0, hit_cnt_ip=0;
 	char buff[VERIFY_STRING_MAX * 2]={0};
-	struct maat_hit_path hit_path[2048];
+	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
 
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_LOCATION_USER_DEFINED], sip, (void **)&ip_location_client, 1);
@@ -1209,7 +1209,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, sizeof(hit_path));
+		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 	}
 	if(ip_location_client!=NULL)
 	{
@@ -1241,7 +1241,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, sizeof(hit_path));
+		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 	}
 
 	if(ip_location_server)
@@ -1255,7 +1255,7 @@ int http_ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip
 {
 	size_t n_hit_result=0;
 	int scan_ret=0, hit_cnt_ip=0;
-	struct maat_hit_path hit_path[2048];
+	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 	struct ip_data_table* ip_asn_client=NULL, *ip_asn_server=NULL;
 
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_ASN_USER_DEFINED], sip, (void **)&ip_asn_client, 1);
@@ -1284,7 +1284,7 @@ int http_ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, sizeof(hit_path));
+		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 	}
 	if(ip_asn_client!=NULL)
 	{
@@ -1299,7 +1299,7 @@ int http_ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, sizeof(hit_path));
+		ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 	}
 	if(ip_asn_server)
 		ip_table_free(ip_asn_server);
