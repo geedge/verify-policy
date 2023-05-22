@@ -158,6 +158,8 @@ struct verify_policy_rt
 	void * local_logger;
 	int log_level;
 	int thread_num;
+	int load_ip_location;
+	int load_fqdn_cat;
 	int compile_table_id[__SCAN_POLICY_MAX];
 	int profile_table_id  [POLICY_PROFILE_TABLE_MAX];
 	int scan_table_id[__TSG_OBJ_MAX];
@@ -1167,6 +1169,11 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
 
+	if(!g_policy_rt->load_ip_location)
+	{
+		return 0;
+	}
+
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_LOCATION_USER_DEFINED], sip, (void **)&ip_location_client, 1);
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_LOCATION_USER_DEFINED], dip, (void **)&ip_location_server, 1);
 
@@ -1258,6 +1265,11 @@ int http_ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 	struct ip_data_table* ip_asn_client=NULL, *ip_asn_server=NULL;
 
+	if(!g_policy_rt->load_ip_location)
+	{
+		return 0;
+	}
+
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_ASN_USER_DEFINED], sip, (void **)&ip_asn_client, 1);
 	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_ASN_USER_DEFINED], dip, (void **)&ip_asn_server, 1);
 
@@ -1315,6 +1327,11 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	int n_read=0, hit_path_cnt=0;
 	int i=0,ret=0, hit_cnt_fqdn=0;
 	struct fqdn_category_t *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
+
+	if(!g_policy_rt->load_fqdn_cat)
+	{
+		return 0;
+	}
 
 	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_FQDN_CAT_USER_DEFINED], fqdn, (void **)fqdn_cat_user, 8);
 	for(i=0; i <ret; i++)
@@ -1439,8 +1456,8 @@ int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit
 
 static inline int secy_request_in_fqdn_cat(int compile_table_id, int table_id)
 {
-	if(compile_table_id == TSG_TABLE_SECURITY && (table_id == TSG_OBJ_HTTP_HOST || table_id == TSG_OBJ_SSL_SNI
-	    || table_id==TSG_OBJ_SSL_CN || table_id==TSG_OBJ_SSL_SAN || table_id==TSG_OBJ_DNS_QNAME
+	if((compile_table_id == TSG_TABLE_SECURITY || compile_table_id == TSG_TRAFFIC_SHAPING || compile_table_id == TSG_SERVICE_CHAINGNG || compile_table_id == PXY_TABLE_INTERCEPT)
+		&& (table_id == TSG_OBJ_HTTP_HOST || table_id == TSG_OBJ_SSL_SNI || table_id==TSG_OBJ_SSL_CN || table_id==TSG_OBJ_SSL_SAN || table_id==TSG_OBJ_DNS_QNAME
 	    || table_id == TSG_OBJ_QUIC_SNI))
 	{
 		return 1;
@@ -1631,7 +1648,7 @@ static int policy_verify_scan_ip_addr(struct request_query_obj *request, struct 
 	return hit_cnt_ip;
 }
 
-size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *request, cJSON *data_obj, void *pme)
+size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *request, void *pme)
 {
 	size_t n_hit_result=0;
 	int scan_ret=0, n_read;
@@ -1830,6 +1847,11 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 		mesa_runtime_log(RLOG_LV_FATAL, "%s MAAT init failed.", __FUNCTION__);
 		goto error_out;
 	}
+
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%s", "Maat Redis Ip", redis_ip);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%s", "Maat Redis Port", redis_port_range);
+	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "Maat Redis_db_index", db_index);
+
     maat_options_free(opts);
 	return target;
 
@@ -1901,6 +1923,7 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 int maat_table_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1; int vsys_id=0;
+	int load_vsys_num=0;
 	char log_path[VERIFY_PATH_MAX];
 
 	snprintf(log_path, sizeof(log_path), "logs/maat.log");
@@ -1908,7 +1931,12 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 	g_policy_rt->local_logger = verify->logger;
 	g_policy_rt->thread_num = verify->nr_work_threads;
 
-	for(vsys_id=0; vsys_id < VSYS_ID_MAX; vsys_id++)
+	MESA_load_profile_int_def(profile_path, "MAAT", "load_ip_location", &(g_policy_rt->load_ip_location), 1);
+	MESA_load_profile_int_def(profile_path, "MAAT", "load_fqdn_cat", &(g_policy_rt->load_fqdn_cat), 1);
+	MESA_load_profile_int_def(profile_path, "MAAT", "load_vsys_num", &(load_vsys_num), 255);
+	load_vsys_num = load_vsys_num > VSYS_ID_MAX ? VSYS_ID_MAX : load_vsys_num;
+
+	for(vsys_id=0; vsys_id < load_vsys_num; vsys_id++)
 	{
 		g_policy_rt->feather[vsys_id] = create_maat_feather("static", profile_path, "MAAT", g_policy_rt->thread_num, log_path, vsys_id);
 		if (!g_policy_rt->feather[vsys_id])
@@ -1966,7 +1994,7 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "PXY_INTERCEPT_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
  		}
 
-		for(int i = POLICY_ASN_USER_DEFINED; i < POLICY_FQDN_CAT_USER_DEFINED; i++)
+		for(int i = POLICY_ASN_USER_DEFINED; i < POLICY_FQDN_CAT_USER_DEFINED && g_policy_rt->load_ip_location; i++)
 		{
 			ret = maat_ip_table_init(i, vsys_id, ip_table_free_cb, ip_table_dup_cb);
 			if(ret<0)
@@ -1974,7 +2002,7 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 				goto error_out;
 			}
 		}
-		for(int i = POLICY_FQDN_CAT_USER_DEFINED; i <= POLICY_FQDN_CAT_BUILT_IN; i++)
+		for(int i = POLICY_FQDN_CAT_USER_DEFINED; i <= POLICY_FQDN_CAT_BUILT_IN && g_policy_rt->load_fqdn_cat; i++)
 		{
 			ret = maat_fqdn_cat_table_init(i, vsys_id, fqdn_cat_new_data, fqdn_cat_free_data, fqdn_cat_dup_data);
 			if(ret<0)

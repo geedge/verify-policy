@@ -435,7 +435,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 			{
 				goto free;
 			}
-			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], data_obj, ctx);
+			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], ctx);
 			if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
 			   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
 			{

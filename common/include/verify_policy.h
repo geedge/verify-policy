@@ -140,7 +140,7 @@ extern struct verify_policy * g_verify_proxy;
 
 void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table_id);
 void policy_scan_ctx_free(void * pme);
-size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *query_obj, cJSON *data_obj, void *pme);
+size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *query_obj, void *pme);
 void http_get_scan_status(struct request_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
 int maat_table_init(struct verify_policy * verify, const char* profile_path);
 int http_hit_policy_list(int vsys_id, int compile_table_id, size_t hit_cnt, cJSON *data_obj, void *pme);
