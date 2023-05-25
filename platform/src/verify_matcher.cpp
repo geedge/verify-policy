@@ -891,8 +891,8 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 int http_table_in_fqdn(int protocol_field, int compile_table_id)
 {
 
-	if(compile_table_id == TSG_TABLE_SECURITY &&(protocol_field == TSG_OBJ_HTTP_HOST ||
-	   protocol_field == TSG_OBJ_SSL_SNI || protocol_field==TSG_OBJ_SSL_CN || protocol_field==TSG_OBJ_SSL_SAN ||
+	if((compile_table_id == TSG_TABLE_SECURITY || compile_table_id == TSG_TRAFFIC_SHAPING || compile_table_id == TSG_SERVICE_CHAINGNG || compile_table_id == PXY_TABLE_INTERCEPT)
+	 &&(protocol_field == TSG_OBJ_HTTP_HOST || protocol_field == TSG_OBJ_SSL_SNI || protocol_field==TSG_OBJ_SSL_CN || protocol_field==TSG_OBJ_SSL_SAN ||
        protocol_field==TSG_OBJ_DNS_QNAME || protocol_field == TSG_OBJ_QUIC_SNI))
 	{
 		return 1;
