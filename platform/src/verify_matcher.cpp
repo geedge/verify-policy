@@ -804,7 +804,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 	{
 		rule_ctx =(struct rule_data_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id],
 																		g_policy_rt->compile_table_id[compile_table_id],
-																        (const char *)&results[i]);
+																        (const char *)&results[i], sizeof(long long));
 		if(!rule_ctx)
 		{
 			continue;
