@@ -449,7 +449,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 
 			i++;
 		}
-		http_hit_policy_list(verify_policy->vsys_id, verify_policy->compile_table_id, hit_cnt, data_obj, ctx);
+		http_hit_policy_list(verify_policy, i, hit_cnt, data_obj, ctx);
 
 		int item = 0;
 		cJSON *verfifySession = cJSON_CreateObject();
