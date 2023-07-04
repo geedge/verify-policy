@@ -22,7 +22,7 @@
 #include "verify_policy_utils.h"
 #include "verify_policy_logging.h"
 
-#define HIT_PATH_SIZE           	2048
+#define HIT_PATH_SIZE           	4096
 #define	MAX_SCAN_RESULT				16
 
 enum policy_action
@@ -1258,7 +1258,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 	if(ip_location_server!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		if(ip_location_server->subdivision_addr == NULL)
+		if(ip_location_server->subdivision_addr == NULL || strcasecmp(ip_location_server->subdivision_addr, "null") == 0)
 		{
 			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full);
 		}
@@ -1295,7 +1295,7 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 	if(ip_location_client!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		if(ip_location_client->subdivision_addr == NULL)
+		if(ip_location_client->subdivision_addr == NULL || strcasecmp(ip_location_client->subdivision_addr, "null") == 0)
 		{
 			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full);
 		}
