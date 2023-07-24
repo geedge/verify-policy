@@ -74,6 +74,7 @@ int tsg_policy_type_str2idx(const char *action_str)
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
 	policy_name[PXY_TABLE_INTERCEPT] = "pxy_intercept";
+	policy_name[TSG_STATISTICS] = "statistics";
 	policy_name[PXY_TABLE_DEFENCE] = "active_defence";
 
 	size_t i = 0;
