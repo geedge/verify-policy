@@ -1510,7 +1510,7 @@ int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit
 	struct tunnel_data_ctx *endpoint_data[TUNNEL_BOOL_ID_MAX];
 
 	ret=maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_TUNNEL_ENDPOINT], sip, (void **)&endpoint_data, TUNNEL_BOOL_ID_MAX);
-	for(i=0; i<ret && i<TUNNEL_BOOL_ID_MAX; i++)
+	for(i=0; i<ret && i<TUNNEL_BOOL_ID_MAX && ctx->bool_id_array_idx < TUNNEL_BOOL_ID_MAX; i++)
 	{
 		ctx->bool_id_array[ctx->bool_id_array_idx]=(long long)endpoint_data[i]->id;
 		ctx->bool_id_array_idx++;
