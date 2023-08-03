@@ -84,7 +84,7 @@ int tsg_policy_type_str2idx(const char *action_str)
 		if (0 == strcasecmp(action_str, policy_name[i]))
 			break;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, "[I]   policyType= %s", action_str);
+	mesa_runtime_log(RLOG_LV_INFO, "[I]   policyType= %s", action_str);
 	return i;
 }
 
@@ -171,7 +171,7 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=htons(serverPort1);
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    attributeName = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
+	mesa_runtime_log(RLOG_LV_INFO, "[I]    attributeName = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
 		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
 
 	return ip_addr;
@@ -309,7 +309,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
 		}
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    %s", buff);
+	mesa_runtime_log(RLOG_LV_INFO, "[I]    %s", buff);
 	memset(buff, 0, VERIFY_STRING_MAX);
 end:
 	xret = 1;
@@ -399,7 +399,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 	{
 		verify_policy->vsys_id = item->valueint;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, " [I]   vsysId= %d", verify_policy->vsys_id);
+	mesa_runtime_log(RLOG_LV_INFO, " [I]   vsysId= %d", verify_policy->vsys_id);
 
 	item = cJSON_GetObjectItem(subitem,"verifySession");
 	if(item == NULL || item->type!=cJSON_Object)
@@ -474,7 +474,7 @@ free:
 	return hit_cnt;
 }
 
-cJSON *get_query_from_request(const char *data, int thread_id)
+cJSON *get_query_from_request(const char *data, ssize_t data_len, int thread_id)
 {
 	int hit_cnt = 0;
 
@@ -494,7 +494,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
 	int verify_type=get_verify_type(data_json);
-	mesa_runtime_log(RLOG_LV_DEBUG, " [I]   verifyType= %d", verify_type);
+	mesa_runtime_log(RLOG_LV_INFO, " [I]   verifyType= %d", verify_type);
 	cJSON *item = NULL, *subitem = NULL;
 
 	item = cJSON_GetObjectItem(data_json,"verifyList");
@@ -504,7 +504,7 @@ cJSON *get_query_from_request(const char *data, int thread_id)
 		{
 			if(verify_type == VERIFY_TYPE_REGEX)
 			{
-				mesa_runtime_log(RLOG_LV_DEBUG, " [I]   data= %s", data);
+				mesa_runtime_log(RLOG_LV_INFO, " [I]   data= %.*s", (int)data_len, data);
 				hit_cnt = get_query_result_regex(subitem, data_obj);
 			}
 
@@ -560,7 +560,7 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 
 	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
 	{
-		mesa_runtime_log(RLOG_LV_DEBUG, "FAILED (post type)");
+		mesa_runtime_log(RLOG_LV_FATAL, "FAILED (post type)");
 		goto error;
 	}
 	evbuf_body = evhttp_request_get_input_buffer(evh_req);
@@ -570,14 +570,14 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 		goto error;
 	}
 
- 	policy_obj = get_query_from_request(input, thread_ctx->id);
+ 	policy_obj = get_query_from_request(input, inputlen, thread_ctx->id);
 	if(policy_obj == NULL)
 	{
 		goto error;
 	}
 
 	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	mesa_runtime_log(RLOG_LV_DEBUG, "[O]   %s", policy_payload);
+	mesa_runtime_log(RLOG_LV_INFO, "[O]   %s", policy_payload);
 	evhttp_socket_send(evh_req, policy_payload);
 
 	cJSON_Delete(policy_obj);
