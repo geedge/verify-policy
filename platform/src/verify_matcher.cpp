@@ -858,12 +858,6 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 		return PG_ACTION_WHITELIST;
 	}
 
-	size_t monit_enable=1;
-	if(compile_table_id == TSG_TABLE_SECURITY && n_monit != n_hit)
-	{
-		monit_enable=0;
-	}
-
 	exist_enforce_num = *n_enforce;
 	if (multiple_hit_actions(prior_action))
 	{
@@ -875,7 +869,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 	}
 
 	*enforce_rules = (struct rule_data_ctx  *) realloc(*enforce_rules, sizeof(struct rule_data_ctx ) * (*n_enforce));
-	if (multiple_hit_actions(prior_action) && monit_enable)
+	if (multiple_hit_actions(prior_action))
 	{
 		memcpy(*enforce_rules + exist_enforce_num, monit_rule, n_monit * sizeof(struct rule_data_ctx ));
 	}
@@ -883,10 +877,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 	{
 		memmove(*enforce_rules+1, *enforce_rules, exist_enforce_num*sizeof(struct rule_data_ctx ));
 		memcpy(*enforce_rules, prior_rule, sizeof(struct rule_data_ctx ));
-		if(monit_enable)
-		{
-			memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct rule_data_ctx ));
-		}
+		memcpy(*enforce_rules + exist_enforce_num + 1, monit_rule, n_monit * sizeof(struct rule_data_ctx ));
 	}
 	return prior_action;
 }
