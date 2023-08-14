@@ -229,11 +229,13 @@ void __policy_action_weight_init()
 	policy_action_weight[PG_ACTION_MONIT] = 1;
 	policy_action_weight[PG_ACTION_INTERCEPT] = 2;
 	policy_action_weight[PG_ACTION_NO_INTERCEPT] = 3;
-	policy_action_weight[PG_ACTION_MANIPULATE] = 4;
-	policy_action_weight[PG_ACTION_REJECT] = 5;
-	policy_action_weight[PG_ACTION_WHITELIST] = 6;
-	policy_action_weight[PX_ACTION_SHUNT] = 7;
-	policy_action_weight[PG_STATISTICS] = 8;
+	policy_action_weight[PG_ACTION_SHAPING] = 4;
+	policy_action_weight[PG_ACTION_MANIPULATE] = 5;
+	policy_action_weight[PG_ACTION_SERVICE_CHAINING]=6;
+	policy_action_weight[PG_ACTION_REJECT] = 7;
+	policy_action_weight[PG_ACTION_WHITELIST] = 8;
+	policy_action_weight[PX_ACTION_SHUNT] = 9;
+	policy_action_weight[PG_STATISTICS] = 10;
 }
 
 static inline int action_cmp(enum policy_action a1, enum policy_action a2)
@@ -847,7 +849,17 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 		}
 	}
 
-	if (prior_action == PG_ACTION_WHITELIST)
+	if(compile_table_id == TSG_TABLE_SECURITY && prior_action == PX_ACTION_SHUNT)
+	{
+		if(*n_enforce==0)
+		{
+			*enforce_rules=ALLOC(struct rule_data_ctx, 1);
+		}
+		*enforce_rules[0]=*prior_rule;
+		*n_enforce=1;
+		return PX_ACTION_SHUNT;
+	}
+	if(compile_table_id != TSG_TABLE_SECURITY && prior_action == PG_ACTION_WHITELIST)
 	{
 		if(*n_enforce==0)
 		{
