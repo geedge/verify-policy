@@ -1874,6 +1874,7 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 	maat_options_set_foreign_cont_dir(opts, "./verify_policy_files");
 	maat_options_set_rule_effect_interval_ms(opts, effect_interval);
 	maat_options_set_caller_thread_number(opts, max_thread);
+	maat_options_set_hit_path_enabled(opts);
 
 	if(maat_perf_on)
 	{
