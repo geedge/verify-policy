@@ -245,7 +245,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_policy_query *policy_query)
 {
 	int xret = -1;
-	char buff[VERIFY_STRING_MAX], *p = NULL;
+	char buff[VERIFY_STRING_MAX*2], *p = NULL;
 	cJSON* item = NULL, *attributeValue=NULL;
 
 	p = buff;
@@ -310,7 +310,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		}
 	}
 	mesa_runtime_log(RLOG_LV_INFO, "[I]    %s", buff);
-	memset(buff, 0, VERIFY_STRING_MAX);
+	memset(buff, 0, VERIFY_STRING_MAX*2);
 end:
 	xret = 1;
 finish:

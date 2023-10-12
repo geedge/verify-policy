@@ -1114,19 +1114,6 @@ int get_attributes_table_name(struct request_query_obj *query_obj, int num, int 
 			if (query_obj[i].nth_scan[j] == Nth_scan)
 			{
 				attributeObj=query_obj[i].attributes;
-				/*tunnel filter*/
-				if(tunnel_endpoint_x == 2)
-				{
-					subchild = cJSON_GetObjectItem(attributeObj, "attributeName");
-					if(subchild && subchild->type==cJSON_String)
-					{
-						if(0 == strcasecmp(subchild->valuestring, "tunnel_endpointa"))
-						{
-							break;
-						}
-					}
-				}
-
 				subchild = cJSON_GetObjectItem(attributeObj, "tableName");
 				if(subchild && subchild->type==cJSON_String)
 				{
@@ -1217,6 +1204,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 					}
 					topObject=cJSON_CreateObject();
 					cJSON_AddNumberToObject(topObject, "objectId", ctx->hit_path[j].top_group_id);
+					cJSON_AddNumberToObject(topObject, "notFlag", ctx->hit_path[j].NOT_flag);
 					result_object_id[j] = ctx->hit_path[j].top_group_id;
 					get_attributes_table_name(verify_policy->verify_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
 					cJSON_AddItemToArray(topObjectList, topObject);
