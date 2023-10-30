@@ -149,7 +149,6 @@ struct policy_scan_ctx
 	int bool_id_array_idx;
     unsigned long long bool_id_array[256];
 
-	int isExclusion;
 	struct ip_data_ctx ip_ctx;
 	int thread_id;
 };
@@ -164,6 +163,7 @@ struct verify_policy_rt
 	int load_fqdn_cat;
 	int hit_path_size;
 	int compile_table_id[__SCAN_POLICY_MAX];
+	int plugin_table_id[__SCAN_POLICY_MAX];
 	int profile_table_id  [POLICY_PROFILE_TABLE_MAX];
 	int scan_table_id[__TSG_OBJ_MAX];
 };
@@ -808,7 +808,7 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 	for (i = 0; i < n_hit && i<MAX_SCAN_RESULT; i++)
 	{
 		rule_ctx =(struct rule_data_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id],
-																		g_policy_rt->compile_table_id[compile_table_id],
+																		g_policy_rt->plugin_table_id[compile_table_id],
 																        (const char *)&results[i], sizeof(long long));
 		if(!rule_ctx)
 		{
@@ -1167,21 +1167,10 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 
 			for (rules = 0; rules < ctx->n_enforce; rules++)
 			{
-				if (ctx->enforce_rules[rules].action == PG_ACTION_INTERCEPT)
+				if (ctx->enforce_rules[rules].config_id == ctx->hit_rules[i].config_id)
 				{
-					if (ctx->isExclusion != 1)
-					{
-						cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
-						succeeded = true;
-					}
-				}
-				else
-				{
-					if (ctx->enforce_rules[rules].config_id == ctx->hit_rules[i].config_id)
-					{
-						cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
-						succeeded = true;
-					}
+					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+					succeeded = true;
 				}
 			}
 			if (succeeded == false)
@@ -1956,6 +1945,33 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	return;
 }
 
+int maat_plugin_table_int(int vsys_id, int compile_type_id)
+{
+	int table_id=0;
+	const char *table_name=NULL;
+
+	const char *conjunction_table_name_map[] = {"TSG_SECURITY_COMPILE_CONJUNCTION", "PXY_CTRL_COMPILE_CONJUNCTION", "TRAFFIC_SHAPING_COMPILE_CONJUNCTION",
+												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION"};
+
+	table_name = conjunction_table_name_map[compile_type_id];
+	table_id=g_policy_rt->compile_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
+	if(table_id < 0)
+	{
+		return table_id;
+	}
+
+	const char *plugin_table_name_map[] = {"TSG_SECURITY_COMPILE_PLUGIN", "PXY_CTRL_COMPILE_PLUGIN", "TRAFFIC_SHAPING_COMPILE_PLUGIN", 
+											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN"};
+
+	table_name = plugin_table_name_map[compile_type_id];
+	table_id = g_policy_rt->plugin_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
+	if(table_id >=0 )
+	{
+		maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
+	}
+	return table_id;
+}
+
 int maat_table_init(struct verify_policy * verify, const char* profile_path)
 {
 	int ret = -1; int vsys_id=0;
@@ -2000,41 +2016,14 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			mesa_runtime_log(RLOG_LV_DEBUG, "Register maat %p, table name %s, table id %d", g_policy_rt->feather[vsys_id], table_name[i], g_policy_rt->scan_table_id[i]);
 		}
 
-		g_policy_rt->compile_table_id[TSG_TABLE_SECURITY]=maat_get_table_id(g_policy_rt->feather[vsys_id], "TSG_SECURITY_COMPILE");
-		if(g_policy_rt->compile_table_id[TSG_TABLE_SECURITY] >= 0)
+		for(int compile_type_id = 0; compile_type_id < PXY_TABLE_DEFENCE; compile_type_id++) 
 		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "TSG_SECURITY_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
-
-		g_policy_rt->compile_table_id[PXY_TABLE_MANIPULATION]=maat_get_table_id(g_policy_rt->feather[vsys_id], "PXY_CTRL_COMPILE");
-		if(g_policy_rt->compile_table_id[PXY_TABLE_MANIPULATION] >= 0)
-		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "PXY_CTRL_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
-
-		g_policy_rt->compile_table_id[TSG_TRAFFIC_SHAPING]=maat_get_table_id(g_policy_rt->feather[vsys_id], "TRAFFIC_SHAPING_COMPILE");
-		if(g_policy_rt->compile_table_id[TSG_TRAFFIC_SHAPING] >= 0)
-		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "TRAFFIC_SHAPING_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
-
-		g_policy_rt->compile_table_id[TSG_SERVICE_CHAINGNG]=maat_get_table_id(g_policy_rt->feather[vsys_id], "SERVICE_CHAINING_COMPILE");
-		if(g_policy_rt->compile_table_id[TSG_SERVICE_CHAINGNG] >= 0)
-		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "SERVICE_CHAINING_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
-
-		g_policy_rt->compile_table_id[PXY_TABLE_INTERCEPT]=maat_get_table_id(g_policy_rt->feather[vsys_id], "PXY_INTERCEPT_COMPILE");
-		if(g_policy_rt->compile_table_id[PXY_TABLE_INTERCEPT] >= 0)
-		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "PXY_INTERCEPT_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
-
-		g_policy_rt->compile_table_id[TSG_STATISTICS]=maat_get_table_id(g_policy_rt->feather[vsys_id], "STATISTICS_COMPILE");
-		if(g_policy_rt->compile_table_id[TSG_STATISTICS] >= 0)
-		{
-			maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], "STATISTICS_COMPILE", compile_table_new_cb, compile_free_data, compile_dup_data, 0,NULL);
- 		}
+			ret = maat_plugin_table_int(vsys_id, compile_type_id);
+			if(ret<0)
+			{
+				goto error_out;
+			}
+		}
 
 		for(int i = POLICY_ASN_USER_DEFINED; i < POLICY_FQDN_CAT_USER_DEFINED && g_policy_rt->load_ip_location; i++)
 		{
