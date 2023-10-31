@@ -132,6 +132,7 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_APN]="TSG_FILED_GTP_APN";
 	table_name[TSG_OBJ_TUNNEL]="TSG_SECURITY_TUNNEL",
 	table_name[TSG_OBJ_FLAG]="TSG_SECURITY_FLAG";
+	table_name[TSG_OBJ_GTP_IMEI]="TSG_FILED_GTP_IMEI";
 	table_name[TSG_OBJ_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
 	table_name[TSG_OBJ_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[TSG_OBJ_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";

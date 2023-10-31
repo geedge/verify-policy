@@ -1938,6 +1938,7 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_APN]="TSG_FILED_GTP_APN";
 	table_name[TSG_OBJ_TUNNEL]="TSG_SECURITY_TUNNEL",
 	table_name[TSG_OBJ_FLAG]="TSG_SECURITY_FLAG";
+	table_name[TSG_OBJ_GTP_IMEI]="TSG_FILED_GTP_IMEI";
 	table_name[TSG_OBJ_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
 	table_name[TSG_OBJ_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
 	table_name[TSG_OBJ_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
