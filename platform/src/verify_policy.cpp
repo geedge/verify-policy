@@ -376,6 +376,33 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
 	return 1;
 }
 
+static void get_count_form_attributeName(void *ctx, cJSON *subchild)
+{
+	cJSON *item = NULL;
+
+	item = cJSON_GetObjectItem(subchild, "attributeName");
+	if(item && item->type==cJSON_String)
+	{
+		if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+		{
+			verify_policy_tunnle_add(ctx);
+		}
+		if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
+		{
+			verify_policy_tunnle_add(ctx);
+		}
+		if(0 == strcasecmp(item->valuestring, "req_hdr"))
+		{
+			http_req_hdr_num(ctx);
+		}
+		if(0 == strcasecmp(item->valuestring, "res_hdr"))
+		{
+			http_res_hdr_num(ctx);
+		}
+	}
+	return;
+}
+
 int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 {
 	int i = 0;
@@ -415,19 +442,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 
 		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 		{
-			item = cJSON_GetObjectItem(subchild, "attributeName");
-			if(item && item->type==cJSON_String)
-			{
-				if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
-				{
-					verify_policy_tunnle_add(ctx);
-				}
-
-				if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
-				{
-					verify_policy_tunnle_add(ctx);
-				}
-			}
+			get_count_form_attributeName(ctx, subchild);
 		}
 
 		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)

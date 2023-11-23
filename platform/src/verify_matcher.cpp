@@ -63,6 +63,7 @@ enum verify_profile_table
 	POLICY_TUNNEL_CATALOG,
 	POLICY_TUNNEL_ENDPOINT,
 	POLICY_TUNNEL_LABEL,
+	POLICY_APP_DI_DICT,
 	POLICY_PROFILE_TABLE_MAX,
 };
 
@@ -100,13 +101,14 @@ struct ip_data_ctx
 	int Nth_scan[2];
 };
 
-struct fqdn_category_t
+struct fqdn_category_ctx
 {
 	int ref_cnt;
-	unsigned int category_id;
+	unsigned int fqdn_cat_id;
 	int match_method;
 	char fqdn[VERIFY_ARRAY_MAX];
 
+	long long int group_id;
 	pthread_mutex_t lock;
 };
 
@@ -119,6 +121,7 @@ struct tunnel_data_ctx
 	char *composition;
 	char *description;
 
+	long long int group_id;
 	pthread_mutex_t lock;
 };
 
@@ -128,6 +131,15 @@ struct rule_data_ctx
 	int		config_id;
 	int		service_id;
 	unsigned char	action;
+	pthread_mutex_t lock;
+};
+
+struct app_id_dict
+{
+	int ref_cnt;
+	int app_id;
+	long long int group_id;
+
 	pthread_mutex_t lock;
 };
 
@@ -145,6 +157,8 @@ struct policy_scan_ctx
 	int n_read;
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 
+	int req_hdr_num;
+	int res_hdr_num;
 	int tunnel_endpoint_x;
 	int bool_id_array_idx;
     unsigned long long bool_id_array[256];
@@ -180,6 +194,18 @@ void verify_policy_tunnle_add(void * pme)
 {
 	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *) pme;
 	ctx->tunnel_endpoint_x++;
+}
+
+void http_req_hdr_num(void *pem)
+{
+	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *)pem;
+	ctx->req_hdr_num++;
+}
+
+void http_res_hdr_num(void *pem)
+{
+	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *)pem;
+	ctx->res_hdr_num++;
 }
 
 void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table_id)
@@ -448,12 +474,25 @@ void tunnel_catalog_table_new_cb(const char *table_name, int table_id, const cha
 		return;
 	}
 
+	int group_id=0; char *group_id_str=NULL;
+	size_t offset=0, len=0;
+
+	ret = maat_helper_read_column(table_line, 8, &offset, &len);
+	if(ret >= 0)
+	{
+		group_id_str=ALLOC(char, len+1);
+		memcpy(group_id_str, table_line+offset, len);
+		group_id=atoll(group_id_str);
+		FREE(&group_id_str);
+	}
+
 	struct tunnel_data_ctx *tunnel=ALLOC(struct tunnel_data_ctx, 1);
 	memset(tunnel, 0, sizeof(struct tunnel_data_ctx));
 	tunnel->id=tunnel_id;
 	tunnel->name=strdup(tunnel_name);
 	tunnel->type=strdup(tunnel_type);
 	tunnel->composition=strdup(composition);
+	tunnel->group_id=group_id;
 	tunnel->ref_cnt=1;
 	pthread_mutex_init(&(tunnel->lock), NULL);
 
@@ -539,25 +578,11 @@ int maat_tunnel_table_init(int profile_idx,int vsys_id,
 
 	const char *table_name = table_name_map[profile_idx];
 	table_id=g_policy_rt->profile_table_id[profile_idx]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
-	if(table_id < 0)
+	if(table_id > 0)
 	{
-		goto finish;
+		table_id=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func[profile_idx], free_func, dup_func, 0, NULL);
+		return table_id;
 	}
-
-	if(profile_idx==POLICY_TUNNEL_CATALOG)
-	{
-		table_id=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id],table_name, new_func[profile_idx], free_func, dup_func,
-											  0,NULL);
-	}
-	if(profile_idx==POLICY_TUNNEL_ENDPOINT)
-	{
-		table_id=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func[profile_idx], free_func, dup_func,
-								  		 	0, NULL);
-
-	}
-	return table_id;
-
-finish:
 	mesa_runtime_log(RLOG_LV_FATAL, "Register table %s failed.", table_name);
 	return -1;
 }
@@ -621,11 +646,99 @@ int maat_fqdn_cat_table_init(int profile_idx, int vsys_id,
 	table_id=g_policy_rt->profile_table_id[profile_idx]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
 	if(table_id >= 0)
 	{
+		ret=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func, free_func, dup_func, 0, NULL);
+		return ret;
+	}
+	mesa_runtime_log(RLOG_LV_FATAL, "Register fqdn cat table %s failed.", table_name);
+	return -1;
+}
+
+void app_dict_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
+{
+	int ret=0;
+	size_t offset=0, len=0;
+	char *app_id_str=NULL, *group_id_str=NULL;
+	struct app_id_dict *app_dict=ALLOC(struct app_id_dict, 1);
+
+	ret = maat_helper_read_column(table_line, 1, &offset, &len);
+	if(ret >= 0)
+	{
+		app_id_str=ALLOC(char, len+1);
+		memcpy(app_id_str, table_line+offset, len);
+		app_dict->app_id=atoi(app_id_str);
+		FREE(&app_id_str);
+	}
+	
+	ret = maat_helper_read_column(table_line, 18, &offset, &len);
+	if(ret >= 0)
+	{
+		group_id_str=ALLOC(char, len+1);
+		memcpy(group_id_str, table_line+offset, len);
+		app_dict->group_id=atoll(group_id_str);
+		FREE(&group_id_str);
+	}
+
+	app_dict->ref_cnt=1;
+	pthread_mutex_init(&(app_dict->lock), NULL);
+	*ad=app_dict;
+	return;
+}
+
+void app_dict_table_free_cb(int table_id, void **ad, long argl, void* argp)
+{
+	if(*ad==NULL)
+	{
+		return;
+	}
+
+	struct app_id_dict *app_dict=(struct app_id_dict *)(*ad);
+	pthread_mutex_lock(&(app_dict->lock));
+	app_dict->ref_cnt--;
+	if(app_dict->ref_cnt>0)
+	{
+		pthread_mutex_unlock(&(app_dict->lock));
+		return;
+	}
+	pthread_mutex_unlock(&(app_dict->lock));
+	pthread_mutex_destroy(&(app_dict->lock));
+
+	FREE(&app_dict);
+	*ad=NULL;
+	return;
+}
+
+void app_id_dict_free(struct app_id_dict *app_dict)
+{
+	app_dict_table_free_cb(0, (void **)&app_dict, 0, NULL);
+}
+
+void app_dict_table_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
+{
+	struct app_id_dict *app_dict=(struct app_id_dict *)(*from);
+	pthread_mutex_lock(&(app_dict->lock));
+	app_dict->ref_cnt++;
+	pthread_mutex_unlock(&(app_dict->lock));
+	*to=app_dict;
+
+	return;
+}
+
+int maat_app_dict_table_init(int profile_idx, int vsys_id,
+							 	maat_ex_new_func_t* new_func,
+							 	maat_ex_free_func_t* free_func,
+							 	maat_ex_dup_func_t* dup_func)
+{
+	int table_id=0, ret=0;
+
+	const char *table_name = "APP_ID_DICT";
+	table_id=g_policy_rt->profile_table_id[profile_idx]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
+	if(table_id >= 0)
+	{
 		ret=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func, free_func, dup_func,
 										0, NULL);
 		return ret;
 	}
-	mesa_runtime_log(RLOG_LV_FATAL, "Register fqdn cat table %s failed.", table_name);
+	mesa_runtime_log(RLOG_LV_FATAL, "Register app dict table %s failed.", table_name);
 	return -1;
 }
 
@@ -656,7 +769,7 @@ int maat_ip_table_init(int profile_idx,int vsys_id,
 
 void fqdn_cat_dup_data(int table_id, void **to, void **from, long argl, void* argp)
 {
-	struct fqdn_category_t *fqdn_cat=(struct fqdn_category_t *)(*from);
+	struct fqdn_category_ctx *fqdn_cat=(struct fqdn_category_ctx *)(*from);
 	pthread_mutex_lock(&(fqdn_cat->lock));
 	fqdn_cat->ref_cnt++;
 	pthread_mutex_unlock(&(fqdn_cat->lock));
@@ -668,11 +781,12 @@ void fqdn_cat_dup_data(int table_id, void **to, void **from, long argl, void* ar
 void fqdn_cat_new_data(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
 	int ret=0,id=0,is_valid=0;
+	long long int op_time=0;
 
-	struct fqdn_category_t *fqdn_cat = ALLOC(struct fqdn_category_t, 1);
+	struct fqdn_category_ctx *fqdn_cat = ALLOC(struct fqdn_category_ctx, 1);
 
-	ret=sscanf(table_line, "%d\t%u\t%s\t\t%d\t%d",&id, &fqdn_cat->category_id, fqdn_cat->fqdn, &fqdn_cat->match_method, &is_valid);
-	if(ret!=5)
+	ret=sscanf(table_line, "%d\t%u\t%s\t%d\t%d\t%llu\t%llu",&id, &fqdn_cat->fqdn_cat_id, fqdn_cat->fqdn, &fqdn_cat->match_method, &is_valid, &op_time, &fqdn_cat->group_id);
+	if(ret!=7)
 	{
 		FREE(&fqdn_cat);
 		mesa_runtime_log(RLOG_LV_FATAL, "Parse fqdn category failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
@@ -692,7 +806,7 @@ void fqdn_cat_free_data(int table_id, void **ad, long argl, void* argp)
 		return;
 	}
 
-	struct fqdn_category_t *fqdn_cat=(struct fqdn_category_t *)(*ad);
+	struct fqdn_category_ctx *fqdn_cat=(struct fqdn_category_ctx *)(*ad);
 	pthread_mutex_lock(&(fqdn_cat->lock));
 	fqdn_cat->ref_cnt--;
 	if(fqdn_cat->ref_cnt>0)
@@ -708,7 +822,7 @@ void fqdn_cat_free_data(int table_id, void **ad, long argl, void* argp)
 	return;
 }
 
-void fqdn_cat_table_free(struct fqdn_category_t *fqdn_cat)
+void fqdn_cat_table_free(struct fqdn_category_ctx *fqdn_cat)
 {
 	fqdn_cat_free_data(0, (void **)&fqdn_cat, 0, NULL);
 }
@@ -921,18 +1035,18 @@ void http_get_fqdn_cat_id(struct request_query_obj *query_obj, cJSON *attributeO
 	cJSON_AddItemToObject(attributeObj, "sniCategory", sniCategory);
 
 	cJSON *fqdnObj=NULL;
-	for(i=0; i<query_obj->category_user_num; i++)
+	for(i=0; i<query_obj->fqdn_user.fqdn_cat_num; i++)
 	{
 		fqdnObj=cJSON_CreateObject();
 		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->category_id_user[i]);
+		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->fqdn_user.fqdn_cat_id[i]);
 	}
 
-	for(i=0; i<query_obj->category_built_num; i++)
+	for(i=0; i<query_obj->fqdn_builtin.fqdn_cat_num; i++)
 	{
 		fqdnObj=cJSON_CreateObject();
 		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->category_id_built[i]);
+		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->fqdn_builtin.fqdn_cat_id[i]);
 	}
 }
 
@@ -1399,7 +1513,7 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	size_t n_hit_result=0;
 	int n_read=0, hit_path_cnt=0;
 	int i=0,ret=0, hit_cnt_fqdn=0;
-	struct fqdn_category_t *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
+	struct fqdn_category_ctx *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
 
 	if(!g_policy_rt->load_fqdn_cat)
 	{
@@ -1411,40 +1525,41 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	{
 		if(i < 8)
 		{
-			if(http_hit_policy_match((int *)query_obj->category_id_user, j, (int)fqdn_cat_user[i]->category_id))
+			if(http_hit_policy_match((int *)(query_obj->fqdn_user.fqdn_cat_id), j, (int)fqdn_cat_user[i]->fqdn_cat_id))
 			{
 				continue;
 			}
-			query_obj->category_id_user[j] = fqdn_cat_user[i]->category_id;
+			query_obj->fqdn_user.fqdn_cat_id[i] = fqdn_cat_user[i]->fqdn_cat_id;
+			query_obj->fqdn_user.group_id[i] = fqdn_cat_user[i]->group_id;
 			j++;
 		}
 		fqdn_cat_table_free(fqdn_cat_user[i]);
 	}
-	query_obj->category_user_num = j< 8 ? j : 8;
+	query_obj->fqdn_user.fqdn_cat_num = j< 8 ? j : 8;
 
 	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_FQDN_CAT_BUILT_IN], fqdn, (void **)fqdn_cat_built, 8);
 	for(i=0; i <ret; i++)
 	{
 		if(i < 8)
 		{
-			if(http_hit_policy_match((int *)query_obj->category_id_built, k, (int)fqdn_cat_built[i]->category_id))
+			if(http_hit_policy_match((int *)(query_obj->fqdn_builtin.fqdn_cat_id), k, (int)fqdn_cat_built[i]->fqdn_cat_id))
 			{
 				continue;
 			}
-			query_obj->category_id_built[k] = fqdn_cat_built[i]->category_id;
+			query_obj->fqdn_builtin.fqdn_cat_id[i] = fqdn_cat_built[i]->fqdn_cat_id;
+			query_obj->fqdn_builtin.group_id[i] = fqdn_cat_built[i]->group_id;
 			k++;
 		}
 		fqdn_cat_table_free(fqdn_cat_built[i]);
 	}
-	query_obj->category_built_num = k < 8 ? k : 8;
+	query_obj->fqdn_builtin.fqdn_cat_num  = k < 8 ? k : 8;
 
-	if(query_obj->category_user_num > 0)
+	if(query_obj->fqdn_user.fqdn_cat_num > 0)
 	{
-		for(i=0; i<query_obj->category_user_num; i++)
+		for(i=0; i<query_obj->fqdn_user.fqdn_cat_num; i++)
 		{
-			ret=maat_scan_integer(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
-								  query_obj->category_id_user[i], result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
-								  &n_hit_result, ctx->scan_mid);
+	    	ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &query_obj->fqdn_user.group_id[i], 1,
+							    result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if(ret>0)
 			{
 				hit_cnt_fqdn+=n_hit_result;
@@ -1457,15 +1572,22 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 				hit_path_cnt++;
 			}
 		}
+
+		ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
+								  result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
+                          	      &n_hit_result, ctx->scan_mid);
+		if (ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_fqdn += n_hit_result;
+		}
 		goto finish;
 	}
-	if (query_obj->category_built_num > 0)
+	if (query_obj->fqdn_builtin.fqdn_cat_num > 0)
 	{
-		for(i=0; i<query_obj->category_built_num; i++)
+		for(i=0; i<query_obj->fqdn_builtin.fqdn_cat_num; i++)
 		{
-			ret=maat_scan_integer(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
-								  query_obj->category_id_built[i], result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
-								  &n_hit_result, ctx->scan_mid);
+			ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &query_obj->fqdn_builtin.group_id[i], 1,
+							    result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if(ret>0)
 			{
 				hit_cnt_fqdn+=n_hit_result;
@@ -1477,6 +1599,13 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 				ctx->n_read=n_read;
 				hit_path_cnt++;
 			}
+		}
+		ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
+								  result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
+                          	      &n_hit_result, ctx->scan_mid);
+		if (ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_fqdn += n_hit_result;
 		}
 	}
 finish:
@@ -1507,9 +1636,8 @@ int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit
 	ret=maat_bool_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_TUNNEL_CATALOG], ctx->bool_id_array, ctx->bool_id_array_idx, (void**)(&tunnel_catalog), TUNNEL_CATALOG_MAX);
 	for(i=0; i<ret && i<TUNNEL_CATALOG_MAX; i++)
 	{
-		scan_ret=maat_scan_integer(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL],
-								   tunnel_catalog[i]->id, result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel,
-								   &n_hit_result, ctx->scan_mid);
+		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &tunnel_catalog[i]->group_id, 1,
+							    result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
 		if(scan_ret>= MAAT_SCAN_HALF_HIT)
 		{
 			hit_cnt_tunnel+=n_hit_result;
@@ -1545,18 +1673,25 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 {
 	int n_read=0;
 	int scan_ret=0, hit_cnt_app_id=0;
+	struct app_id_dict *app_dict=NULL;
 	size_t n_hit_result=0;
 
+	long long app_id = request->numeric;
 	int table_id = request->table_id;
-	int scan_val = request->numeric;
 
-	scan_ret=maat_scan_integer(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
-						       scan_val, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
-						       &n_hit_result, ctx->scan_mid);
+	app_dict = (struct app_id_dict*)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_APP_DI_DICT], (const char *)&app_id, sizeof(long long));
+	if(app_dict==NULL)
+	{
+		return 0;
+	}
+
+    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &app_dict->group_id, 1,
+							   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_app_id+=n_hit_result;
 	}
+	app_id_dict_free(app_dict);
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
@@ -1585,7 +1720,7 @@ static int policy_verify_scan_flag(struct request_query_obj *request, struct pol
 	return hit_cnt_flag;
 }
 
-static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
+static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, int hdr_num)
 {
 	int n_read=0;
 	int scan_ret=0, hit_cnt_hdr=0;
@@ -1608,6 +1743,17 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 	{
 		hit_cnt_hdr += n_hit_result;
 	}
+
+	if(hdr_num == 0)
+	{
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
+                          				&n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_hdr += n_hit_result;
+		}
+	}
+
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
@@ -1747,8 +1893,16 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			}
 			goto decide;
 		case TSG_OBJ_HTTP_REQ_HDR:
+			ctx->req_hdr_num--;
+			scan_ret = policy_verify_scan_http_hdr(request, ctx, vsys_id, hit_cnt, ctx->req_hdr_num);
+			if(scan_ret > 0)
+			{
+				hit_cnt+=scan_ret;
+			}
+			goto decide;
 		case TSG_OBJ_HTTP_RES_HDR:
-			scan_ret = policy_verify_scan_http_hdr(request, ctx, vsys_id, hit_cnt);
+			ctx->res_hdr_num--;
+			scan_ret = policy_verify_scan_http_hdr(request, ctx, vsys_id, hit_cnt, ctx->res_hdr_num);
 			if(scan_ret > 0)
 			{
 				hit_cnt+=scan_ret;
@@ -1946,7 +2100,7 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	return;
 }
 
-int maat_plugin_table_int(int vsys_id, int compile_type_id)
+int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 {
 	int table_id=0;
 	const char *table_name=NULL;
@@ -2017,9 +2171,9 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			mesa_runtime_log(RLOG_LV_DEBUG, "Register maat %p, table name %s, table id %d", g_policy_rt->feather[vsys_id], table_name[i], g_policy_rt->scan_table_id[i]);
 		}
 
-		for(int compile_type_id = 0; compile_type_id < PXY_TABLE_DEFENCE; compile_type_id++) 
+		for(int i = 0; i < PXY_TABLE_DEFENCE; i++)
 		{
-			ret = maat_plugin_table_int(vsys_id, compile_type_id);
+			ret = maat_complie_plugin_table_init(vsys_id, i);
 			if(ret<0)
 			{
 				goto error_out;
@@ -2049,8 +2203,8 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			{
 				goto error_out;
 			}
-
 		}
+		ret = maat_app_dict_table_init(POLICY_APP_DI_DICT, vsys_id, app_dict_table_new_cb, app_dict_table_free_cb, app_dict_table_dup_cb);
 	}
 	ret = 0;
 error_out:
