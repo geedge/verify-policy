@@ -463,27 +463,15 @@ void ip_table_free(struct ip_data_table* ip_asn)
 
 void tunnel_catalog_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
-	int ret=0,tunnel_id=0,is_valid=0;
+	int ret=0,tunnel_id=0,group_id=0,is_valid=0;
 	char tunnel_name[VERIFY_ARRAY_MAX]={0},tunnel_type[16]={0};
 	char composition[VERIFY_ARRAY_MAX]={0};
 
-	ret=sscanf(table_line, "%d\t%s\t%s\t%s\t%d", &tunnel_id, tunnel_name, tunnel_type, composition, &is_valid);
-	if(ret!=5)
+	ret=sscanf(table_line, "%d\t%s\t%s\t%s\t%d\t%d", &tunnel_id, tunnel_name, tunnel_type, composition, &group_id, &is_valid);
+	if(ret!=6)
 	{
 		mesa_runtime_log(RLOG_LV_FATAL, "Policy catalog table parse tunnel catalog failed, ret:%d, %s", ret, table_line);
 		return;
-	}
-
-	int group_id=0; char *group_id_str=NULL;
-	size_t offset=0, len=0;
-
-	ret = maat_helper_read_column(table_line, 8, &offset, &len);
-	if(ret >= 0)
-	{
-		group_id_str=ALLOC(char, len+1);
-		memcpy(group_id_str, table_line+offset, len);
-		group_id=atoll(group_id_str);
-		FREE(&group_id_str);
 	}
 
 	struct tunnel_data_ctx *tunnel=ALLOC(struct tunnel_data_ctx, 1);
@@ -781,12 +769,11 @@ void fqdn_cat_dup_data(int table_id, void **to, void **from, long argl, void* ar
 void fqdn_cat_new_data(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
 	int ret=0,id=0,is_valid=0;
-	long long int op_time=0;
 
 	struct fqdn_category_ctx *fqdn_cat = ALLOC(struct fqdn_category_ctx, 1);
 
-	ret=sscanf(table_line, "%d\t%u\t%s\t%d\t%d\t%llu\t%llu",&id, &fqdn_cat->fqdn_cat_id, fqdn_cat->fqdn, &fqdn_cat->match_method, &is_valid, &op_time, &fqdn_cat->group_id);
-	if(ret!=7)
+	ret=sscanf(table_line, "%d\t%u\t%s\t%d\t%llu\t%d",&id, &fqdn_cat->fqdn_cat_id, fqdn_cat->fqdn, &fqdn_cat->match_method, &fqdn_cat->group_id, &is_valid);
+	if(ret!=6)
 	{
 		FREE(&fqdn_cat);
 		mesa_runtime_log(RLOG_LV_FATAL, "Parse fqdn category failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
@@ -1276,7 +1263,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 			}
 			succeeded = false;
 			policy_obj=cJSON_CreateObject();
-			cJSON_AddNumberToObject(policy_obj, "policyId",ctx->hit_rules[i].config_id);
+			cJSON_AddNumberToObject(policy_obj, "id",ctx->hit_rules[i].config_id);
 			cJSON_AddStringToObject(policy_obj, "policyName", "");
 
 			for (rules = 0; rules < ctx->n_enforce; rules++)
@@ -2041,62 +2028,62 @@ error_out:
 
 static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 {
-	table_name[TSG_OBJ_HTTP_URL] = "TSG_FIELD_HTTP_URL";
-	table_name[TSG_OBJ_HTTP_HOST] =  "TSG_FIELD_HTTP_HOST";
-	table_name[TSG_OBJ_HTTP_HOST_CAT] = "TSG_FIELD_HTTP_HOST_CAT";
-	table_name[TSG_OBJ_HTTP_REQ_HDR] =  "TSG_FIELD_HTTP_REQ_HDR";
-	table_name[TSG_OBJ_HTTP_REQ_BODY] =  "TSG_FIELD_HTTP_REQ_BODY";
-	table_name[TSG_OBJ_HTTP_RES_HDR] =  "TSG_FIELD_HTTP_RES_HDR";
-	table_name[TSG_OBJ_HTTP_RES_BODY] = "TSG_FIELD_HTTP_RES_BODY";
-	table_name[TSG_OBJ_SSL_SNI] =  "TSG_FIELD_SSL_SNI";
-	table_name[TSG_OBJ_SSL_SNI_CAT] = "TSG_FIELD_SSL_SNI_CAT";
-	table_name[TSG_OBJ_SSL_CN] =  "TSG_FIELD_SSL_CN";
-	table_name[TSG_OBJ_SSL_CN_CAT] = "TSG_FIELD_SSL_CN_CAT";
-	table_name[TSG_OBJ_SSL_SAN] = "TSG_FIELD_SSL_SAN";
-	table_name[TSG_OBJ_SSL_SAN_CAT] = "TSG_FIELD_SSL_SAN_CAT";
+	table_name[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL";
+	table_name[TSG_OBJ_HTTP_HOST] =  "ATTR_HTTP_HOST";
+	table_name[TSG_OBJ_HTTP_HOST_CAT] = "ATTR_HTTP_HOST_CAT";
+	table_name[TSG_OBJ_HTTP_REQ_HDR] =  "ATTR_HTTP_REQ_HDR";
+	table_name[TSG_OBJ_HTTP_REQ_BODY] =  "ATTR_HTTP_REQ_BODY";
+	table_name[TSG_OBJ_HTTP_RES_HDR] =  "ATTR_HTTP_RES_HDR";
+	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
+	table_name[TSG_OBJ_SSL_SNI] =  "ATTR_SSL_SNI";
+	table_name[TSG_OBJ_SSL_SNI_CAT] = "ATTR_SSL_SNI_CAT";
+	table_name[TSG_OBJ_SSL_CN] =  "ATTR_SSL_CN";
+	table_name[TSG_OBJ_SSL_CN_CAT] = "ATTR_SSL_CN_CAT";
+	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
+	table_name[TSG_OBJ_SSL_SAN_CAT] = "ATTR_SSL_SAN_CAT";
 	return;
 }
 
 static void doq_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 {
-	table_name[TSG_OBJ_DOH_QNAME]="TSG_FIELD_DOH_QNAME";
-	table_name[TSG_OBJ_DOH_HOST]="TSG_FIELD_DOH_HOST";
-	table_name[TSG_OBJ_DOH_HOST_CAT]="TSG_FIELD_DOH_HOST_CAT";
-	table_name[TSG_OBJ_DNS_QNAME] = "TSG_FIELD_DNS_QNAME";
-	table_name[TSG_OBJ_QUIC_SNI] = "TSG_FIELD_QUIC_SNI";
-	table_name[TSG_OBJ_QUIC_SNI_CAT] = "TSG_FIELD_QUIC_SNI_CAT";
+	table_name[TSG_OBJ_DOH_QNAME]="ATTR_DNS_QNAME";
+	table_name[TSG_OBJ_DOH_HOST]="ATTR_DOH_HOST";
+	table_name[TSG_OBJ_DOH_HOST_CAT]="ATTR_DOH_HOST_CAT";
+	table_name[TSG_OBJ_DNS_QNAME] = "ATTR_DOH_QNAME";
+	table_name[TSG_OBJ_QUIC_SNI] = "ATTR_QUIC_SNI";
+	table_name[TSG_OBJ_QUIC_SNI_CAT] = "ATTR_QUIC_SNI_CAT";
 	return;
 }
 
 static void mail_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 {
-	table_name[TSG_OBJ_MAIL_ACCOUNT] = "TSG_FIELD_MAIL_ACCOUNT";
-	table_name[TSG_OBJ_MAIL_FROM] = "TSG_FIELD_MAIL_FROM";
-	table_name[TSG_OBJ_MAIL_TO] = "TSG_FIELD_MAIL_TO";
-	table_name[TSG_OBJ_MAIL_SUBJECT] = "TSG_FIELD_MAIL_SUBJECT";
-	table_name[TSG_OBJ_MAIL_CONTENT] = "TSG_FIELD_MAIL_CONTENT";
-	table_name[TSG_OBJ_MAIL_ATT_NAME] = "TSG_FIELD_MAIL_ATT_NAME";
-	table_name[TSG_OBJ_MAIL_ATT_CONTENT] = "TSG_FIELD_MAIL_ATT_CONTENT";
-	table_name[TSG_OBJ_FTP_URI] = "TSG_FIELD_FTP_URI";
-	table_name[TSG_OBJ_FTP_CONTENT] = "TSG_FIELD_FTP_CONTENT";
-	table_name[TSG_OBJ_FTP_ACCOUNT] = "TSG_FIELD_FTP_ACCOUNT";
+	table_name[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT";
+	table_name[TSG_OBJ_MAIL_FROM] = "ATTR_MAIL_FROM";
+	table_name[TSG_OBJ_MAIL_TO] = "ATTR_MAIL_TO";
+	table_name[TSG_OBJ_MAIL_SUBJECT] = "ATTR_MAIL_SUBJECT";
+	table_name[TSG_OBJ_MAIL_CONTENT] = "ATTR_MAIL_CONTENT";
+	table_name[TSG_OBJ_MAIL_ATT_NAME] = "ATTR_MAIL_ATT_NAME";
+	table_name[TSG_OBJ_MAIL_ATT_CONTENT] = "ATTR_MAIL_ATT_CONTENT";
+	table_name[TSG_OBJ_FTP_URI] = "ATTR_FTP_URI";
+	table_name[TSG_OBJ_FTP_CONTENT] = "ATTR_FTP_CONTENT";
+	table_name[TSG_OBJ_FTP_ACCOUNT] = "ATTR_FTP_ACCOUNT";
 	return;
 }
 
 static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 {
-	table_name[TSG_OBJ_SIP_FROM]="TSG_FIELD_SIP_ORIGINATOR_DESCRIPTION";
-	table_name[TSG_OBJ_SIP_TO]="TSG_FIELD_SIP_RESPONDER_DESCRIPTION";
-	table_name[TSG_OBJ_IMSI]="TSG_FILED_GTP_IMSI";
-	table_name[TSG_OBJ_PHONE_NUMBER]="TSG_FILED_GTP_PHONE_NUMBER";
-	table_name[TSG_OBJ_APN]="TSG_FILED_GTP_APN";
-	table_name[TSG_OBJ_TUNNEL]="TSG_SECURITY_TUNNEL",
-	table_name[TSG_OBJ_FLAG]="TSG_SECURITY_FLAG";
-	table_name[TSG_OBJ_GTP_IMEI]="TSG_FILED_GTP_IMEI";
-	table_name[TSG_OBJ_IP_SRC_ASN]="TSG_SECURITY_SOURCE_ASN";
-	table_name[TSG_OBJ_IP_DST_ASN]="TSG_SECURITY_DESTINATION_ASN";
-	table_name[TSG_OBJ_IP_SRC_LOCATION]="TSG_SECURITY_SOURCE_LOCATION";
-	table_name[TSG_OBJ_IP_DST_LOCATION]="TSG_SECURITY_DESTINATION_LOCATION";
+	table_name[TSG_OBJ_SIP_FROM]="ATTR_SIP_ORIGINATOR_DESCRIPTION";
+	table_name[TSG_OBJ_SIP_TO]="ATTR_SIP_RESPONDER_DESCRIPTION";
+	table_name[TSG_OBJ_IMSI]="ATTR_GTP_IMSI";
+	table_name[TSG_OBJ_PHONE_NUMBER]="ATTR_GTP_PHONE_NUMBER";
+	table_name[TSG_OBJ_APN]="ATTR_GTP_APN";
+	table_name[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
+	table_name[TSG_OBJ_FLAG]="ATTR_FLAG";
+	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
+	table_name[TSG_OBJ_IP_SRC_ASN]="ATTR_SOURCE_ASN";
+	table_name[TSG_OBJ_IP_DST_ASN]="ATTR_DESTINATION_ASN";
+	table_name[TSG_OBJ_IP_SRC_LOCATION]="ATTR_SOURCE_LOCATION";
+	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
 	return;
 }
 
@@ -2151,10 +2138,10 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			goto error_out;
 		}
 		const char * table_name[__TSG_OBJ_MAX];
-		table_name[TSG_OBJ_SOURCE_ADDR] = "TSG_SECURITY_SOURCE_ADDR";
-		table_name[TSG_OBJ_DESTINATION_ADDR]="TSG_SECURITY_DESTINATION_ADDR";
-		table_name[TSG_OBJ_SUBSCRIBE_ID] = "TSG_OBJ_SUBSCRIBER_ID";
-		table_name[TSG_OBJ_APP_ID] = "TSG_OBJ_APP_ID";
+		table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_ADDR";
+		table_name[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_ADDR";
+		table_name[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID";
+		table_name[TSG_OBJ_APP_ID] = "ATTR_APP_ID";
 		http_table_name_init(table_name);
 		doq_table_name_init(table_name);
 		mail_table_name_int(table_name);
