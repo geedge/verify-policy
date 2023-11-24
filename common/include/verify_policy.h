@@ -29,6 +29,7 @@ enum compile_table_typle
     TSG_SERVICE_CHAINGNG,
     PXY_TABLE_INTERCEPT,
     TSG_STATISTICS,
+    TSG_MONITOR,
     PXY_TABLE_DEFENCE,
     __SCAN_POLICY_MAX
 };

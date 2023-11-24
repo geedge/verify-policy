@@ -1026,14 +1026,14 @@ void http_get_fqdn_cat_id(struct request_query_obj *query_obj, cJSON *attributeO
 	{
 		fqdnObj=cJSON_CreateObject();
 		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->fqdn_user.fqdn_cat_id[i]);
+		cJSON_AddNumberToObject(fqdnObj, "objectId", query_obj->fqdn_user.group_id[i]);
 	}
 
 	for(i=0; i<query_obj->fqdn_builtin.fqdn_cat_num; i++)
 	{
 		fqdnObj=cJSON_CreateObject();
 		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "categoryId", query_obj->fqdn_builtin.fqdn_cat_id[i]);
+		cJSON_AddNumberToObject(fqdnObj, "objectId", query_obj->fqdn_builtin.group_id[i]);
 	}
 }
 
@@ -2093,7 +2093,7 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 	const char *table_name=NULL;
 
 	const char *conjunction_table_name_map[] = {"TSG_SECURITY_COMPILE_CONJUNCTION", "PXY_CTRL_COMPILE_CONJUNCTION", "TRAFFIC_SHAPING_COMPILE_CONJUNCTION",
-												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION"};
+												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION", "MONITOR_COMPILE_CONJUNCTION"};
 
 	table_name = conjunction_table_name_map[compile_type_id];
 	table_id=g_policy_rt->compile_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
@@ -2102,8 +2102,8 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 		return table_id;
 	}
 
-	const char *plugin_table_name_map[] = {"TSG_SECURITY_COMPILE_PLUGIN", "PXY_CTRL_COMPILE_PLUGIN", "TRAFFIC_SHAPING_COMPILE_PLUGIN", 
-											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN"};
+	const char *plugin_table_name_map[] = {"TSG_SECURITY_COMPILE_PLUGIN", "PXY_CTRL_COMPILE_PLUGIN", "TRAFFIC_SHAPING_COMPILE_PLUGIN",
+											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN", "MONITOR_COMPILE_PLUGIN"};
 
 	table_name = plugin_table_name_map[compile_type_id];
 	table_id = g_policy_rt->plugin_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
