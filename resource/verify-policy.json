@@ -1,30 +1,64 @@
 {
     "compile_table": "PXY_CTRL_COMPILE",
-    "group_table": "PXY_CTRL_GROUP",
+    "group2compile_table": "GROUP_PXY_CTRL_COMPILE_RELATION",
+    "group2group_table": "GROUP_GROUP_RELATION",
     "rules": [
        {
             "compile_id": 1021,
             "service": 1,
             "action": 48,
             "do_blacklist": 1,
-						"do_log": 1,
+	        "do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.baidu.com/index.html\"}",
-	    "is_valid": "yes",
+	        "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
+	        "is_valid": "yes",
             "groups": [
                 {
+	                "virtual_table":"ATTR_HTTP_URL",
+                    "group_name":"http_url",
+                    "group_id":101,
+                    "not_flag":0,
                     "regions": [
                         {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
+                            "table_name": "TSG_OBJ_URL",
+                            "table_type": "expr",
                             "table_content": {
-                                "keywords": "www.rbc.ru",
+                                "keywords": "baidu.com",
                                 "expr_type": "regex",
                                 "match_method": "sub",
                                 "format": "uncase plain"
                             }
                         }
                     ]
+                },
+				{
+					"virtual_table":"ATTR_APP_ID",
+                    "group_name":"app_id",
+					"group_id":201,
+					"not_flag":0
+                },
+		        {
+                    "not_flag": 0,
+                    "group_id": 301,
+                    "group_name":"ipv4_addr",
+                    "virtual_table": "ATTR_SOURCE_ADDR",
+                    "regions": [
+                        {
+                            "table_type": "ip_plus",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.55.4",
+                                "ip2": "192.168.55.4",
+                                "port_format": "range",
+                                "port1": "80",
+                                "port2": "80",
+                                "protocol": -1
+                            }
+                        }
+                    ] 
                 }
             ]
         },
@@ -33,24 +67,15 @@
             "service": 1,
             "action": 48,
             "do_blacklist": 1,
-						"do_log": 1,
+			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\",\"html_profile\":101}",
+            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
             "is_valid": "yes",
             "groups": [
                 {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "bing.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
+					"group_name":"http_url",
+					"virtual_table":"ATTR_HTTP_URL"
                 }
             ]
         },
@@ -61,16 +86,20 @@
             "do_blacklist": 1,
 			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\",\"html_profile\":102}",
-            "is_valid": "yes",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"邮箱\",\"replace_with\":\"test\"}]}",
+			"is_valid": "yes",
             "groups": [
                 {
+					"virtual_table":"ATTR_HTTP_HOST_VIRTUAL",
+					"group_name":"http_fqdn",
+					"group_id":102,
+					"not_flag":0,
                     "regions": [
                         {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
+                            "table_name": "TSG_OBJ_FQDN",
+                            "table_type": "expr",
                             "table_content": {
-                                "keywords": "pc.wps.cn",
+                                "keywords": "www.126.com",
                                 "expr_type": "regex",
                                 "match_method": "sub",
                                 "format": "uncase plain"
@@ -85,24 +114,15 @@
             "service": 1,
             "action": 48,
             "do_blacklist": 1,
-						"do_log": 1,
+			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"比特币\",\"replace_with\":\"硬币\"}]}",
+            "user_region":"{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"账号登录\",\"replace_with\":\"Login\"}]}",
             "is_valid": "yes",
             "groups": [
                 {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "edu.csdn.net/course/detail/6998",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
+					"group_name":"http_fqdn",
+					"virtual_table":"ATTR_HTTP_HOST",
+					"not_flag":0 
                 }
             ]
         },
@@ -113,22 +133,13 @@
             "do_blacklist": 1,
 			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"hijack\",\"hijack_profile\":201}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"会员\",\"replace_with\":\"用户\"}]}",
             "is_valid": "yes",
             "groups": [
                 {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "www.wireshark.org/download/win32/WiresharkPortable_2.6.8.paf.exe",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
+					"group_name":"http_fqdn",
+					"virtual_table":"ATTR_DOH_QNAME",
+					"not_flag":0 
                 }
             ]
         },
@@ -137,25 +148,50 @@
             "service": 1,
             "action": 48,
             "do_blacklist": 1,
-						"do_log": 1,
+			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"hijack\",\"hijack_profile\":201}",
-            "is_valid": "yes",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\"}",
+			"is_valid": "yes",
             "groups": [
                 {
+				    "virtual_table":"ATTR_HTTP_REQ_HDR",
+				    "group_name":"http_signature_ua",
+				    "group_id":103,
+					"not_flag":0,
                     "regions": [
                         {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
+                            "table_name": "TSG_OBJ_HTTP_SIGNATURE",
+                            "table_type": "expr_plus",
                             "table_content": {
-                                "keywords": "www.downcc.com/ajax.asp",
-                                "expr_type": "regex",
+								"district": "User-Agent",
+                                "keywords": "Chrome",
+                                "expr_type": "none",
                                 "match_method": "sub",
                                 "format": "uncase plain"
                             }
                         }
                     ]
-                }
+                },
+				{
+					
+		            "virtual_table":"ATTR_HTTP_REQ_HDR",
+					"group_name":"http_signature_cookie",
+					"group_id":104,
+		            "not_flag":0,
+		            "regions": [
+						{
+							"table_name": "TSG_OBJ_HTTP_SIGNATURE",
+							"table_type": "expr_plus",
+		                    "table_content": {
+								"district": "Cookie",
+                                "keywords": "uid=12345678",
+                                "expr_type": "none",
+                                "match_method": "sub",
+                                "format": "uncase plain"
+                            }
+		                }	                    
+		            ]
+		        }      
             ]
         },
 		{
@@ -165,23 +201,27 @@
             "do_blacklist": 1,
 			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"hijack\",\"hijack_profile\":202}",
-            "is_valid": "yes",
+            "user_region": "test",
+			"is_valid": "yes",
             "groups": [
                 {
+					"virtual_table":"ATTR_HTTP_URL",
+					"group_name":"http_url_bing",
+					"group_id": 105,
+					"not_flag":0,
                     "regions": [
                         {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
+                            "table_name": "TSG_OBJ_URL",
+                            "table_type": "expr",
                             "table_content": {
-                                "keywords": "dldir1.qq.com/foxmail/windows/FoxmailSetup_7.2.10.151.exe",
+                                "keywords": "bing.com",
                                 "expr_type": "regex",
                                 "match_method": "sub",
                                 "format": "uncase plain"
                             }
                         }
                     ]
-                }
+                }	
             ]
         },
 		{
@@ -189,134 +229,98 @@
             "service": 1,
             "action": 48,
             "do_blacklist": 1,
-						"do_log": 1,
+			"do_log": 1,
             "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"insert\",\"insert_profile\":302}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\"}",
             "is_valid": "yes",
             "groups": [
-                {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "mirror.hoster.kz/centos",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-		{
-            "compile_id": 1029,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-            "do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"insert\",\"insert_profile\":303,\"position\":\"after-page-load\"}",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "100wa.com/music",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-		{
-            "compile_id": 1030,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-            "do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"insert\",\"insert_profile\":303,\"position\":\"before-page-load\"}",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "www.youku.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-		{
-            "compile_id": 1031,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-						"do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_req_uri\",\"find\":\"(?<=\\\\\\?|^|&)q=([^&|^#]*)(?=&|$)\",\"replace_with\":\"q=find\"},{\"search_in\":\"http_req_uri\",\"find\":\"(?<=\\\\\\?|^|&)ei=([^&|^#]*)(?=&|$)\",\"replace_with\":\"ei=chaxun\"}]}",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "regions": [
-                        {
-                            "table_name": "PXY_CTRL_HTTP_URL",
-                            "table_type": "string",
-                            "table_content": {
-                                "keywords": "www.google.com/search?",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
+				{
+					"group_name":"http_url_bing",
+					"virtual_table":"ATTR_HTTP_URL"
                 }
             ]
         }
    ],
     "plugin_table": [
         {
-            "table_name": "PXY_PROFILE_RESPONSE_PAGES",
+            "table_name": "TSG_PROFILE_TRAFFIC_MIRROR",
             "table_content": [
-                "101\t404\thtml\t./resource/pangu/policy_file/404.html\t1",
-                "102\tHTTP403\ttemplate\t./resource/pangu/HTTP403.html\t1"
+                "1234\ttest-traffic-mirror\t[1,2,3,4,5,6,7,8,9]\t1"
+            ]
+        },
+        {
+            "table_name": "TSG_PROFILE_RESPONSE_PAGES",
+            "table_content": [
+                "101\t404\thtml\t./resource/pangu/policy_file/404.html\t1"
             ]
         },
         {
             "table_name": "PXY_PROFILE_HIJACK_FILES",
             "table_content": [
-                "201\tchakanqi\tchakanqi-947KB.exe\tapplication/x-msdos-program\t./resource/pangu/policy_file/chakanqi-947KB.exe\t1",
-                "202\tWPS8648\tWPS8648-132M.exe\tapplication/x-msdos-program\t./resource/pangu/policy_file/WPS8648-132M.exe\t1"
+                "201\tchakanqi\tchakanqi-947KB.exe\tapplication/x-msdos-program\t./resource/pangu/policy_file/chakanqi-947KB.exe\t1"
             ]
         },
 				{
             "table_name": "PXY_PROFILE_INSERT_SCRIPTS",
             "table_content": [
-                "301\ttime\tjs\t./resource/pangu/policy_file/time.js\tbefore_page_load\t1",
-                "302\tu1\tcss\t./resource/pangu/policy_file/u1.css\tbefore_page_load\t1",
-                "303\tu1\tjs\t./resource/pangu/policy_file/alert.js\tbefore_page_load\t1"
+                "301\ttime\tjs\t./resource/pangu/policy_file/time.js\tbefore_page_load\t1"
             ]
         },
-				{
-            "table_name": "TSG_SECURITY_COMPILE",
+		{		
+            "table_name": "PXY_PROFILE_DECRYPTION",
             "table_content": [
-                "0\t0\t2\t1\t1\t{}\t{\"protocol\":\"SSL/HTTP\",\"keyring\":765,\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":1,\"cert_pinning\":1,\"protocol_errors\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":0},\"fail_action\":\"pass-through\"},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"ssl3\",\"mirror_client\":1,\"allow_http2\":1},\"decrypt_mirror\":{\"enable\":0}}\t1\t2",
-                "1\t0\t2\t1\t1\t{}\t{\"protocol\":\"SSL/HTTP\",\"keyring\":0,\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":1,\"cert_pinning\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":1},\"fail_action\":\"pass-through\"},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"tls13\",\"mirror_client\":1},\"decrypt_mirror\":{\"enable\":1,\"mirror_profile\":4}}\t1\t2"
+                "0\ttest\t{\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":1,\"cert_pinning\":1,\"protocol_errors\":1,\"trusted_root_cert_is_not_installed_on_client\":1},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"ssl3\",\"mirror_client\":1,\"allow_http2\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":0},\"fail_action\":\"pass-through\"}}\t1",
+                "3\ttest\t{\"dynamic_bypass\":{\"ev_cert\":1,\"cert_transparency\":1,\"mutual_authentication\":1,\"cert_pinning\":1,\"protocol_errors\":1,\"trusted_root_cert_is_not_installed_on_client\":0},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"tls13\",\"mirror_client\":1,\"allow_http2\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":1},\"fail_action\":\"fail-close\"}}\t1",
+                "4\ttest\t{\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":0,\"cert_pinning\":0,\"protocol_errors\":0,\"trusted_root_cert_is_not_installed_on_client\":0},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"ssl3\",\"mirror_client\":0,\"allow_http2\":0},\"certificate_checks\":{\"approach\":{\"cn\":0,\"issuer\":0,\"self-signed\":0,\"expiration\":0},\"fail_action\":\"pass-through\"}}\t1"
+            ]
+        },
+		{
+            "table_name": "PXY_INTERCEPT_COMPILE",
+            "table_content": [
+                "0\t0\t2\t1\t1\t{}\t{\"vsys_id\":1,\"protocol\":\"SSL\",\"keyring_for_trusted\":765,\"keyring_for_untrusted\":10,\"decryption\":0,\"tcp_option_profile\":1,\"traffic_mirror\":{\"enable\":0}}\t1\t1\t2",
+                "255119\t0\t2\t1\t1\t{}\t{\"vsys_id\":1,\"protocol\":\"SSL\",\"keyring_for_trusted\":1,\"keyring_for_untrusted\":10,\"decryption\":0,\"tcp_option_profile\":1,\"traffic_mirror\":{\"enable\":1,\"mirror_profile\":1234}}\t1\t1\t2"
+            ]
+        },
+        {
+            "table_name": "SERVICE_CHAINING_COMPILE",
+            "table_content": [
+                "1\t0\t2\t1\t1\t{}\t{\"targeted_traffic\":\"raw\",\"sff_profiles\":[1]}\t1\t2",
+                "2\t0\t2\t1\t1\t{}\t{\"targeted_traffic\":\"decrypted\",\"sff_profiles\":[1]}\t1\t2"
+            ]
+        },
+        {
+            "table_name": "PXY_PROFILE_TCP_OPTION",
+            "table_content": [
+                "1\t0\t0\t{\"tcp_maxseg\":{\"enable\":0,\"maxseg\":1500},\"nodelay\":1,\"keep_alive\":{\"enable\":1,\"tcp_keepcnt\":8,\"tcp_keepidle\":30,\"tcp_keepintvl\":15},\"ttl\":70,\"user_timeout\":600}\t{\"tcp_maxseg\":{\"enable\":0,\"maxseg\":1500},\"nodelay\":1,\"keep_alive\":{\"enable\":1,\"tcp_keepcnt\":8,\"tcp_keepidle\":30,\"tcp_keepintvl\":15},\"ttl\":75,\"user_timeout\":600}\t1"
+            ]
+        },
+        {
+            "table_name": "PXY_SSL_FINGERPRINT",
+            "table_content": [
+                "1\t599f223c2c9ee5702f5762913889dc21\t0\t1",
+                "2\teb149984fc9c44d85ed7f12c90d818be\t1\t0",
+                "3\te6573e91e6eb777c0933c5b8f97f10cd\t1\t1"
+            ]
+        },
+		{
+            "table_name": "APP_ID_DICT",
+            "table_content": [
+	            "67\thttp\t0\tnull\tnetworking\tinfrastructure\tnetwork-protocol\t3\tused-by-malware,vulnerability,widely-used\tnull\tnull\t{\"method\":\"drop\",\"after_n_packets\":0,\"send_icmp_unreachable\":1,\"send_tcp_reset\":1}\t0\t60\t120\t30\t30\t201\t1",
+                "68\thttps\t0\tnull\tnetworking\tinfrastructure\tnetwork-protocol\t3\tused-by-malware,vulnerability,widely-used\tnull\tnull\t{\"method\":\"rate_limit\",\"bps\":1000}\t0\t0\t0\t0\t0\t68000\t1"
+            ]
+        },
+        {
+            "table_name": "TSG_FQDN_CATEGORY_BUILT_IN",
+            "table_content": [
+                "0\t1\t126.com\t1\t601\t1",
+                "1\t2\tbaidu.com\t1\t602\t1"
+            ]
+        },
+        {
+            "table_name": "TSG_FQDN_CATEGORY_USER_DEFINED",
+            "table_content": [
+                "0\t3\t126.com\t1\t701\t1",
+                "1\t4\tbaidu.com\t1\t702\t1"
             ]
         }
     ]

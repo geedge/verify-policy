@@ -816,14 +816,14 @@ void fqdn_cat_table_free(struct fqdn_category_ctx *fqdn_cat)
 
 void compile_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
-	int ret=0;
+	int ret=0, group_num=0;
 	int config_id=0, service_id=0, action=0;
 	int do_log=0,do_blacklist=0,is_valid=0;
 	char effective_range[VERIFY_ARRAY_MAX]={0};
 	char srv_def_large[VERIFY_STRING_MAX]={0};
 
-	ret=sscanf(table_line, "%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d", &config_id, &service_id, &action, &do_blacklist, &do_log,effective_range,srv_def_large, &is_valid);
-	if(ret!=8)
+	ret=sscanf(table_line, "%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d", &config_id, &service_id, &action, &do_blacklist, &do_log,effective_range,srv_def_large,&group_num,&is_valid);
+	if(ret!=9)
 	{
 		mesa_runtime_log(RLOG_LV_FATAL, "Security compile table parse failed, ret:%d, %s", ret, table_line);
 		return;
@@ -1721,8 +1721,7 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 	int table_id = request->table_id;
 	const char *value = request->keyword;
 	const char * str_field_name = request->district;
-	scan_ret = maat_state_set_scan_district(ctx->scan_mid, g_policy_rt->scan_table_id[table_id], str_field_name, strlen(str_field_name));
-	assert(scan_ret == 0);
+	maat_state_set_scan_district(ctx->scan_mid, g_policy_rt->scan_table_id[table_id], str_field_name, strlen(str_field_name));
 	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								value, strlen(value), ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
 		 					    &n_hit_result, ctx->scan_mid);
@@ -1754,7 +1753,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	size_t n_hit_result=0;
 
 	int table_id = request->table_id;
-	int protocol = 0;
+	int protocol = request->protocol;
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
 		if(0 == strcasecmp(request->attri_name, "source"))
@@ -2192,6 +2191,10 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			}
 		}
 		ret = maat_app_dict_table_init(POLICY_APP_DI_DICT, vsys_id, app_dict_table_new_cb, app_dict_table_free_cb, app_dict_table_dup_cb);
+		if(ret<0)
+		{
+			goto error_out;
+		}
 	}
 	ret = 0;
 error_out:

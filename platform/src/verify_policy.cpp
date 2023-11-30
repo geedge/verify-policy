@@ -263,6 +263,11 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	if(item && item->type==cJSON_String)
 	{
 		policy_query->verify_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
+		if(policy_query->verify_object[curr_id].table_id == __TSG_OBJ_MAX)
+		{
+			mesa_runtime_log(RLOG_LV_FATAL, "Get table id failed form table name:%s", item->valuestring);
+			return xret;
+		}
 	}
 
 	attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
