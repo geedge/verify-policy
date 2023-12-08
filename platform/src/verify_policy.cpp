@@ -138,6 +138,8 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_IP_DST_ASN]="ATTR_DESTINATION_ASN";
 	table_name[TSG_OBJ_IP_SRC_LOCATION]="ATTR_SOURCE_LOCATION";
 	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
+	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_DESTINATION_SERVER_FQDN";
+	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_DESTINATION_SERVER_FQDN_CAT";
 
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
