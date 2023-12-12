@@ -1303,6 +1303,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 					topObject=cJSON_CreateObject();
 					cJSON_AddNumberToObject(topObject, "objectId", ctx->hit_path[j].top_group_id);
 					cJSON_AddNumberToObject(topObject, "notFlag", ctx->hit_path[j].NOT_flag);
+					cJSON_AddNumberToObject(topObject, "nthClause", ctx->hit_path[j].clause_index);
 					result_object_id[j] = ctx->hit_path[j].top_group_id;
 					get_attributes_table_name(verify_policy->verify_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
 					cJSON_AddItemToArray(topObjectList, topObject);
@@ -1555,12 +1556,12 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 		{
 	    	ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &query_obj->fqdn_user.group_id[i], 1,
 							    result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
-			if(ret>0)
+			if(ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			if(ret >0)
+			if(ret >= MAAT_SCAN_OK)
 			{
 				query_obj->nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);;
 				ctx->n_read=n_read;
@@ -1608,7 +1609,7 @@ finish:
 	return hit_cnt_fqdn;
 }
 
-int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit_cnt, unsigned int thread_id, int vsys_id, struct policy_scan_ctx * ctx, struct request_query_obj *query_obj)
+int policy_verify_scan_tunnel(long long *result, struct ip_addr *sip, int hit_cnt, unsigned int thread_id, int vsys_id, struct policy_scan_ctx * ctx, struct request_query_obj *query_obj)
 {
 #define	TUNNEL_BOOL_ID_MAX	128
 #define	TUNNEL_CATALOG_MAX	128
@@ -1633,12 +1634,12 @@ int policy_verify_scan_tunnel_id(long long *result, struct ip_addr *sip, int hit
 	{
 		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &tunnel_catalog[i]->group_id, 1,
 							    result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
-		if(scan_ret>= MAAT_SCAN_HALF_HIT)
+		if(scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_tunnel+=n_hit_result;
 		}
-		
-		if(scan_ret >= MAAT_SCAN_HALF_HIT)
+
+		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			query_obj->nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1751,7 +1752,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	int protocol = request->protocol;
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
-		if(0 == strcasecmp(request->attri_name, "source"))
+		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
 			scan_ret = maat_scan_ipv4(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								      request->ip_addr->v4->saddr, request->ip_addr->v4->source, protocol, ctx->result+hit_cnt+hit_cnt_ip,
@@ -1761,7 +1762,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 				hit_cnt_ip += n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->attri_name, "destination"))
+		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
 		{
 			scan_ret = maat_scan_ipv4(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								      request->ip_addr->v4->daddr, request->ip_addr->v4->dest, protocol,ctx->result+hit_cnt+hit_cnt_ip,
@@ -1781,7 +1782,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	}
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV6)
 	{
-		if(0 == strcasecmp(request->attri_name, "source"))
+		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
 			scan_ret = maat_scan_ipv6(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								      request->ip_addr->v6->saddr, request->ip_addr->v6->source, protocol,ctx->result+hit_cnt+hit_cnt_ip,
@@ -1791,7 +1792,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 				hit_cnt_ip += n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->attri_name, "destination"))
+		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
 		{
 			scan_ret = maat_scan_ipv6(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								     request->ip_addr->v6->daddr, request->ip_addr->v6->dest, protocol, ctx->result+hit_cnt+hit_cnt_ip,
@@ -1826,9 +1827,11 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 	{
 		case TSG_OBJ_SOURCE_ADDR:
 		case TSG_OBJ_DESTINATION_ADDR:
+		case TSG_OBJ_INTERNAL_ADDR:
+		case TSG_OBJ_EXTERNAL_ADDR:
 			if(request->ip_addr == NULL)
 			{
-				break;
+				goto decide;
 			}
 			struct ip_addr dest_ip, source_ip;
 			ip_addr_to_address(request->ip_addr, &dest_ip, &source_ip);
@@ -1852,8 +1855,8 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 		case TSG_OBJ_TUNNEL:
 			memset(&dest_ip, 0, sizeof(dest_ip));
 			memset(&source_ip, 0, sizeof(source_ip));
-			ip_addr_to_address(request->endpoint, &dest_ip, &source_ip);
-			scan_ret = policy_verify_scan_tunnel_id(ctx->result, &source_ip, hit_cnt, ctx->thread_id, vsys_id,  ctx, request);
+			ip_addr_to_address(request->ip_addr, &dest_ip, &source_ip);
+			scan_ret = policy_verify_scan_tunnel(ctx->result, &source_ip, hit_cnt, ctx->thread_id, vsys_id,  ctx, request);
 			if(scan_ret)
 			{
 				hit_cnt+=scan_ret;
@@ -2080,6 +2083,8 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_DESTINATION_SERVER_FQDN";
 	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_DESTINATION_SERVER_FQDN_CAT";
+	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_ADDR";
+	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_ADDR";
 	return;
 }
 

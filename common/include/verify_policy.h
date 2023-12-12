@@ -83,6 +83,8 @@ enum tsg_obj_table
 	TSG_OBJ_IP_DST_LOCATION,
     TSG_OBJ_DST_SERVER_FQDN,
     TSG_OBJ_DST_SERVER_FQDN_CAT,
+    TSG_OBJ_INTERNAL_ADDR,
+    TSG_OBJ_EXTERNAL_ADDR,
     __TSG_OBJ_MAX
 };
 
@@ -126,7 +128,6 @@ struct request_query_obj
 
     int protocol;
 	struct ipaddr *ip_addr;
-    struct ipaddr *endpoint;
 
 	char *subscriberid;
 

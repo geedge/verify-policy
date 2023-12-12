@@ -140,6 +140,8 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_DESTINATION_SERVER_FQDN";
 	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_DESTINATION_SERVER_FQDN_CAT";
+	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_ADDR";
+	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_ADDR";
 
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
@@ -152,7 +154,21 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	return i;
 }
 
-struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1, const char *serverIp1, unsigned int serverPort1, int addr_type)
+int match_ip_attribute_name(char *attri_name)
+{
+	size_t i = 0;
+	const char *attribute_name_map[] ={"source", "destination", "tunnel_endpointa", "tunnel_endpointb", "internal", "external"};
+	for(i = 0; i < sizeof(attribute_name_map)/sizeof(attribute_name_map[0]); i++)
+	{
+		if(0 == strcasecmp(attri_name, attribute_name_map[i]))
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1, const char *serverIp1, unsigned int serverPort1, int addr_type, const char *attributeName)
 {
 	struct ipaddr *ip_addr = ALLOC(struct ipaddr, 1);
 	if(addr_type == 4)
@@ -175,7 +191,7 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=htons(serverPort1);
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "[I]    attributeName = ip, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d",
+	mesa_runtime_log(RLOG_LV_INFO, "[I]    attributeName = %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d", attributeName,
 		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
 
 	return ip_addr;
@@ -217,10 +233,10 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName)
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol)
 {
 	cJSON* item = NULL;
-	int addr_type=0, __attribute__((__unused__))protocol=0;
+	int addr_type=0;
 	const char *Ip=NULL;
 	unsigned int Port=0;
 
@@ -229,19 +245,20 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 	item = cJSON_GetObjectItem(attributeValue,"port");
 	if(item && item->type==cJSON_String) Port =atoi(item->valuestring);
 	item = cJSON_GetObjectItem(attributeValue,"protocol");
-	if(item && item->type==cJSON_Number) protocol = item->valueint;
+	if(item && item->type==cJSON_Number) *protocol = item->valueint;
 	item=cJSON_GetObjectItem(attributeValue,"addrType");
 	if(item && item->type==cJSON_Number) addr_type = item->valueint;
 
 	struct ipaddr *ip_addr = NULL;
-	if(strcasecmp(attributeName, "source") == 0)
+	if(strcasecmp(attributeName, "source") == 0 || strcasecmp(attributeName, "internal") == 0 ||
+	   strcasecmp(attributeName, "tunnel_endpointa") == 0 || strcasecmp(attributeName, "tunnel_endpointb") == 0)
 	{
-		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type);
+		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, attributeName);
 	}
 
-	if(strcasecmp(attributeName, "destination") == 0)
+	if(strcasecmp(attributeName, "destination") == 0 || strcasecmp(attributeName, "external") == 0)
 	{
-		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type);
+		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, attributeName);
 	}
 	return ip_addr;
 }
@@ -277,18 +294,10 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	{
 		goto finish;
 	}
-	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "source") ||
-	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "destination"))
-	{
-		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name);
-		policy_query->verify_object[curr_id].protocol= cJSON_GetObjectItem(attributeValue , "protocol")->valueint;
-		goto end;
-	}
 
-	if(0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "tunnel_endpointa") ||
-	   0 == strcasecmp(policy_query->verify_object[curr_id].attri_name, "tunnel_endpointb"))
+	if(match_ip_attribute_name(policy_query->verify_object[curr_id].attri_name) >= 0)
 	{
-		policy_query->verify_object[curr_id].endpoint = get_ip_from_json(attributeValue, "source");
+		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name, &(policy_query->verify_object[curr_id].protocol));
 		goto end;
 	}
 
@@ -461,17 +470,10 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 				goto free;
 			}
 			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], ctx);
-			if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "source") ||
-			   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "destination"))
+			if(match_ip_attribute_name(verify_policy->verify_object[i].attri_name) >= 0)
 			{
 				ipaddr_free(verify_policy->verify_object[i].ip_addr);
 			}
-			if(0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointa") ||
-			   0 == strcasecmp(verify_policy->verify_object[i].attri_name, "tunnel_endpointb"))
-			{
-				ipaddr_free(verify_policy->verify_object[i].endpoint);
-			}
-
 			i++;
 		}
 		http_hit_policy_list(verify_policy, i, hit_cnt, data_obj, ctx);
