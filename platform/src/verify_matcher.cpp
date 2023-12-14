@@ -1392,8 +1392,13 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		
-		if(scan_ret >= MAAT_SCAN_HALF_HIT)
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_DST_LOCATION], result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_ip+=n_hit_result;
+		}
+		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 			ctx->ip_ctx.Nth_scan[1] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1425,12 +1430,17 @@ int ip_location_scan(long long *result, struct ip_addr *sip, struct ip_addr *dip
 		scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_SRC_LOCATION],
 									buff, strlen(buff),result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
 									&n_hit_result, ctx->scan_mid);
-		if(scan_ret>0)
+		if(scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
-		
-		if(scan_ret >= MAAT_SCAN_HALF_HIT)
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_SRC_LOCATION], result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_ip+=n_hit_result;
+		}
+		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
 			ctx->ip_ctx.Nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1477,7 +1487,13 @@ int ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip, int
 								    result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
 								    &n_hit_result, ctx->scan_mid);
 
-		if(scan_ret>0)
+		if(scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_ip+=n_hit_result;
+		}
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_DST_ASN], result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
@@ -1491,7 +1507,13 @@ int ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip, int
 								   ip_asn_client->asn, strlen(ip_asn_client->asn),
 								   result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
 								   &n_hit_result, ctx->scan_mid);
-		if(scan_ret>0)
+		if(scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_ip+=n_hit_result;
+		}
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_SRC_ASN], result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_ip+=n_hit_result;
 		}
@@ -1507,7 +1529,7 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 {
 	int j=0, k=0;
 	size_t n_hit_result=0;
-	int n_read=0, hit_path_cnt=0;
+	int hit_path_cnt=0;
 	int i=0,ret=0, hit_cnt_fqdn=0;
 	struct fqdn_category_ctx *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
 
@@ -1560,21 +1582,13 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			if(ret >= MAAT_SCAN_OK)
+			ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
+								  	  result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
+			if (ret == MAAT_SCAN_HIT)
 			{
-				query_obj->nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);;
-				ctx->n_read=n_read;
-				hit_path_cnt++;
+				hit_cnt_fqdn+=n_hit_result;
 			}
-		}
-
-		ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
-								  result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
-                          	      &n_hit_result, ctx->scan_mid);
-		if (ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_fqdn += n_hit_result;
+			hit_path_cnt++;
 		}
 		goto finish;
 	}
@@ -1588,20 +1602,13 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			if(ret>0)
+			ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], result+hit_cnt+hit_cnt_fqdn, 
+								      MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
+			if (ret == MAAT_SCAN_HIT)
 			{
-				query_obj->nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
-				ctx->n_read=n_read;
-				hit_path_cnt++;
+				hit_cnt_fqdn+=n_hit_result;
 			}
-		}
-		ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
-								  result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn,
-                          	      &n_hit_result, ctx->scan_mid);
-		if (ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_fqdn += n_hit_result;
+			hit_path_cnt++;
 		}
 	}
 finish:
@@ -1638,7 +1645,12 @@ int policy_verify_scan_tunnel(long long *result, struct ip_addr *sip, int hit_cn
 		{
 			hit_cnt_tunnel+=n_hit_result;
 		}
-
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL],result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel,
+                          			   &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_tunnel+=n_hit_result;
+		}
 		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
@@ -1674,6 +1686,12 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 	{
 		hit_cnt_app_id+=n_hit_result;
 	}
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
+									&n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_app_id+=n_hit_result;
+	}
 	app_id_dict_free(app_dict);
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1694,6 +1712,12 @@ static int policy_verify_scan_flag(struct request_query_obj *request, struct pol
 							flag, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
 						    &n_hit_result, ctx->scan_mid);
 	if(scan_ret==MAAT_SCAN_HIT)
+	{
+		hit_cnt_flag+=n_hit_result;
+	}
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
+								   &n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_flag+=n_hit_result;
 	}
@@ -1735,7 +1759,6 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 			hit_cnt_hdr += n_hit_result;
 		}
 	}
-
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
@@ -1759,7 +1782,13 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 								      MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,&n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
-				hit_cnt_ip += n_hit_result;
+				hit_cnt_ip+=n_hit_result;
+			}
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  	  &n_hit_result, ctx->scan_mid);
+			if (scan_ret == MAAT_SCAN_HIT)
+			{
+				hit_cnt_ip+=n_hit_result;
 			}
 		}
 		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
@@ -1770,10 +1799,16 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
-				hit_cnt_ip += n_hit_result;
+				hit_cnt_ip+=n_hit_result;
+			}
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  	  &n_hit_result, ctx->scan_mid);
+			if (scan_ret == MAAT_SCAN_HIT)
+			{
+				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(scan_ret >= MAAT_SCAN_HALF_HIT)
+		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1789,7 +1824,13 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 								      MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
-				hit_cnt_ip += n_hit_result;
+				hit_cnt_ip+=n_hit_result;
+			}
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  	  &n_hit_result, ctx->scan_mid);
+			if (scan_ret == MAAT_SCAN_HIT)
+			{
+				hit_cnt_ip+=n_hit_result;
 			}
 		}
 		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
@@ -1799,10 +1840,16 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 								     MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
-				hit_cnt_ip += n_hit_result;
+				hit_cnt_ip+=n_hit_result;
+			}
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+                          			  	  &n_hit_result, ctx->scan_mid);
+			if (scan_ret == MAAT_SCAN_HIT)
+			{
+				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(scan_ret >= MAAT_SCAN_HALF_HIT)
+		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 			request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1913,12 +1960,15 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 	{
 		hit_cnt+=n_hit_result;
 	}
-	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-	if(scan_ret >0)
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
+								   &n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
 	{
-		request->nth_scan[request->nth_scan_num] = maat_state_get_scan_count(ctx->scan_mid);
-		ctx->n_read=n_read;
+		hit_cnt+=n_hit_result;
 	}
+	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+	request->nth_scan[request->nth_scan_num] = maat_state_get_scan_count(ctx->scan_mid);
+	ctx->n_read=n_read;
 decide:
 	ctx->hit_cnt = hit_cnt;
 	return hit_cnt;
