@@ -1543,12 +1543,11 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	{
 		if(i < 8)
 		{
-			if(http_hit_policy_match((int *)(query_obj->fqdn_user.fqdn_cat_id), j, (int)fqdn_cat_user[i]->fqdn_cat_id))
+			if(http_hit_policy_match((int *)(query_obj->fqdn_user.group_id), j, (int)fqdn_cat_user[i]->group_id))
 			{
 				continue;
 			}
-			query_obj->fqdn_user.fqdn_cat_id[i] = fqdn_cat_user[i]->fqdn_cat_id;
-			query_obj->fqdn_user.group_id[i] = fqdn_cat_user[i]->group_id;
+			query_obj->fqdn_user.group_id[j] = fqdn_cat_user[i]->group_id;
 			j++;
 		}
 		fqdn_cat_table_free(fqdn_cat_user[i]);
@@ -1560,12 +1559,11 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	{
 		if(i < 8)
 		{
-			if(http_hit_policy_match((int *)(query_obj->fqdn_builtin.fqdn_cat_id), k, (int)fqdn_cat_built[i]->fqdn_cat_id))
+			if(http_hit_policy_match((int *)(query_obj->fqdn_builtin.group_id), k, (int)fqdn_cat_built[i]->group_id))
 			{
 				continue;
 			}
-			query_obj->fqdn_builtin.fqdn_cat_id[i] = fqdn_cat_built[i]->fqdn_cat_id;
-			query_obj->fqdn_builtin.group_id[i] = fqdn_cat_built[i]->group_id;
+			query_obj->fqdn_builtin.group_id[k] = fqdn_cat_built[i]->group_id;
 			k++;
 		}
 		fqdn_cat_table_free(fqdn_cat_built[i]);

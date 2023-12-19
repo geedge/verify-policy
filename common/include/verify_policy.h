@@ -114,7 +114,6 @@ struct fqdn_category_id
 {
     int fqdn_cat_num;
     long long int group_id[8];
-    unsigned int fqdn_cat_id[8];
 };
 
 struct request_query_obj
