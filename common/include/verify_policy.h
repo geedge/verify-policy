@@ -116,6 +116,8 @@ struct fqdn_category_id
     long long int group_id[8];
 };
 
+#define MERGE_SCAN_NTH 128
+
 struct request_query_obj
 {
 	int table_id;
@@ -130,10 +132,11 @@ struct request_query_obj
 
 	char *subscriberid;
 
-    int nth_scan[256];
-    int nth_scan_num;
-    cJSON* attributes;
+    int merge_nth_scan_num;
+    int exclude_nth_scan[MERGE_SCAN_NTH];
+    int merge_nth_scan[MERGE_SCAN_NTH];
 
+    cJSON* attributes;
     struct fqdn_category_id fqdn_user;
     struct fqdn_category_id fqdn_builtin;
 };
@@ -142,7 +145,7 @@ struct verify_policy_query
 {
     int vsys_id;
 	int compile_table_id;
-	struct request_query_obj verify_object[32];
+	struct request_query_obj request_object[32];
 };
 
 extern struct verify_policy * g_verify_proxy;

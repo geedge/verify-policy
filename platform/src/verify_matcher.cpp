@@ -1159,15 +1159,15 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 	cJSON *histObj=NULL;
 	for(i=0; i< ctx->n_read; i++)
 	{
-		for(j=0; j<=query_obj->nth_scan_num; j++)
+		for(j=0; j<=query_obj->merge_nth_scan_num; j++)
 		{
-			if (query_obj->nth_scan[j] == ctx->hit_path[i].Nth_scan)
+			if (query_obj->merge_nth_scan[j] == ctx->hit_path[i].Nth_scan && query_obj->exclude_nth_scan[j] != 1)
 			{
 				if(ctx->hit_path[i].compile_id > 0)
 				{
 					if(hit_path_is_duplicate(result_hit_path, ctx->hit_path[i], result_cnt))
 					{
-						break;	
+						break;
 					}
 					else
 					{
@@ -1218,9 +1218,9 @@ int get_attributes_table_name(struct request_query_obj *query_obj, int num, int 
 
 	for(i=0; i<num; i++)
 	{
-		for(j=0; j<= query_obj[i].nth_scan_num; j++)
+		for(j=0; j<= query_obj[i].merge_nth_scan_num; j++)
 		{
-			if (query_obj[i].nth_scan[j] == Nth_scan)
+			if (query_obj[i].merge_nth_scan[j] == Nth_scan)
 			{
 				attributeObj=query_obj[i].attributes;
 				subchild = cJSON_GetObjectItem(attributeObj, "tableName");
@@ -1240,7 +1240,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 	bool succeeded = false;
 	size_t rules=0, i=0,j=0;
 	int result_config[MAX_SCAN_RESULT] = {0};
-	
+
 	int vsys_id = verify_policy->vsys_id;
 	int compile_table_id = verify_policy->compile_table_id;
 
@@ -1298,7 +1298,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 					cJSON_AddNumberToObject(topObject, "objectId", ctx->hit_path[j].top_group_id);
 					cJSON_AddNumberToObject(topObject, "notFlag", ctx->hit_path[j].NOT_flag);
 					cJSON_AddNumberToObject(topObject, "nthClause", ctx->hit_path[j].clause_index);
-					get_attributes_table_name(verify_policy->verify_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
+					get_attributes_table_name(verify_policy->request_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
 					cJSON_AddItemToArray(topObjectList, topObject);
 				}
 			}
@@ -1521,7 +1521,7 @@ int ip_asn_scan(long long *result, struct ip_addr* sip, struct ip_addr* dip, int
 int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int hit_cnt, unsigned int thread_id, int vsys_id, struct policy_scan_ctx * ctx, struct request_query_obj *query_obj)
 {
 	int j=0, k=0;
-	size_t n_hit_result=0;
+	size_t n_read=0, n_hit_result=0;
 	int hit_path_cnt=0;
 	int i=0,ret=0, hit_cnt_fqdn=0;
 	struct fqdn_category_ctx *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
@@ -1579,7 +1579,14 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			hit_path_cnt++;
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+			if(ret >= MAAT_SCAN_OK)
+			{
+				query_obj->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);;
+				query_obj->exclude_nth_scan[hit_path_cnt] = 1;
+				ctx->n_read=n_read;
+				hit_path_cnt++;
+			}
 		}
 		goto finish;
 	}
@@ -1593,17 +1600,24 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], result+hit_cnt+hit_cnt_fqdn, 
+			ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], result+hit_cnt+hit_cnt_fqdn,
 								      MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if (ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_fqdn+=n_hit_result;
 			}
-			hit_path_cnt++;
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+			if(ret >= MAAT_SCAN_OK)
+			{
+				query_obj->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+				query_obj->exclude_nth_scan[hit_path_cnt] = 1;
+				ctx->n_read=n_read;
+				hit_path_cnt++;
+			}
 		}
 	}
 finish:
-	query_obj->nth_scan_num = hit_path_cnt;
+	query_obj->merge_nth_scan_num = hit_path_cnt;
 	return hit_cnt_fqdn;
 }
 
@@ -1645,13 +1659,13 @@ int policy_verify_scan_tunnel(long long *result, struct ip_addr *sip, int hit_cn
 		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			query_obj->nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+			query_obj->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
 			ctx->n_read=n_read;
 			hit_path_cnt++;
 		}
 		tunnel_table_free(tunnel_catalog[i]);
 	}
-	query_obj->nth_scan_num = hit_path_cnt;
+	query_obj->merge_nth_scan_num = hit_path_cnt;
 	return hit_cnt_tunnel;
 }
 
@@ -1685,7 +1699,7 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 	}
 	app_id_dict_free(app_dict);
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
 	return hit_cnt_app_id;
 }
@@ -1713,7 +1727,7 @@ static int policy_verify_scan_flag(struct request_query_obj *request, struct pol
 		hit_cnt_flag+=n_hit_result;
 	}
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
 	return hit_cnt_flag;
 }
@@ -1751,7 +1765,7 @@ static int policy_verify_scan_http_hdr(struct request_query_obj *request, struct
 		}
 	}
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-	request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
 	return hit_cnt_hdr;
 }
@@ -1802,7 +1816,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+			request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 			ctx->n_read=n_read;
 		}
 	}
@@ -1843,7 +1857,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 		if(scan_ret >= MAAT_SCAN_OK)
 		{
 			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			request->nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+			request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 			ctx->n_read=n_read;
 		}
 	}
@@ -1958,7 +1972,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 		hit_cnt+=n_hit_result;
 	}
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-	request->nth_scan[request->nth_scan_num] = maat_state_get_scan_count(ctx->scan_mid);
+	request->merge_nth_scan[request->merge_nth_scan_num] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
 decide:
 	ctx->hit_cnt = hit_cnt;

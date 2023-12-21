@@ -273,16 +273,16 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	item = cJSON_GetObjectItem(subchild, "attributeName");
 	if(item && item->type==cJSON_String)
 	{
-		policy_query->verify_object[curr_id].attri_name = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), "attributeName = %s",policy_query->verify_object[curr_id].attri_name);
+		policy_query->request_object[curr_id].attri_name = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), "attributeName = %s",policy_query->request_object[curr_id].attri_name);
 	}
-	policy_query->verify_object[curr_id].attributes=cJSON_Duplicate(subchild, 1);
+	policy_query->request_object[curr_id].attributes=cJSON_Duplicate(subchild, 1);
 
 	item = cJSON_GetObjectItem(subchild, "tableName");
 	if(item && item->type==cJSON_String)
 	{
-		policy_query->verify_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
-		if(policy_query->verify_object[curr_id].table_id == __TSG_OBJ_MAX)
+		policy_query->request_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
+		if(policy_query->request_object[curr_id].table_id == __TSG_OBJ_MAX)
 		{
 			mesa_runtime_log(RLOG_LV_FATAL, "Get table id failed form table name:%s", item->valuestring);
 			return xret;
@@ -295,27 +295,27 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		goto finish;
 	}
 
-	if(match_ip_attribute_name(policy_query->verify_object[curr_id].attri_name) >= 0)
+	if(match_ip_attribute_name(policy_query->request_object[curr_id].attri_name) >= 0)
 	{
-		policy_query->verify_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->verify_object[curr_id].attri_name, &(policy_query->verify_object[curr_id].protocol));
+		policy_query->request_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->request_object[curr_id].attri_name, &(policy_query->request_object[curr_id].protocol));
 		goto end;
 	}
 
 	item = cJSON_GetObjectItem(attributeValue,"district");
 	if(item!=NULL)
 	{
-		policy_query->verify_object[curr_id].district = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->verify_object[curr_id].district);
+		policy_query->request_object[curr_id].district = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->request_object[curr_id].district);
 	}
 
-	if(policy_query->verify_object[curr_id].table_id == TSG_OBJ_APP_ID ||
-	   policy_query->verify_object[curr_id].table_id == TSG_OBJ_FLAG)
+	if(policy_query->request_object[curr_id].table_id == TSG_OBJ_APP_ID ||
+	   policy_query->request_object[curr_id].table_id == TSG_OBJ_FLAG)
 	{
 		item = cJSON_GetObjectItem(attributeValue, "numeric");
 		if(item && item->type==cJSON_Number)
 		{
-			policy_query->verify_object[curr_id].numeric = item->valueint;
-			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %d", policy_query->verify_object[curr_id].numeric);
+			policy_query->request_object[curr_id].numeric = item->valueint;
+			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %d", policy_query->request_object[curr_id].numeric);
 		}
 	}
 	else
@@ -323,8 +323,8 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		item = cJSON_GetObjectItem(attributeValue, "string");
 		if(item!=NULL)
 		{
-			policy_query->verify_object[curr_id].keyword = item->valuestring;
-			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->verify_object[curr_id].keyword);
+			policy_query->request_object[curr_id].keyword = item->valuestring;
+			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->request_object[curr_id].keyword);
 		}
 	}
 	mesa_runtime_log(RLOG_LV_INFO, "[I]    %s", buff);
@@ -469,10 +469,10 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 			{
 				goto free;
 			}
-			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->verify_object[i], ctx);
-			if(match_ip_attribute_name(verify_policy->verify_object[i].attri_name) >= 0)
+			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->request_object[i], ctx);
+			if(match_ip_attribute_name(verify_policy->request_object[i].attri_name) >= 0)
 			{
-				ipaddr_free(verify_policy->verify_object[i].ip_addr);
+				ipaddr_free(verify_policy->request_object[i].ip_addr);
 			}
 			i++;
 		}
@@ -485,7 +485,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 		cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 		for (item = 0; item < i; item++)
 		{
-			http_get_scan_status(&verify_policy->verify_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
+			http_get_scan_status(&verify_policy->request_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
 		}
 		policy_scan_ctx_free(ctx);
 	}
