@@ -2098,10 +2098,10 @@ static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 
 static void doq_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 {
-	table_name[TSG_OBJ_DOH_QNAME]="ATTR_DNS_QNAME";
+	table_name[TSG_OBJ_DNS_QNAME]="ATTR_DNS_QNAME";
 	table_name[TSG_OBJ_DOH_HOST]="ATTR_DOH_HOST";
 	table_name[TSG_OBJ_DOH_HOST_CAT]="ATTR_DOH_HOST_CAT";
-	table_name[TSG_OBJ_DNS_QNAME] = "ATTR_DOH_QNAME";
+	table_name[TSG_OBJ_DOH_QNAME] = "ATTR_DOH_QNAME";
 	table_name[TSG_OBJ_QUIC_SNI] = "ATTR_QUIC_SNI";
 	table_name[TSG_OBJ_QUIC_SNI_CAT] = "ATTR_QUIC_SNI_CAT";
 	return;
