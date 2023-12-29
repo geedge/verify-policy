@@ -997,9 +997,8 @@ static enum policy_action decide_ctrl_action(int vsys_id, int compile_table_id, 
 
 static inline int request_in_fqdn_cat(int table_id)
 {
-	if(table_id==TSG_OBJ_HTTP_HOST || table_id==TSG_OBJ_SSL_SNI || table_id==TSG_OBJ_SSL_CN || table_id==TSG_OBJ_SSL_SAN
-	   || table_id==TSG_OBJ_DNS_QNAME || table_id==TSG_OBJ_QUIC_SNI || table_id==TSG_OBJ_DOH_QNAME || table_id==TSG_OBJ_DOH_HOST
-	   || table_id==TSG_OBJ_DST_SERVER_FQDN)
+	if( table_id==TSG_OBJ_SSL_CN || table_id==TSG_OBJ_SSL_SAN
+	   || table_id==TSG_OBJ_DNS_QNAME || table_id==TSG_OBJ_DOH_QNAME || table_id==TSG_OBJ_DST_SERVER_FQDN)
 	{
 		return 1;
 	}
@@ -2081,14 +2080,10 @@ error_out:
 static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 {
 	table_name[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL";
-	table_name[TSG_OBJ_HTTP_HOST] =  "ATTR_HTTP_HOST";
-	table_name[TSG_OBJ_HTTP_HOST_CAT] = "ATTR_HTTP_HOST_CAT";
 	table_name[TSG_OBJ_HTTP_REQ_HDR] =  "ATTR_HTTP_REQ_HDR";
 	table_name[TSG_OBJ_HTTP_REQ_BODY] =  "ATTR_HTTP_REQ_BODY";
 	table_name[TSG_OBJ_HTTP_RES_HDR] =  "ATTR_HTTP_RES_HDR";
 	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
-	table_name[TSG_OBJ_SSL_SNI] =  "ATTR_SSL_SNI";
-	table_name[TSG_OBJ_SSL_SNI_CAT] = "ATTR_SSL_SNI_CAT";
 	table_name[TSG_OBJ_SSL_CN] =  "ATTR_SSL_CN";
 	table_name[TSG_OBJ_SSL_CN_CAT] = "ATTR_SSL_CN_CAT";
 	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
@@ -2099,11 +2094,7 @@ static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 static void doq_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 {
 	table_name[TSG_OBJ_DNS_QNAME]="ATTR_DNS_QNAME";
-	table_name[TSG_OBJ_DOH_HOST]="ATTR_DOH_HOST";
-	table_name[TSG_OBJ_DOH_HOST_CAT]="ATTR_DOH_HOST_CAT";
 	table_name[TSG_OBJ_DOH_QNAME] = "ATTR_DOH_QNAME";
-	table_name[TSG_OBJ_QUIC_SNI] = "ATTR_QUIC_SNI";
-	table_name[TSG_OBJ_QUIC_SNI_CAT] = "ATTR_QUIC_SNI_CAT";
 	return;
 }
 
