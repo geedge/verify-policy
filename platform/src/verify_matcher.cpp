@@ -1571,12 +1571,15 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 		fqdn_cat_table_free(fqdn_cat_built[i]);
 	}
 	query_obj->fqdn_builtin.fqdn_cat_num  = k < 8 ? k : 8;
+	struct maat_hit_group hit_group;
 
 	if(query_obj->fqdn_user.fqdn_cat_num > 0)
 	{
 		for(i=0; i<query_obj->fqdn_user.fqdn_cat_num; i++)
 		{
-	    	ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &query_obj->fqdn_user.group_id[i], 1,
+			memset(&hit_group, 0, sizeof(hit_group));
+			hit_group.group_id=query_obj->fqdn_user.group_id[i];
+	    	ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
 							    result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if(ret == MAAT_SCAN_HIT)
 			{
@@ -1603,7 +1606,9 @@ int get_fqdn_category_id(long long *result, const char *fqdn, int table_id, int 
 	{
 		for(i=0; i<query_obj->fqdn_builtin.fqdn_cat_num; i++)
 		{
-			ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &query_obj->fqdn_builtin.group_id[i], 1,
+			memset(&hit_group, 0, sizeof(hit_group));
+			hit_group.group_id=query_obj->fqdn_builtin.group_id[i];
+			ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
 							    result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if(ret>0)
 			{
@@ -1639,6 +1644,7 @@ int policy_verify_scan_tunnel(long long *result, struct ip_addr *sip, int hit_cn
 	int i=0,ret=0,n_read=0;
 	int scan_ret=0, hit_cnt_tunnel=0;
 	int hit_path_cnt=0;
+	struct maat_hit_group hit_group;
 	struct tunnel_data_ctx *endpoint_data[TUNNEL_BOOL_ID_MAX];
 
 	ret=maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_TUNNEL_ENDPOINT], sip, (void **)&endpoint_data, TUNNEL_BOOL_ID_MAX);
@@ -1653,7 +1659,9 @@ int policy_verify_scan_tunnel(long long *result, struct ip_addr *sip, int hit_cn
 	ret=maat_bool_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[POLICY_TUNNEL_CATALOG], ctx->bool_id_array, ctx->bool_id_array_idx, (void**)(&tunnel_catalog), TUNNEL_CATALOG_MAX);
 	for(i=0; i<ret && i<TUNNEL_CATALOG_MAX; i++)
 	{
-		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &tunnel_catalog[i]->group_id, 1,
+		memset(&hit_group, 0, sizeof(hit_group));
+		hit_group.group_id=tunnel_catalog[i]->group_id;
+		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &hit_group, 1,
 							    result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
 		if(scan_ret == MAAT_SCAN_HIT)
 		{
@@ -1684,6 +1692,7 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 	int scan_ret=0, hit_cnt_app_id=0;
 	struct app_id_dict *app_dict=NULL;
 	size_t n_hit_result=0;
+	struct maat_hit_group hit_group;
 
 	long long app_id = request->numeric;
 	int table_id = request->table_id;
@@ -1693,8 +1702,9 @@ static int policy_verify_scan_app_id(struct request_query_obj *request, struct p
 	{
 		return 0;
 	}
-
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &app_dict->group_id, 1,
+	memset(&hit_group, 0, sizeof(hit_group));
+	hit_group.group_id=app_dict->group_id;
+    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
 							   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
