@@ -1174,7 +1174,10 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 						result_cnt++;
 					}
 				}
-
+				if(ctx->hit_path[i].item_id < 0)
+				{
+					continue;
+				}
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
 				cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].item_id);
@@ -1239,6 +1242,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 	bool succeeded = false;
 	size_t rules=0, i=0,j=0;
 	int result_config[MAX_SCAN_RESULT] = {0};
+	int result_object_id[512] = {0};
 
 	int vsys_id = verify_policy->vsys_id;
 	int compile_table_id = verify_policy->compile_table_id;
@@ -1286,6 +1290,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 			}
 			cJSON_AddItemToArray(hit_obj, policy_obj);
 			result_config[i] = ctx->hit_rules[i].config_id;
+			memset(result_object_id, 0, sizeof(result_object_id));
 
 			topObjectList=cJSON_CreateArray();
 			cJSON_AddItemToObject(policy_obj, "topObjectList", topObjectList);
@@ -1293,10 +1298,15 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 			{
 				if(ctx->hit_path[j].compile_id > 0 && ctx->hit_path[j].compile_id == ctx->hit_rules[i].config_id)
 				{
+					if(http_hit_policy_match(result_object_id, j, ctx->hit_path[j].top_group_id))
+					{
+						continue;
+					}
 					topObject=cJSON_CreateObject();
 					cJSON_AddNumberToObject(topObject, "objectId", ctx->hit_path[j].top_group_id);
 					cJSON_AddNumberToObject(topObject, "notFlag", ctx->hit_path[j].NOT_flag);
 					cJSON_AddNumberToObject(topObject, "nthClause", ctx->hit_path[j].clause_index);
+					result_object_id[j] = ctx->hit_path[j].top_group_id;
 					get_attributes_table_name(verify_policy->request_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
 					cJSON_AddItemToArray(topObjectList, topObject);
 				}
