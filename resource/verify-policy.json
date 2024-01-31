@@ -42,7 +42,7 @@
                     "not_flag": 0,
                     "group_id": 301,
                     "group_name":"ipv4_addr",
-                    "virtual_table": "ATTR_SOURCE_ADDR",
+                    "virtual_table": "ATTR_SOURCE_IP",
                     "regions": [
                         {
                             "table_type": "ip_plus",

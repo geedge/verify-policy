@@ -77,6 +77,15 @@ enum tsg_obj_table
     TSG_OBJ_DST_SERVER_FQDN_CAT,
     TSG_OBJ_INTERNAL_ADDR,
     TSG_OBJ_EXTERNAL_ADDR,
+    TSG_OBJ_SOURCE_PORT,
+    TSG_OBJ_DESTINATION_PORT,
+    TSG_OBJ_INTERNAL_PORT,
+    TSG_OBJ_EXTERNAL_PORT,
+    TSG_OBJ_IP_PROTOCOL,
+    TSG_OBJ_SSL_ECH,
+    TSG_OBJ_SSL_ESNI,
+    TSG_OBJ_SSL_NO_SNI,
+    TSG_OBJ_TUNNEL_LEVEL,
     __TSG_OBJ_MAX
 };
 
@@ -113,21 +122,15 @@ struct fqdn_category_id
 struct request_query_obj
 {
 	int table_id;
-
     int numeric;
-	char *keyword;
+	char *string;
     char *district;
 	char *attri_name;
-
-    int protocol;
 	struct ipaddr *ip_addr;
-
 	char *subscriberid;
-
     int merge_nth_scan_num;
     int exclude_nth_scan[MERGE_SCAN_NTH];
     int merge_nth_scan[MERGE_SCAN_NTH];
-
     cJSON* attributes;
     struct fqdn_category_id fqdn_user;
     struct fqdn_category_id fqdn_builtin;
@@ -152,5 +155,6 @@ void http_res_hdr_num(void *pem);
 void http_req_hdr_num(void *pem);
 void verify_policy_tunnle_add(void * pme);
 int policy_verify_regex_expression(const char *expression);
+void verify_reload_loglevel();
 
 #endif

@@ -69,7 +69,7 @@ static int load_system_conf(struct verify_policy * verify, const char *profile)
 int tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
-	policy_name[TSG_TABLE_SECURITY] = "tsg_security";
+	policy_name[TSG_TABLE_SECURITY] = "security";
 	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
@@ -93,8 +93,8 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 {
 	const char * table_name[__TSG_OBJ_MAX] ={0};
 
-	table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_ADDR";
-	table_name[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_ADDR";
+	table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP";
+	table_name[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_IP";
 	table_name[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID";
 	table_name[TSG_OBJ_APP_ID] = "ATTR_APP_ID";
 	table_name[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL";
@@ -132,9 +132,18 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
 	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_SERVER_FQDN_CAT";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_ADDR";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_ADDR";
-
+	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
+	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
+	table_name[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT";
+	table_name[TSG_OBJ_DESTINATION_PORT]="ATTR_DESTINATION_PORT";
+	table_name[TSG_OBJ_INTERNAL_PORT]="ATTR_INTERNAL_PORT";
+	table_name[TSG_OBJ_EXTERNAL_PORT]="ATTR_EXTERNAL_PORT";
+	table_name[TSG_OBJ_IP_PROTOCOL]="ATTR_IP_PROTOCOL";
+	table_name[TSG_OBJ_SSL_ECH]="ATTR_SSL_ECH";
+	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
+	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
+	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
+	
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
 	{
@@ -160,7 +169,7 @@ int match_ip_attribute_name(char *attri_name)
 	return -1;
 }
 
-struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1, const char *serverIp1, unsigned int serverPort1, int addr_type, const char *attributeName)
+struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1, const char *serverIp1, unsigned int serverPort1, int addr_type, char *buff, int *protocol)
 {
 	struct ipaddr *ip_addr = ALLOC(struct ipaddr, 1);
 	if(addr_type == 4)
@@ -183,8 +192,8 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=htons(serverPort1);
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "[I]    attributeName = %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type = %d", attributeName,
-		clientIp1, clientPort1, serverIp1, serverPort1, addr_type);
+	mesa_runtime_log(RLOG_LV_INFO, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
+					clientIp1, clientPort1, serverIp1, serverPort1, addr_type, *protocol);
 
 	return ip_addr;
 }
@@ -213,6 +222,10 @@ struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
 
 void ipaddr_free(struct ipaddr *ip_addr)
 {
+	if(ip_addr==NULL)
+	{
+		return;
+	}
 	if(ip_addr->addrtype==ADDR_TYPE_IPV4)
 	{
 		free(ip_addr->v4);
@@ -225,7 +238,7 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol)
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol, char *buff)
 {
 	cJSON* item = NULL;
 	int addr_type=0;
@@ -245,28 +258,69 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 	if(strcasecmp(attributeName, "source") == 0 || strcasecmp(attributeName, "internal") == 0 ||
 	   strcasecmp(attributeName, "tunnel_endpointa") == 0 || strcasecmp(attributeName, "tunnel_endpointb") == 0)
 	{
-		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, attributeName);
+		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, buff, protocol);
 	}
 
 	if(strcasecmp(attributeName, "destination") == 0 || strcasecmp(attributeName, "external") == 0)
 	{
-		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, attributeName);
+		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, buff, protocol);
 	}
 	return ip_addr;
+}
+
+static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff)
+{
+	cJSON* item = NULL;
+	char *string=NULL;
+
+	item = cJSON_GetObjectItem(attributeValue,"port");
+	if(item && item->type==cJSON_String) 
+	{
+		string = item->valuestring;
+	}
+	item = cJSON_GetObjectItem(attributeValue,"protocol");
+	if(item && item->type==cJSON_Number)
+	{
+		*protocol = item->valueint;
+	} 
+	mesa_runtime_log(RLOG_LV_INFO, "[I]   %s, port=%s, protocol=%d", buff, string, *protocol);
+
+	return string;
+}
+
+static inline int match_attributeType_in_numeric(const char *attribute_type, int table_id)
+{
+	if(0 == strcasecmp(attribute_type, "numeric") || 0 == strcasecmp(attribute_type, "flag") || 
+	   0 == strcasecmp(attribute_type, "boolean") || table_id == TSG_OBJ_IP_PROTOCOL)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_policy_query *policy_query)
 {
 	int xret = -1;
+	const char *attribute_type=NULL;
 	char buff[VERIFY_STRING_MAX*2], *p = NULL;
 	cJSON* item = NULL, *attributeValue=NULL;
 
 	p = buff;
+	item = cJSON_GetObjectItem(subchild, "attributeType");
+	if(item && item->type==cJSON_String)
+	{
+		attribute_type = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), "attributeType = %s", attribute_type);
+	}
+
 	item = cJSON_GetObjectItem(subchild, "attributeName");
 	if(item && item->type==cJSON_String)
 	{
 		policy_query->request_object[curr_id].attri_name = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), "attributeName = %s",policy_query->request_object[curr_id].attri_name);
+		p += snprintf(p, sizeof(buff) - (p - buff), ", attributeName = %s",policy_query->request_object[curr_id].attri_name);
 	}
 	policy_query->request_object[curr_id].attributes=cJSON_Duplicate(subchild, 1);
 
@@ -287,9 +341,14 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		goto finish;
 	}
 
-	if(match_ip_attribute_name(policy_query->request_object[curr_id].attri_name) >= 0)
+	if(0 == strcasecmp(attribute_type, "ip"))
 	{
-		policy_query->request_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->request_object[curr_id].attri_name, &(policy_query->request_object[curr_id].protocol));
+		policy_query->request_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->request_object[curr_id].attri_name, &(policy_query->request_object[curr_id].numeric), buff);
+		goto end;
+	}
+	if(0 == strcasecmp(attribute_type, "port"))
+	{
+		policy_query->request_object[curr_id].string = get_port_from_json(attributeValue, &(policy_query->request_object[curr_id].numeric), buff);		
 		goto end;
 	}
 
@@ -300,8 +359,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s",policy_query->request_object[curr_id].district);
 	}
 
-	if(policy_query->request_object[curr_id].table_id == TSG_OBJ_APP_ID ||
-	   policy_query->request_object[curr_id].table_id == TSG_OBJ_FLAG)
+	if(match_attributeType_in_numeric(attribute_type, policy_query->request_object[curr_id].table_id))
 	{
 		item = cJSON_GetObjectItem(attributeValue, "numeric");
 		if(item && item->type==cJSON_Number)
@@ -315,8 +373,8 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		item = cJSON_GetObjectItem(attributeValue, "string");
 		if(item!=NULL)
 		{
-			policy_query->request_object[curr_id].keyword = item->valuestring;
-			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->request_object[curr_id].keyword);
+			policy_query->request_object[curr_id].string = item->valuestring;
+			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->request_object[curr_id].string);
 		}
 	}
 	mesa_runtime_log(RLOG_LV_INFO, "[I]    %s", buff);
@@ -344,6 +402,7 @@ enum verify_type get_verify_type(cJSON* data_json)
 		{
 			q_type = VERIFY_TYPE_REGEX;
 		}
+		mesa_runtime_log(RLOG_LV_INFO, " [I]   verifyType= %s", item->valuestring);
 	}
 	return q_type;
 }
@@ -436,7 +495,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 	{
 		verify_policy->vsys_id = item->valueint;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, " [I]   vsysId= %d", verify_policy->vsys_id);
+	mesa_runtime_log(RLOG_LV_INFO, "[I]   vsysId= %d", verify_policy->vsys_id);
 
 	item = cJSON_GetObjectItem(subitem,"verifySession");
 	if(item == NULL || item->type!=cJSON_Object)
@@ -512,7 +571,6 @@ cJSON *get_query_from_request(const char *data, ssize_t data_len, int thread_id)
 	cJSON_AddItemToObject(policy_obj, "data", data_obj);
 
 	int verify_type=get_verify_type(data_json);
-	mesa_runtime_log(RLOG_LV_INFO, " [I]   verifyType= %d", verify_type);
 	cJSON *item = NULL, *subitem = NULL;
 
 	item = cJSON_GetObjectItem(data_json,"verifyList");
@@ -1004,6 +1062,7 @@ void __signal_handler_cb(int sig)
 		case SIGHUP:
 			mesa_runtime_log(RLOG_LV_INFO, "Reload log config");
             MESA_handle_runtime_log_reconstruction(NULL);
+			verify_reload_loglevel();
             break;
 		case SIGPIPE:
 			break;
