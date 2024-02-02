@@ -90,6 +90,8 @@ struct http_field_name
 	enum http_std_field field_id;
 };
 
+/** Nth_scan: Since there is no virtual table name in the request due to IP location and IP protocol,
+ * the current hit path scan count needs to be recorded to correspond to the virtual table name */
 struct ip_data_ctx
 {
 	char *asn_client;
@@ -98,7 +100,7 @@ struct ip_data_ctx
 	char *organization_server;
 	char *location_client;
 	char *location_server;
-	int Nth_scan[2];
+	int Nth_scan[3];
 };
 
 struct fqdn_category_ctx
@@ -157,14 +159,12 @@ struct policy_scan_ctx
 	int n_read;
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 
-	int req_hdr_num;
-	int res_hdr_num;
+	int ip_protocol_num;
 	int tunnel_endpoint_x;
 	int bool_id_array_idx;
     unsigned long long bool_id_array[256];
-
+	
 	struct ip_data_ctx ip_ctx;
-	int thread_id;
 };
 
 struct verify_policy_rt
@@ -203,23 +203,10 @@ void verify_policy_tunnle_add(void * pme)
 	ctx->tunnel_endpoint_x++;
 }
 
-void http_req_hdr_num(void *pem)
-{
-	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *)pem;
-	ctx->req_hdr_num++;
-}
-
-void http_res_hdr_num(void *pem)
-{
-	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *)pem;
-	ctx->res_hdr_num++;
-}
-
 void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table_id)
 {
 	struct policy_scan_ctx * ctx = ALLOC(struct policy_scan_ctx, 1);
 	ctx->scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], thread_id);
-	ctx->thread_id = (int) thread_id;
 	maat_state_set_scan_compile_table(ctx->scan_mid, g_policy_rt->compile_table_id[compile_table_id]);
 
 	return (void *)ctx;
@@ -1193,7 +1180,7 @@ int policy_verify_regex_expression(const char *expression)
 	return maat_helper_verify_regex_expression(expression);
 }
 
-int get_attributes_table_name(struct request_query_obj *query_obj, int num, int Nth_scan, struct ip_data_ctx *ip_ctx, int tunnel_endpoint_x, cJSON *topObject)
+int get_attributes_table_name(struct request_query_obj *request, int num, int Nth_scan, struct ip_data_ctx *ip_ctx, int tunnel_endpoint_x, cJSON *topObject)
 {
 	int i=0, j=0;
 	cJSON *attributeObj=NULL, *subchild=NULL;
@@ -1204,20 +1191,25 @@ int get_attributes_table_name(struct request_query_obj *query_obj, int num, int 
 		cJSON_AddStringToObject(topObject, "tableName", "ATTR_SOURCE_IP");
 		return 0;
 	}
-
 	if(ip_ctx->Nth_scan[1] == Nth_scan)
 	{
 		cJSON_AddStringToObject(topObject, "tableName", "ATTR_DESTINATION_IP");
 		return 0;
 	}
+	/**ip protocol*/
+	if(ip_ctx->Nth_scan[2] == Nth_scan)
+	{
+		cJSON_AddStringToObject(topObject, "tableName", "ATTR_IP_PROTOCOL");
+		return 0;
+	}
 
 	for(i=0; i<num; i++)
 	{
-		for(j=0; j<= query_obj[i].merge_nth_scan_num; j++)
+		for(j=0; j<= request[i].merge_nth_scan_num; j++)
 		{
-			if (query_obj[i].merge_nth_scan[j] == Nth_scan)
+			if (request[i].merge_nth_scan[j] == Nth_scan)
 			{
-				attributeObj=query_obj[i].attributes;
+				attributeObj=request[i].attributes;
 				subchild = cJSON_GetObjectItem(attributeObj, "tableName");
 				if(subchild && subchild->type==cJSON_String)
 				{
@@ -1520,6 +1512,27 @@ int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, struct ip_addr* sip, 
 	return hit_cnt_ip;
 }
 
+static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct maat_hit_group hit_group, int table_id)
+{
+	size_t n_hit_result=0;
+	int scan_ret=0, hit_cnt_group=0;
+
+	scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
+							   ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+	if(scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_group+=n_hit_result;
+	}
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_group,
+								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_group+=n_hit_result;
+	}
+
+	return hit_cnt_group;
+}
+
 int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_ctx * ctx, int vsys_id, const char *fqdn, int table_id, int hit_cnt)
 {
 	int j=0, k=0;
@@ -1630,29 +1643,18 @@ finish:
 
 int tunnel_level_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
 {
-	size_t n_hit_result=0;
 	int n_read, hit_path_cnt=0;
 	int scan_ret=0, hit_cnt_tunnel=0;
 	struct maat_hit_group hit_group;
-	int table_id = request->table_id;
 	int group_level_array[]={50, 51, 52, 53, 54, 55, 56, 57};
 
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=group_level_array[request->numeric];
-	scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-							   ctx->result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
+	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	if(scan_ret > 0)
 	{
-		hit_cnt_tunnel+=n_hit_result;
+		hit_cnt_tunnel += scan_ret;
 	}
-
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_tunnel,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_tunnel+=n_hit_result;
-	}
-
 	if(scan_ret >= MAAT_SCAN_OK)
 	{
 		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
@@ -1720,30 +1722,19 @@ static int app_id_scan(struct request_query_obj *request, struct policy_scan_ctx
 	int n_read=0;
 	int scan_ret=0, hit_cnt_app_id=0;
 	struct app_id_dict *app_dict=NULL;
-	size_t n_hit_result=0;
 	struct maat_hit_group hit_group;
 
-	long long app_id = request->numeric;
-	int table_id = request->table_id;
-
-	app_dict = (struct app_id_dict*)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_APP_DI_DICT], (const char *)&app_id, sizeof(long long));
+	app_dict = (struct app_id_dict*)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_APP_DI_DICT], (const char *)&(request->numeric), sizeof(long long));
 	if(app_dict==NULL)
 	{
 		return 0;
 	}
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=app_dict->group_id;
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-							   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
+	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	if(scan_ret > 0)
 	{
-		hit_cnt_app_id+=n_hit_result;
-	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
-									&n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_app_id+=n_hit_result;
+		hit_cnt_app_id += scan_ret;
 	}
 	app_id_dict_free(app_dict);
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
@@ -1780,7 +1771,7 @@ static int flag_scan(struct request_query_obj *request, struct policy_scan_ctx *
 	return hit_cnt_flag;
 }
 
-static int http_hdr_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, int hdr_num)
+static int http_hdr_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
 {
 	int n_read=0;
 	int scan_ret=0, hit_cnt_hdr=0;
@@ -1802,16 +1793,13 @@ static int http_hdr_scan(struct request_query_obj *request, struct policy_scan_c
 	{
 		hit_cnt_hdr += n_hit_result;
 	}
-
-	if(hdr_num == 0)
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
+                      				&n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
 	{
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
-                          				&n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_hdr += n_hit_result;
-		}
+		hit_cnt_hdr += n_hit_result;
 	}
+
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
@@ -1820,6 +1808,7 @@ static int http_hdr_scan(struct request_query_obj *request, struct policy_scan_c
 
 enum ip_protocol_type
 {
+	PROCOCOL_ANY=-1,
 	PROTOCOL_ICMP=1,
 	PROCOCOL_TCP=6,
 	PROCOCOL_UDP=17,
@@ -1829,6 +1818,9 @@ static int get_group_id_by_protocol(int protocol)
 	int group_id = 0;
 	switch(protocol)
 	{
+		case PROCOCOL_ANY:
+			group_id = PROTOCOL_ANY_GROUP_ID;
+			break;
 		case PROTOCOL_ICMP:
 			group_id = PROTOCOL_ICMP_GROUP_ID;
 			break;
@@ -1839,10 +1831,40 @@ static int get_group_id_by_protocol(int protocol)
 			group_id = PROTOCOL_UDP_GROUP_ID;
 			break;
 		default:
-			group_id = PROTOCOL_ANY_GROUP_ID;
+			group_id = 0;
 			break;
 	}
 	return group_id;
+}
+
+static int protocol_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, int virtual_method)
+{
+	int n_read=0;
+	int scan_ret=0, hit_cnt_protocol=0;
+	struct maat_hit_group hit_group;
+
+	memset(&hit_group, 0, sizeof(hit_group));
+	hit_group.group_id=get_group_id_by_protocol(request->numeric);
+	if(hit_group.group_id != 0 && ctx->ip_protocol_num == 0)
+	{
+		scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_PROTOCOL);
+		if(scan_ret > 0)
+		{
+			hit_cnt_protocol+=scan_ret; 
+		}
+		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+		if(virtual_method)
+		{
+			request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+			ctx->n_read=n_read;
+		}
+		else
+		{
+			ctx->ip_ctx.Nth_scan[2] = maat_state_get_scan_count(ctx->scan_mid);
+			ctx->ip_protocol_num++;
+		}
+	}
+	return hit_cnt_protocol;
 }
 
 static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
@@ -1850,16 +1872,12 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	int n_read=0;
 	int scan_ret=0, hit_cnt_ip=0;
 	size_t n_hit_result=0;
-	struct maat_hit_group hit_group;
 	int table_id = request->table_id;
 
-	memset(&hit_group, 0, sizeof(hit_group));
-	hit_group.group_id=get_group_id_by_protocol(request->numeric);
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_PROTOCOL], &hit_group, 1,
-							   ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
+	scan_ret = protocol_scan(request, ctx, vsys_id, hit_cnt, 0);
+	if(scan_ret > 0)
 	{
-		hit_cnt_ip+=n_hit_result;
+		hit_cnt_ip+=scan_ret; 
 	}
 
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV4)
@@ -1947,21 +1965,14 @@ static int ssl_extension_scan(struct request_query_obj *request, struct policy_s
 {
 	int n_read=0;
 	int scan_ret=0, hit_cnt_ssl=0;
-	size_t n_hit_result=0;
 	struct maat_hit_group hit_group;
-	int table_id = request->table_id;
 
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=(request->numeric == 1 ? BOOLEAN_TRUE_GROUP_ID : BOOLEAN_FLASE_GROUP_ID);
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
+	scan_ret =group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	if(scan_ret > 0)
 	{
-		hit_cnt_ssl+=n_hit_result;
-	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_ssl+=n_hit_result;
+		hit_cnt_ssl += scan_ret;
 	}
 	n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -1974,17 +1985,13 @@ static int port_scan(struct request_query_obj *request, struct policy_scan_ctx *
 	int n_read=0;
 	int scan_ret=0, hit_cnt_port=0;
 	size_t n_hit_result=0;
-	struct maat_hit_group hit_group;
 	int table_id = request->table_id;
 	int port = atoi(request->string);
 
-	memset(&hit_group, 0, sizeof(hit_group));
-	hit_group.group_id=get_group_id_by_protocol(request->numeric);
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_PROTOCOL], &hit_group, 1,
-							   ctx->result+hit_cnt+hit_cnt_port, MAX_SCAN_RESULT-hit_cnt-hit_cnt_port, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
+	scan_ret = protocol_scan(request, ctx, vsys_id, hit_cnt, 0);
+	if(scan_ret > 0)
 	{
-		hit_cnt_port+=n_hit_result;
+		hit_cnt_port+=scan_ret; 
 	}
 
 	scan_ret=maat_scan_integer(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], port, ctx->result+hit_cnt+hit_cnt_port,
@@ -2003,30 +2010,6 @@ static int port_scan(struct request_query_obj *request, struct policy_scan_ctx *
 	request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
 	ctx->n_read=n_read;
 	return hit_cnt_port;
-}
-
-static int protocol_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
-{
-	size_t n_hit_result=0;
-	int scan_ret=0, hit_cnt_protocol=0;
-	struct maat_hit_group hit_group;
-
-	memset(&hit_group, 0, sizeof(hit_group));
-	hit_group.group_id=get_group_id_by_protocol(request->numeric);
-    scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_PROTOCOL], &hit_group, 1,
-							   ctx->result+hit_cnt+hit_cnt_protocol, MAX_SCAN_RESULT-hit_cnt-hit_cnt_protocol, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_protocol+=n_hit_result;
-	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_PROTOCOL], ctx->result+hit_cnt+hit_cnt_protocol,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_protocol, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_protocol+=n_hit_result;
-	}
-
-	return hit_cnt_protocol;
 }
 
 size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *request, void *pme)
@@ -2070,7 +2053,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			}
 			goto decide;
 		case TSG_OBJ_IP_PROTOCOL:
-			scan_ret = protocol_scan(request, ctx, vsys_id, hit_cnt);
+			scan_ret = protocol_scan(request, ctx, vsys_id, hit_cnt, 1);
 			if(scan_ret > 0)
 			{
 				hit_cnt+=scan_ret;
@@ -2118,16 +2101,8 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			}
 			goto decide;
 		case TSG_OBJ_HTTP_REQ_HDR:
-			ctx->req_hdr_num--;
-			scan_ret = http_hdr_scan(request, ctx, vsys_id, hit_cnt, ctx->req_hdr_num);
-			if(scan_ret > 0)
-			{
-				hit_cnt+=scan_ret;
-			}
-			goto decide;
 		case TSG_OBJ_HTTP_RES_HDR:
-			ctx->res_hdr_num--;
-			scan_ret = http_hdr_scan(request, ctx, vsys_id, hit_cnt, ctx->res_hdr_num);
+			scan_ret = http_hdr_scan(request, ctx, vsys_id, hit_cnt);
 			if(scan_ret > 0)
 			{
 				hit_cnt+=scan_ret;

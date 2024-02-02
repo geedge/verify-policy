@@ -151,8 +151,6 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 void http_get_scan_status(struct request_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
 int maat_table_init(struct verify_policy * verify, const char* profile_path);
 int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, size_t hit_cnt, cJSON *data_obj, void *pme);
-void http_res_hdr_num(void *pem);
-void http_req_hdr_num(void *pem);
 void verify_policy_tunnle_add(void * pme);
 int policy_verify_regex_expression(const char *expression);
 void verify_reload_loglevel();

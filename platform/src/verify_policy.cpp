@@ -459,14 +459,6 @@ static void get_count_form_attributeName(void *ctx, cJSON *subchild)
 		{
 			verify_policy_tunnle_add(ctx);
 		}
-		if(0 == strcasecmp(item->valuestring, "req_hdr"))
-		{
-			http_req_hdr_num(ctx);
-		}
-		if(0 == strcasecmp(item->valuestring, "res_hdr"))
-		{
-			http_res_hdr_num(ctx);
-		}
 	}
 	return;
 }
