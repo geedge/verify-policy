@@ -1105,6 +1105,10 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 
 	if(query_obj->table_id == TSG_OBJ_IP_PROTOCOL)
 	{
+		if(query_obj->attributes)
+		{
+			cJSON_Delete(query_obj->attributes);
+		}
 		return;
 	}
 
@@ -1118,6 +1122,10 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 		{
 			if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
 			{
+				if(query_obj->attributes)
+				{
+					cJSON_Delete(query_obj->attributes);
+				}
 				return;
 			}
 		}
