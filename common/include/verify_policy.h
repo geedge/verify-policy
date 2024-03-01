@@ -86,6 +86,8 @@ enum tsg_obj_table
     TSG_OBJ_SSL_ESNI,
     TSG_OBJ_SSL_NO_SNI,
     TSG_OBJ_TUNNEL_LEVEL,
+    TSG_OBJ_INTERNAL_ASN,
+    TSG_OBJ_EXTERNAL_ASN,
     __TSG_OBJ_MAX
 };
 

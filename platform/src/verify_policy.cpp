@@ -143,6 +143,8 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
 	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
 	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
+	table_name[TSG_OBJ_INTERNAL_ASN]="ATTR_INTERNAL_ASN";
+	table_name[TSG_OBJ_EXTERNAL_ASN]="ATTR_EXTERNAL_ASN";
 	
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
@@ -245,6 +247,12 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 	const char *Ip=NULL;
 	unsigned int Port=0;
 
+	if(attributeName==NULL)
+	{
+		mesa_runtime_log(RLOG_LV_FATAL, "The attributeType is of type iP, but the attributeName is empty, resulting in IP type parsing failure.");
+		return NULL;
+	}
+
 	item = cJSON_GetObjectItem(attributeValue,"ip");
 	if(item && item->type==cJSON_String) Ip = item->valuestring;
 	item = cJSON_GetObjectItem(attributeValue,"port");
@@ -253,6 +261,12 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 	if(item && item->type==cJSON_Number) *protocol = item->valueint;
 	item=cJSON_GetObjectItem(attributeValue,"addrType");
 	if(item && item->type==cJSON_Number) addr_type = item->valueint;
+
+	if(strcasecmp(attributeName, "ip_protocol") == 0)
+	{
+		mesa_runtime_log(RLOG_LV_INFO, "  [I]   %s, protocol=%d", buff, *protocol);
+		return NULL;
+	}
 
 	struct ipaddr *ip_addr = NULL;
 	if(strcasecmp(attributeName, "source") == 0 || strcasecmp(attributeName, "internal") == 0 ||
