@@ -1970,8 +1970,9 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	{
 		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
-			scan_ret = maat_scan_ipv4(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->saddr,
-			 						  ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
+
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->saddr, request->ip_addr->v4->source, 
+			 						      ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
@@ -1985,8 +1986,8 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 		}
 		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
 		{
-			scan_ret = maat_scan_ipv4(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->daddr,
-			 						  ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->daddr, request->ip_addr->v4->dest, 
+			 						       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
@@ -2009,8 +2010,8 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	{
 		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
-			scan_ret = maat_scan_ipv6(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v6->saddr,
-									  ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
+			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v6->saddr,request->ip_addr->v6->source,
+									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
@@ -2024,8 +2025,8 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 		}
 		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
 		{
-			scan_ret = maat_scan_ipv6(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v6->daddr,
-									  ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
+			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v6->daddr,request->ip_addr->v6->dest,
+									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
@@ -2295,7 +2296,6 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 			break;
 	}
 	maat_options_set_foreign_cont_dir(opts, "./verify_policy_files");
-	maat_options_set_rule_effect_interval_ms(opts, effect_interval);
 	maat_options_set_caller_thread_number(opts, max_thread);
 	maat_options_set_hit_path_enabled(opts);
 
