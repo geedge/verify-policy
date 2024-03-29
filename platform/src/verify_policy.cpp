@@ -240,7 +240,7 @@ void ipaddr_free(struct ipaddr *ip_addr)
 	free(ip_addr);
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol, char *buff)
+static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol, char *buff, struct verify_policy_query *policy_query)
 {
 	cJSON* item = NULL;
 	int addr_type=0;
@@ -267,16 +267,17 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 		mesa_runtime_log(RLOG_LV_INFO, "  [I]   %s, protocol=%d", buff, *protocol);
 		return NULL;
 	}
-
 	struct ipaddr *ip_addr = NULL;
 	if(strcasecmp(attributeName, "source") == 0 || strcasecmp(attributeName, "internal") == 0 ||
 	   strcasecmp(attributeName, "tunnel_endpointa") == 0 || strcasecmp(attributeName, "tunnel_endpointb") == 0)
 	{
+		if(Port==0) Port=policy_query->src_port;
 		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, buff, protocol);
 	}
 
 	if(strcasecmp(attributeName, "destination") == 0 || strcasecmp(attributeName, "external") == 0)
 	{
+		if(Port==0) Port=policy_query->dst_port;
 		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, buff, protocol);
 	}
 	return ip_addr;
@@ -357,7 +358,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 
 	if(0 == strcasecmp(attribute_type, "ip"))
 	{
-		policy_query->request_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->request_object[curr_id].attri_name, &(policy_query->request_object[curr_id].numeric), buff);
+		policy_query->request_object[curr_id].ip_addr = get_ip_from_json(attributeValue, policy_query->request_object[curr_id].attri_name, &(policy_query->request_object[curr_id].numeric), buff, policy_query);
 		goto end;
 	}
 	if(0 == strcasecmp(attribute_type, "port"))
@@ -458,22 +459,61 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
 	return 1;
 }
 
-static void get_count_form_attributeName(void *ctx, cJSON *subchild)
+static void get_count_form_attributeName(void *ctx, cJSON *subchild, struct verify_policy_query *verify_policy)
 {
-	cJSON *item = NULL;
+	int port=0;
+	cJSON* item = NULL, *attributeValue=NULL;
+	const char *attribute_type=NULL;
+
+	item = cJSON_GetObjectItem(subchild, "attributeType");
+	if(item && item->type==cJSON_String)
+	{
+		attribute_type = item->valuestring;
+	}
 
 	item = cJSON_GetObjectItem(subchild, "attributeName");
 	if(item && item->type==cJSON_String)
 	{
 		if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
 		{
-			verify_policy_tunnle_add(ctx);
+			policy_verify_tunnle_add(ctx);
 		}
 		if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
 		{
-			verify_policy_tunnle_add(ctx);
+			policy_verify_tunnle_add(ctx);
 		}
 	}
+
+	if(0 == strcasecmp(attribute_type, "port") && 0 == strcasecmp(item->valuestring, "source"))
+	{
+		attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
+		if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
+		{
+			goto finish;
+		}
+		item = cJSON_GetObjectItem(attributeValue,"port");
+		if(item && item->type==cJSON_String) 
+		{
+			port = atoi(item->valuestring);
+		}
+		verify_policy->src_port = port;
+	}
+	if(0 == strcasecmp(attribute_type, "port") && 0 == strcasecmp(item->valuestring, "destination"))
+	{
+		attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
+		if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
+		{
+			goto finish;
+		}
+		item = cJSON_GetObjectItem(attributeValue,"port");
+		if(item && item->type==cJSON_String) 
+		{
+			port = atoi(item->valuestring);
+		}
+		verify_policy->dst_port=port;
+	}
+
+finish:
 	return;
 }
 
@@ -516,7 +556,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 
 		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 		{
-			get_count_form_attributeName(ctx, subchild);
+			get_count_form_attributeName(ctx, subchild, verify_policy);
 		}
 
 		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)

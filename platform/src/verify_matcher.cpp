@@ -208,7 +208,7 @@ struct verify_policy_rt * g_policy_rt;
 #define PROTOCOL_TCP_GROUP_ID	6
 #define PROTOCOL_UDP_GROUP_ID 	7
 
-void verify_policy_tunnle_add(void * pme)
+void policy_verify_tunnle_add(void * pme)
 {
 	struct policy_scan_ctx * ctx = (struct policy_scan_ctx *) pme;
 	ctx->tunnel_endpoint_x++;
