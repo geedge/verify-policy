@@ -70,17 +70,19 @@ enum verify_profile_table
 struct ip_data_table
 {
 	int profile_id;
-	int group_id;
-	int ref_cnt;
-
+	int asn_group_id;
+	int geoname_group_id;
+	int country_region_group_id;
+	int province_group_id;
+	int city_group_id;
+	int subdivision_group_id;
 	char *asn;
 	char *organization;
-
 	char *country_full;
 	char *province_full;
 	char *city_full;
 	char *subdivision_addr;
-
+	int ref_cnt;
 	pthread_mutex_t lock;
 };
 
@@ -92,8 +94,14 @@ struct http_field_name
 
 enum nth_scan_type
 {
-	NTH_SCAN_IP_SRC_LOCATION = 0,
-	NTH_SCAN_IP_DST_LOCATION,
+	NTH_SCAN_IP_SRC_GEO_COUNTRY = 0,
+	NTH_SCAN_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA,
+	NTH_SCAN_IP_SRC_GEO_ADMINISTRATIVE_AREA,
+	NTH_SCAN_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA,
+	NTH_SCAN_IP_DST_GEO_COUNTRY,
+	NTH_SCAN_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA,
+	NTH_SCAN_IP_DST_GEO_ADMINISTRATIVE_AREA,
+	NTH_SCAN_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA,
 	NTH_SCAN_IP_DST_ASN,
 	NTH_SCAN_IP_SRC_ASN,
 	NTH_SCAN_IP_INTERNAL_ASN,
@@ -192,8 +200,6 @@ struct verify_policy_rt
 	int profile_table_id  [PROFILE_TABLE_MAX];
 	int scan_table_id[__TSG_OBJ_MAX];
 };
-
-static int ip_location_column_num =0;
 
 struct verify_policy_rt * g_policy_rt;
 
@@ -315,11 +321,12 @@ void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, 
 {
 	int addr_type, group_id=0;
 	int ret=0,profile_id=0,is_valid=0;
+	char addr_format[40]={0};
 	char start_ip[40], end_ip[40],asn[40]={0};
 	char organization[VERIFY_ARRAY_MAX];
 
-	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%s\t%s\t%d", &profile_id, &group_id, &addr_type, start_ip, end_ip, asn, organization, &is_valid);
-	if(ret!=8)
+	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id, &group_id, &addr_type, addr_format, start_ip, end_ip, asn, organization, &is_valid);
+	if(ret!=9)
 	{
 		mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip ASN failed, ret:%d, %s", ret, table_line);
 		return;
@@ -331,7 +338,7 @@ void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, 
 	ip_asn->profile_id=profile_id;
 	ip_asn->asn=strdup(asn);
 	ip_asn->organization=strdup(organization);
-	ip_asn->group_id=group_id;
+	ip_asn->asn_group_id=group_id;
 	ip_asn->ref_cnt=1;
 	pthread_mutex_init(&(ip_asn->lock), NULL);
 
@@ -339,27 +346,13 @@ void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, 
 	*ad = ip_asn;
 }
 
-static int get_column_num(const char* line)
-{
-	const char* seps=" \t";
-	char* saveptr=NULL, *subtoken=NULL, *str=NULL;
-	char* dup_line=strdup(line);
-	int i=0;
-	for (str = dup_line; ; str = NULL)
-	{
-		subtoken = strtok_r(str, seps, &saveptr);
-		if (subtoken == NULL)
-			break;
-		i++;
-	}
-	free(dup_line);
-	return i;
-}
-
 void ip_location_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
 	int ret=0,profile_id=0,is_valid=0;
 	int geoname_id=0, addr_type=0;
+	char addr_format[VERIFY_PATH_MAX];
+	int country_region_group_id=0;
+	int province_group_id=0,city_group_id=0,subdivision_group_id=0;
 	double latitude, longitude, coords;
 	char language[40], start_ip[40], end_ip[40];
 	char continent_abbr[VERIFY_ARRAY_MAX],continent_full[VERIFY_ARRAY_MAX];
@@ -367,61 +360,37 @@ void ip_location_table_new_cb(const char *table_name, int table_id, const char* 
 	char country_full[VERIFY_ARRAY_MAX],province_full[VERIFY_ARRAY_MAX], city_full[VERIFY_ARRAY_MAX];
 	char subdivision_addr[VERIFY_STRING_MAX];
 
-	if(ip_location_column_num == 0)
-	{
-		ip_location_column_num = get_column_num(table_line);
-	}
+	ret=sscanf(table_line, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t %s\t%s\t%s\t%lf\t%lf\t%lf\t%s\t %s\t%s\t%s\t%s\t%s\t%s \t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
+			   &country_region_group_id,&province_group_id,&city_group_id,&subdivision_group_id,&addr_type,addr_format,start_ip,end_ip,&latitude,&longitude,&coords,language,
+			   continent_abbr,continent_full,country_abbr,country_full,province_abbr,province_full,city_full,subdivision_addr,time_zone,&is_valid);
 
-	if(ip_location_column_num == 20)
+	if(ret != 24)
 	{
-		ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
-			   &addr_type, start_ip,end_ip,&latitude,&longitude,&coords,language,
-			   continent_abbr,continent_full, country_abbr,country_full,province_abbr,province_full,
-			   city_full, time_zone,&is_valid);
-
-		if(ret!=18)
-		{
-			mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
-			return;
-		}
-	}
-	else
-	{
-		ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%lf\t%lf\t%lf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
-			   &addr_type, start_ip,end_ip,&latitude,&longitude,&coords,language,
-			   continent_abbr,continent_full, country_abbr,country_full,province_abbr,province_full,
-			   city_full, subdivision_addr, time_zone,&is_valid);
-
-		if(ret!=19)
-		{
-			mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
-			return;
-		}
+		mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
+		return;
 	}
 
 	verify_unescape(continent_full);
 	verify_unescape(country_full);
 	verify_unescape(province_full);
 	verify_unescape(city_full);
-	if(ip_location_column_num != 20)
-	{
-		verify_unescape(subdivision_addr);
-	}
-	struct ip_data_table* ip_asn=ALLOC(struct ip_data_table, 1);
-	memset(ip_asn, 0, sizeof(struct ip_data_table));
-	ip_asn->profile_id=profile_id;
-	ip_asn->country_full=strdup(country_full);
-	ip_asn->province_full=strdup(province_full);
-	ip_asn->city_full=strdup(city_full);
-	if(ip_location_column_num != 20)
-	{
-		ip_asn->subdivision_addr=strdup(subdivision_addr);
-	}
-	ip_asn->ref_cnt=1;
-	pthread_mutex_init(&(ip_asn->lock), NULL);
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy table add success %d", profile_id);
+	verify_unescape(subdivision_addr);
 
-	*ad = ip_asn;
+	struct ip_data_table* ip_location=ALLOC(struct ip_data_table, 1);
+	memset(ip_location, 0, sizeof(struct ip_data_table));
+	ip_location->profile_id=profile_id;
+	ip_location->country_region_group_id=country_region_group_id;
+	ip_location->province_group_id=province_group_id;
+	ip_location->city_group_id=city_group_id;
+	ip_location->subdivision_group_id=subdivision_group_id;
+	ip_location->country_full=strdup(country_full);
+	ip_location->province_full=strdup(province_full);
+	ip_location->city_full=strdup(city_full);
+	ip_location->subdivision_addr=strdup(subdivision_addr);
+	ip_location->ref_cnt=1;
+	pthread_mutex_init(&(ip_location->lock), NULL);
+	mesa_runtime_log(RLOG_LV_DEBUG, "Policy table add success %d", profile_id);
+	*ad = ip_location;
 }
 
 void ip_table_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
@@ -1200,16 +1169,28 @@ int policy_verify_regex_expression(const char *expression)
 static int get_ip_location_asn_table_name(struct ip_data_ctx *ip_ctx, int Nth_scan, cJSON *topObject)
 {
 	/*ip location**/
-	int xret = 0;
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_SRC_LOCATION] == Nth_scan)
+	int xret = 0, level=0;
+	const char *client_table_name[]={"ATTR_SOURCE_GEO_COUNTRY", "ATTR_SOURCE_GEO_SUPER_ADMINISTRATIVE_AREA",
+							 "ATTR_SOURCE_GEO_ADMINISTRATIVE_AREA", "ATTR_SOURCE_GEO_SUB_ADMINISTRATIVE_AREA"};
+	const char *server_tabel_name[]={"ATTR_DESTINATION_GEO_COUNTRY", "ATTR_DESTINATION_GEO_SUPER_ADMINISTRATIVE_AREA",
+							 "ATTR_DESTINATION_GEO_ADMINISTRATIVE_AREA", "ATTR_DESTINATION_GEO_SUB_ADMINISTRATIVE_AREA"}; 
+
+	for(level = NTH_SCAN_IP_SRC_GEO_COUNTRY; level <= NTH_SCAN_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA; level++)
 	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_SOURCE_LOCATION");
-		goto finish;
+		if(ip_ctx->Nth_scan[level] == Nth_scan)
+		{
+			cJSON_AddStringToObject(topObject, "tableName", client_table_name[level]);
+			goto finish;
+		}
 	}
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_DST_LOCATION] == Nth_scan)
+
+	for(level = NTH_SCAN_IP_DST_GEO_COUNTRY; level <= NTH_SCAN_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA; level ++)
 	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_DESTINATION_LOCATION");
-		goto finish;
+		if(ip_ctx->Nth_scan[level] == Nth_scan)
+		{
+			cJSON_AddStringToObject(topObject, "tableName", server_tabel_name[level-NTH_SCAN_IP_DST_GEO_COUNTRY]);
+			goto finish;
+		}
 	}
 	if(ip_ctx->Nth_scan[NTH_SCAN_IP_SRC_ASN] == Nth_scan)
 	{
@@ -1377,11 +1358,48 @@ int ip_addr_to_address(struct ipaddr *ip_addr, struct ip_addr *dest_ip, struct i
 	return 0;
 }
 
-int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *sip, struct ip_addr *dip, int hit_cnt)
+static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct maat_hit_group hit_group, int table_id)
 {
 	size_t n_hit_result=0;
+	int scan_ret=0, hit_cnt_group=0;
+
+	scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
+							   ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+	if(scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_group+=n_hit_result;
+	}
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_group,
+								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+	if (scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_group+=n_hit_result;
+	}
+	return hit_cnt_group;
+}
+
+static int get_group_id_by_location(struct ip_data_table* ip_location, int level)
+{
+	switch(level)
+	{
+		case 0:
+			return ip_location->country_region_group_id;
+		case 1:
+			return ip_location->province_group_id;
+		case 2:
+			return ip_location->city_group_id;
+		case 3:
+			return ip_location->subdivision_group_id;
+		default:
+			return 0;
+	}
+}
+
+int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *sip, struct ip_addr *dip, int hit_cnt)
+{
 	int scan_ret=0, hit_cnt_ip=0;
 	char buff[VERIFY_STRING_MAX * 2]={0};
+	struct maat_hit_group hit_group;
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
 	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
 
@@ -1406,85 +1424,40 @@ int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *s
 	if(ip_location_server!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		if(ip_location_server->subdivision_addr == NULL || strcasecmp(ip_location_server->subdivision_addr, "null") == 0)
-		{
-			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full);
-		}
-		else
-		{
-			snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
-		}
+		snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
 		ctx->ip_ctx.location_server=strdup(buff);
+		
+		for(int level=0; level < 4; level++)
+		{
+			memset(&hit_group, 0, sizeof(hit_group));
+			hit_group.group_id=get_group_id_by_location(ip_location_server, level);
 
-		memset(buff,0,sizeof(buff));
-
-		if(ip_location_server->subdivision_addr == NULL)
-		{
-			snprintf(buff, sizeof(buff), "%s.%s.", ip_location_server->country_full, ip_location_server->city_full);
-		}
-		else
-		{
-			snprintf(buff, sizeof(buff),"%s.%s.%s.%s.", ip_location_server->country_full,ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
-		}
-		scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_DST_LOCATION],
-									buff, strlen(buff), ctx->result+hit_cnt+hit_cnt_ip,  MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-									&n_hit_result, ctx->scan_mid);
-		if(scan_ret>0)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_DST_LOCATION], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-                          			  &n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		if(scan_ret >= MAAT_SCAN_OK)
-		{
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_DST_GEO_COUNTRY+level);
+			if(scan_ret > 0)
+			{
+				hit_cnt_ip+=scan_ret; 
+			}
 			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_DST_LOCATION] = maat_state_get_scan_count(ctx->scan_mid);
+			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_DST_GEO_COUNTRY+level] = maat_state_get_scan_count(ctx->scan_mid);		
 		}
 	}
 	if(ip_location_client!=NULL)
 	{
 		memset(buff,0,sizeof(buff));
-		if(ip_location_client->subdivision_addr == NULL || strcasecmp(ip_location_client->subdivision_addr, "null") == 0)
-		{
-			snprintf(buff, sizeof(buff), "%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full);
-		}
-		else
-		{
-			snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
-		}
-
+		snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
 		ctx->ip_ctx.location_client=strdup(buff);
 
-		memset(buff,0,sizeof(buff));
-		if(ip_location_client->subdivision_addr == NULL)
+		for(int level=0; level < 4; level++)
 		{
-			snprintf(buff, sizeof(buff), "%s.%s.", ip_location_client->country_full, ip_location_client->city_full);
-		}
-		else
-		{
-			snprintf(buff, sizeof(buff),"%s.%s.%s.%s.", ip_location_client->country_full,ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
-		}
-		scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_SRC_LOCATION],
-									buff, strlen(buff),ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-									&n_hit_result, ctx->scan_mid);
-		if(scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_IP_SRC_LOCATION], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-                          			  &n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		if(scan_ret >= MAAT_SCAN_OK)
-		{
+			memset(&hit_group, 0, sizeof(hit_group));
+			hit_group.group_id=get_group_id_by_location(ip_location_client, level);
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_SRC_GEO_COUNTRY+level);
+			if(scan_ret > 0)
+			{
+				hit_cnt_ip+=scan_ret; 	
+			}
 			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_SRC_LOCATION] = maat_state_get_scan_count(ctx->scan_mid);
+			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_SRC_GEO_COUNTRY+level] = maat_state_get_scan_count(ctx->scan_mid);	
 		}
 	}
 
@@ -1527,7 +1500,7 @@ int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, int table_id, struct 
 		ctx->ip_ctx.organization_server=strdup(ip_asn_server->organization);
 
 		memset(&hit_group, 0, sizeof(hit_group));
-		hit_group.group_id=ip_asn_server->group_id;
+		hit_group.group_id=ip_asn_server->asn_group_id;
 
 		if(table_id == TSG_OBJ_DESTINATION_ADDR)
 		{
@@ -1569,7 +1542,7 @@ int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, int table_id, struct 
 		ctx->ip_ctx.organization_client=strdup(ip_asn_client->organization);
 
 		memset(&hit_group, 0, sizeof(hit_group));
-		hit_group.group_id=ip_asn_client->group_id;
+		hit_group.group_id=ip_asn_client->asn_group_id;
 
 		if(table_id == TSG_OBJ_SOURCE_ADDR)
 		{
@@ -1611,26 +1584,6 @@ int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, int table_id, struct 
 	if(ip_asn_client)
 		ip_table_free(ip_asn_client);
 	return hit_cnt_ip;
-}
-
-static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct maat_hit_group hit_group, int table_id)
-{
-	size_t n_hit_result=0;
-	int scan_ret=0, hit_cnt_group=0;
-
-	scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-							   ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
-	if(scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_group+=n_hit_result;
-	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_group,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
-	{
-		hit_cnt_group+=n_hit_result;
-	}
-	return hit_cnt_group;
 }
 
 int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_ctx * ctx, int vsys_id, const char *fqdn, int table_id, int hit_cnt)
@@ -1970,7 +1923,6 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	{
 		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
-
 			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->saddr, request->ip_addr->v4->source, 
 			 						      ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
@@ -2379,8 +2331,14 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
 	table_name[TSG_OBJ_IP_SRC_ASN]="ATTR_SOURCE_ASN";
 	table_name[TSG_OBJ_IP_DST_ASN]="ATTR_DESTINATION_ASN";
-	table_name[TSG_OBJ_IP_SRC_LOCATION]="ATTR_SOURCE_LOCATION";
-	table_name[TSG_OBJ_IP_DST_LOCATION]="ATTR_DESTINATION_LOCATION";
+	table_name[TSG_OBJ_IP_SRC_GEO_COUNTRY]="ATTR_SOURCE_GEO_COUNTRY";
+	table_name[TSG_OBJ_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUPER_ADMINISTRATIVE_AREA";
+	table_name[TSG_OBJ_IP_SRC_GEO_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_ADMINISTRATIVE_AREA";
+	table_name[TSG_OBJ_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUB_ADMINISTRATIVE_AREA";
+	table_name[TSG_OBJ_IP_DST_GEO_COUNTRY]="ATTR_DESTINATION_GEO_COUNTRY";
+	table_name[TSG_OBJ_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUPER_ADMINISTRATIVE_AREA";
+	table_name[TSG_OBJ_IP_DST_GEO_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_ADMINISTRATIVE_AREA";
+	table_name[TSG_OBJ_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUB_ADMINISTRATIVE_AREA";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
 	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_SERVER_FQDN_CAT";
 	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
@@ -2405,7 +2363,8 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 	const char *table_name=NULL;
 
 	const char *conjunction_table_name_map[] = {"SECURITY_COMPILE_CONJUNCTION", "PXY_CTRL_COMPILE_CONJUNCTION", "TRAFFIC_SHAPING_COMPILE_CONJUNCTION",
-												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION", "MONITOR_COMPILE_CONJUNCTION"};
+												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION", 
+												"MONITOR_COMPILE_CONJUNCTION", "DOS_PROTECTION_COMPILE_CONJUNCTION"};
 
 	table_name = conjunction_table_name_map[compile_type_id];
 	table_id=g_policy_rt->compile_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
@@ -2415,7 +2374,8 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 	}
 
 	const char *plugin_table_name_map[] = {"SECURITY_COMPILE_PLUGIN", "PXY_CTRL_COMPILE_PLUGIN", "TRAFFIC_SHAPING_COMPILE_PLUGIN",
-											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN", "MONITOR_COMPILE_PLUGIN"};
+											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN",
+											"MONITOR_COMPILE_PLUGIN", "DOS_PROTECTION_COMPILE_PLUGIN"};
 
 	table_name = plugin_table_name_map[compile_type_id];
 	table_id = g_policy_rt->plugin_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
