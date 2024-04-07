@@ -166,6 +166,7 @@ struct app_id_dict
 
 struct policy_scan_ctx
 {
+	int thread_id;
 	enum policy_action action;
 	char * action_para;
 	struct maat_state *scan_mid;
@@ -184,6 +185,7 @@ struct policy_scan_ctx
     unsigned long long bool_id_array[256];
 	
 	struct ip_data_ctx ip_ctx;
+	struct maat_state *tunnel_scan_mid;
 };
 
 struct verify_policy_rt
@@ -223,6 +225,7 @@ void verify_policy_tunnle_add(void * pme)
 void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table_id)
 {
 	struct policy_scan_ctx * ctx = ALLOC(struct policy_scan_ctx, 1);
+	ctx->thread_id = thread_id;;
 	ctx->scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], thread_id);
 	maat_state_set_scan_compile_table(ctx->scan_mid, g_policy_rt->compile_table_id[compile_table_id]);
 
@@ -241,6 +244,12 @@ void policy_scan_ctx_free(void * pme)
 
 	maat_state_free(ctx->scan_mid);
 	ctx->scan_mid = NULL;
+
+	if(ctx->tunnel_scan_mid)
+	{
+		maat_state_free(ctx->tunnel_scan_mid);
+		ctx->tunnel_scan_mid = NULL;
+	}
 
 	struct ip_data_ctx *ip_ctx = &ctx->ip_ctx;
 	if(ip_ctx->asn_client)
@@ -1719,54 +1728,111 @@ int tunnel_level_scan(struct request_query_obj *request, struct policy_scan_ctx 
 	return hit_cnt_tunnel;
 }
 
-int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct ip_addr *sip)
+int get_tunnel_type_table_id(char *tunnel_type)
 {
-#define	TUNNEL_BOOL_ID_MAX	128
-#define	TUNNEL_CATALOG_MAX	128
+	int table_id=TSG_OBJ_TUNNEL_GTP_ENDPOINT;
+	size_t i = 0;
+	const char *tunnel_type_map[] = {"GTP", "GRE", "IPv4/IPv6"};
 
-	size_t n_hit_result=0;
-	int i=0,ret=0,n_read=0;
-	int scan_ret=0, hit_cnt_tunnel=0;
-	int hit_path_cnt=0;
-	struct maat_hit_group hit_group;
-	struct tunnel_data_ctx *endpoint_data[TUNNEL_BOOL_ID_MAX];
-
-	ret=maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_TUNNEL_ENDPOINT], sip, (void **)&endpoint_data, TUNNEL_BOOL_ID_MAX);
-	for(i=0; i<ret && i<TUNNEL_BOOL_ID_MAX; i++)
+	if(tunnel_type == NULL)
 	{
-		ctx->bool_id_array[ctx->bool_id_array_idx]=(long long)endpoint_data[i]->id;
-		ctx->bool_id_array_idx++;
-		tunnel_table_free(endpoint_data[i]);
+		return table_id;
 	}
 
-	struct tunnel_data_ctx *tunnel_catalog[TUNNEL_CATALOG_MAX];
-	ret=maat_bool_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_TUNNEL_CATALOG], ctx->bool_id_array, ctx->bool_id_array_idx, (void**)(&tunnel_catalog), TUNNEL_CATALOG_MAX);
-	for(i=0; i<ret && i<TUNNEL_CATALOG_MAX; i++)
+	for (i = 0; i < sizeof(tunnel_type_map) / sizeof(const char *); i++)
 	{
-		memset(&hit_group, 0, sizeof(hit_group));
-		hit_group.group_id=tunnel_catalog[i]->group_id;
-		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &hit_group, 1,
-							    ctx->result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel, &n_hit_result, ctx->scan_mid);
+		if (0 == strcasecmp(tunnel_type, tunnel_type_map[i]))
+			break;
+	}
+
+	switch (i)
+	{
+		case 0:
+			table_id = TSG_OBJ_TUNNEL_GTP_ENDPOINT;
+			break;
+		case 1:
+			table_id = TSG_OBJ_TUNNEL_GRE_ENDPOINT;
+			break;
+		case 2:
+			table_id = TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT;
+			break;
+		default:
+			table_id = TSG_OBJ_TUNNEL_GTP_ENDPOINT;
+			break;
+	}
+	return table_id;
+}
+
+int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct ipaddr *ip_addr)
+{
+	int i=0,hit_path_cnt=0;
+	int n_read=0, hit_cnt_endpoint=0;
+	struct maat_hit_group hit_group;
+	int scan_ret=0, hit_cnt_tunnel=0;
+	size_t n_hit_result=0;
+	long long result[MAX_SCAN_RESULT]={0};
+
+	if(ctx->tunnel_scan_mid == NULL)
+	{
+		ctx->tunnel_scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], ctx->thread_id);
+	}
+	maat_state_set_scan_compile_table(ctx->tunnel_scan_mid, g_policy_rt->compile_table_id[TSG_TUNNEL]);
+
+	int tunnel_table_id = get_tunnel_type_table_id(request->tunnel_type);
+	if (ip_addr->addrtype == ADDR_TYPE_IPV4)
+	{
+		scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], ip_addr->v4->saddr, ip_addr->v4->source, 
+			 					  	   result, MAX_SCAN_RESULT, &n_hit_result, ctx->tunnel_scan_mid);
 		if(scan_ret == MAAT_SCAN_HIT)
 		{
-			hit_cnt_tunnel+=n_hit_result;
+			hit_cnt_endpoint+=n_hit_result;
 		}
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL],ctx->result+hit_cnt+hit_cnt_tunnel, MAX_SCAN_RESULT-hit_cnt-hit_cnt_tunnel,
-                          			   &n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
+	}
+	
+	if (ip_addr->addrtype == ADDR_TYPE_IPV6)
+	{
+		scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], ip_addr->v6->saddr, ip_addr->v6->source,
+									   result, MAX_SCAN_RESULT, &n_hit_result, ctx->tunnel_scan_mid);
+		if(scan_ret == MAAT_SCAN_HIT)
 		{
-			hit_cnt_tunnel+=n_hit_result;
+			hit_cnt_endpoint+=n_hit_result;
 		}
-		if(scan_ret >= MAAT_SCAN_OK)
+	}
+
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], result, MAX_SCAN_RESULT,
+									&n_hit_result, ctx->tunnel_scan_mid);
+	if(scan_ret == MAAT_SCAN_HIT)
+	{
+		hit_cnt_endpoint+=n_hit_result;
+	}
+
+	if(hit_cnt_endpoint < 0)
+	{
+		goto finish;
+	}
+
+	for(i = 0; i< hit_cnt_endpoint; i++)
+	{
+		memset(&hit_group, 0, sizeof(hit_group));
+		hit_group.group_id=result[i];
+		if(hit_group.group_id != 0)
 		{
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
-			ctx->n_read=n_read;
-			hit_path_cnt++;
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_TUNNEL);
+			if(scan_ret > 0)
+			{
+				hit_cnt_tunnel+=scan_ret; 
+			}
+			if(scan_ret >= MAAT_SCAN_OK)
+			{
+				n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+				request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+				ctx->n_read=n_read;
+				hit_path_cnt++;
+			}
 		}
-		tunnel_table_free(tunnel_catalog[i]);
 	}
 	request->merge_nth_scan_num = hit_path_cnt;
+finish:
 	return hit_cnt_tunnel;
 }
 
@@ -2113,7 +2179,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			memset(&dest_ip, 0, sizeof(dest_ip));
 			memset(&source_ip, 0, sizeof(source_ip));
 			ip_addr_to_address(request->ip_addr, &dest_ip, &source_ip);
-			scan_ret = tunnel_scan(request, ctx, vsys_id, hit_cnt, &source_ip);
+			scan_ret = tunnel_scan(request, ctx, vsys_id, hit_cnt, request->ip_addr);
 			if(scan_ret)
 			{
 				hit_cnt+=scan_ret;
@@ -2354,6 +2420,9 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
 	table_name[TSG_OBJ_INTERNAL_ASN]="ATTR_INTERNAL_ASN";
 	table_name[TSG_OBJ_EXTERNAL_ASN]="ATTR_EXTERNAL_ASN";
+	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
+	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
+	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
 	return;
 }
 
@@ -2364,7 +2433,7 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 
 	const char *conjunction_table_name_map[] = {"SECURITY_COMPILE_CONJUNCTION", "PXY_CTRL_COMPILE_CONJUNCTION", "TRAFFIC_SHAPING_COMPILE_CONJUNCTION",
 												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION", 
-												"MONITOR_COMPILE_CONJUNCTION", "DOS_PROTECTION_COMPILE_CONJUNCTION"};
+												"MONITOR_COMPILE_CONJUNCTION", "DOS_PROTECTION_COMPILE_CONJUNCTION", "TUNNEL_COMPILE_CONJUNCTION"};
 
 	table_name = conjunction_table_name_map[compile_type_id];
 	table_id=g_policy_rt->compile_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
@@ -2375,7 +2444,7 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 
 	const char *plugin_table_name_map[] = {"SECURITY_COMPILE_PLUGIN", "PXY_CTRL_COMPILE_PLUGIN", "TRAFFIC_SHAPING_COMPILE_PLUGIN",
 											"SERVICE_CHAINING_COMPILE_PLUGIN", "PXY_INTERCEPT_COMPILE_PLUGIN", "STATISTICS_COMPILE_PLUGIN",
-											"MONITOR_COMPILE_PLUGIN", "DOS_PROTECTION_COMPILE_PLUGIN"};
+											"MONITOR_COMPILE_PLUGIN", "DOS_PROTECTION_COMPILE_PLUGIN", "TUNNEL_COMPILE_PLUGIN"};
 
 	table_name = plugin_table_name_map[compile_type_id];
 	table_id = g_policy_rt->plugin_table_id[compile_type_id]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);

@@ -31,6 +31,7 @@ enum compile_table_typle
     TSG_STATISTICS,
     TSG_MONITOR,
     DOS_PROTECTION,
+    TSG_TUNNEL,
     PXY_TABLE_DEFENCE,
     __SCAN_POLICY_MAX
 };
@@ -95,6 +96,9 @@ enum tsg_obj_table
     TSG_OBJ_TUNNEL_LEVEL,
     TSG_OBJ_INTERNAL_ASN,
     TSG_OBJ_EXTERNAL_ASN,
+    TSG_OBJ_TUNNEL_GTP_ENDPOINT,
+    TSG_OBJ_TUNNEL_GRE_ENDPOINT,
+    TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT,
     __TSG_OBJ_MAX
 };
 
@@ -137,6 +141,7 @@ struct request_query_obj
 	char *attri_name;
 	struct ipaddr *ip_addr;
 	char *subscriberid;
+    char *tunnel_type;
     int merge_nth_scan_num;
     int exclude_nth_scan[MERGE_SCAN_NTH];
     int merge_nth_scan[MERGE_SCAN_NTH];

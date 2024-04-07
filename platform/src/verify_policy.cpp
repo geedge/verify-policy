@@ -152,6 +152,9 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
 	table_name[TSG_OBJ_INTERNAL_ASN]="ATTR_INTERNAL_ASN";
 	table_name[TSG_OBJ_EXTERNAL_ASN]="ATTR_EXTERNAL_ASN";
+	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
+	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
+	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
 	
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
@@ -186,9 +189,9 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		struct stream_tuple4_v4 *v4_addr = ALLOC(struct stream_tuple4_v4, 1);
 		ip_addr->addrtype=ADDR_TYPE_IPV4;
 		inet_pton(AF_INET,clientIp1,&(v4_addr->saddr));
-		v4_addr->source=htons(clientPort1);
+		v4_addr->source=clientPort1;
 		inet_pton(AF_INET,serverIp1,&(v4_addr->daddr));
-		v4_addr->dest=htons(serverPort1);
+		v4_addr->dest=serverPort1;
 		ip_addr->v4=v4_addr;
 	}
 	if(addr_type == 6)
@@ -196,9 +199,9 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		struct stream_tuple4_v6 *v6_addr = ALLOC(struct stream_tuple4_v6, 1);
 		ip_addr->addrtype=ADDR_TYPE_IPV6;
 		inet_pton(AF_INET6,clientIp1,&(v6_addr->saddr));
-		v6_addr->source=htons(clientPort1);
+		v6_addr->source=clientPort1;
 		inet_pton(AF_INET6,serverIp1,&(v6_addr->daddr));
-		v6_addr->dest=htons(serverPort1);
+		v6_addr->dest=serverPort1;
 		ip_addr->v6=v6_addr;
 	}
 	mesa_runtime_log(RLOG_LV_INFO, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
@@ -327,7 +330,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	int xret = -1;
 	const char *attribute_type=NULL;
 	char buff[VERIFY_STRING_MAX*2], *p = NULL;
-	cJSON* item = NULL, *attributeValue=NULL;
+	cJSON* item = NULL, *attributeValue=NULL, *tunnelType_item=NULL;
 
 	p = buff;
 	item = cJSON_GetObjectItem(subchild, "attributeType");
@@ -360,6 +363,12 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
 	{
 		goto finish;
+	}
+
+	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnel_type");
+	if(tunnelType_item && tunnelType_item->type==cJSON_String)
+	{
+		policy_query->request_object[curr_id].tunnel_type=tunnelType_item->valuestring;
 	}
 
 	if(0 == strcasecmp(attribute_type, "ip"))
