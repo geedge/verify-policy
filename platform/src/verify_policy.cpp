@@ -179,9 +179,9 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		struct stream_tuple4_v4 *v4_addr = ALLOC(struct stream_tuple4_v4, 1);
 		ip_addr->addrtype=ADDR_TYPE_IPV4;
 		inet_pton(AF_INET,clientIp1,&(v4_addr->saddr));
-		v4_addr->source=htons(clientPort1);
+		v4_addr->source=clientPort1;
 		inet_pton(AF_INET,serverIp1,&(v4_addr->daddr));
-		v4_addr->dest=htons(serverPort1);
+		v4_addr->dest=serverPort1;
 		ip_addr->v4=v4_addr;
 	}
 	if(addr_type == 6)
@@ -189,9 +189,9 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		struct stream_tuple4_v6 *v6_addr = ALLOC(struct stream_tuple4_v6, 1);
 		ip_addr->addrtype=ADDR_TYPE_IPV6;
 		inet_pton(AF_INET6,clientIp1,&(v6_addr->saddr));
-		v6_addr->source=htons(clientPort1);
+		v6_addr->source=clientPort1;
 		inet_pton(AF_INET6,serverIp1,&(v6_addr->daddr));
-		v6_addr->dest=htons(serverPort1);
+		v6_addr->dest=serverPort1;
 		ip_addr->v6=v6_addr;
 	}
 	mesa_runtime_log(RLOG_LV_INFO, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
