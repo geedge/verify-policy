@@ -1742,23 +1742,21 @@ int get_tunnel_type_table_id(char *tunnel_type)
 	for (i = 0; i < sizeof(tunnel_type_map) / sizeof(const char *); i++)
 	{
 		if (0 == strcasecmp(tunnel_type, tunnel_type_map[i]))
+		{
+			if(i == 0)
+			{
+				table_id = TSG_OBJ_TUNNEL_GTP_ENDPOINT;
+			}
+			if(i == 1)
+			{
+				table_id = TSG_OBJ_TUNNEL_GRE_ENDPOINT;
+			}
+			if(i == 2)
+			{
+				table_id = TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT;
+			}
 			break;
-	}
-
-	switch (i)
-	{
-		case 0:
-			table_id = TSG_OBJ_TUNNEL_GTP_ENDPOINT;
-			break;
-		case 1:
-			table_id = TSG_OBJ_TUNNEL_GRE_ENDPOINT;
-			break;
-		case 2:
-			table_id = TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT;
-			break;
-		default:
-			table_id = TSG_OBJ_TUNNEL_GTP_ENDPOINT;
-			break;
+		}			
 	}
 	return table_id;
 }
@@ -1775,8 +1773,8 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 	if(ctx->tunnel_scan_mid == NULL)
 	{
 		ctx->tunnel_scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], ctx->thread_id);
+		maat_state_set_scan_compile_table(ctx->tunnel_scan_mid, g_policy_rt->compile_table_id[TSG_TUNNEL]);
 	}
-	maat_state_set_scan_compile_table(ctx->tunnel_scan_mid, g_policy_rt->compile_table_id[TSG_TUNNEL]);
 
 	int tunnel_table_id = get_tunnel_type_table_id(request->tunnel_type);
 	if (ip_addr->addrtype == ADDR_TYPE_IPV4)

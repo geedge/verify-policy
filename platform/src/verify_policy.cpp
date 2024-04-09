@@ -365,10 +365,11 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		goto finish;
 	}
 
-	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnel_type");
+	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnelType");
 	if(tunnelType_item && tunnelType_item->type==cJSON_String)
 	{
 		policy_query->request_object[curr_id].tunnel_type=tunnelType_item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), ", tunnelType=%s",policy_query->request_object[curr_id].tunnel_type);
 	}
 
 	if(0 == strcasecmp(attribute_type, "ip"))
