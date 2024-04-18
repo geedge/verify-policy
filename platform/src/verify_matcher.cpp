@@ -185,6 +185,10 @@ struct policy_scan_ctx
     unsigned long long bool_id_array[256];
 	
 	struct ip_data_ctx ip_ctx;
+	
+	/*exception handling*/
+	int tunnel_scan;
+	long long tunnel_result[2];
 	struct maat_state *tunnel_scan_mid;
 };
 
@@ -1108,13 +1112,29 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 
 	if(ctx->tunnel_endpoint_x == 2)
 	{
-		item = cJSON_GetObjectItem(attributeObj, "attributeName");
-		if(item && item->type==cJSON_String)
+		/*temp repair**/
+		if (ctx->tunnel_scan ==2 && ctx->tunnel_result[0] == 1 && ctx->tunnel_result[1] == 0)
 		{
-			if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+			item = cJSON_GetObjectItem(attributeObj, "attributeName");
+			if(item && item->type==cJSON_String)
 			{
-				cJSON_Delete(attributeObj);
-				return;
+				if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
+				{
+					cJSON_Delete(attributeObj);
+					return;
+				}
+			}
+		}
+		else
+		{
+			item = cJSON_GetObjectItem(attributeObj, "attributeName");
+			if(item && item->type==cJSON_String)
+			{
+				if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
+				{
+					cJSON_Delete(attributeObj);
+					return;
+				}
 			}
 		}
 	}
@@ -1367,7 +1387,7 @@ int ip_addr_to_address(struct ipaddr *ip_addr, struct ip_addr *dest_ip, struct i
 	return 0;
 }
 
-static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct maat_hit_group hit_group, int table_id)
+static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct maat_hit_group hit_group, int table_id, int logic)
 {
 	size_t n_hit_result=0;
 	int scan_ret=0, hit_cnt_group=0;
@@ -1378,11 +1398,15 @@ static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, str
 	{
 		hit_cnt_group+=n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_group,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
+
+	if(logic)
 	{
-		hit_cnt_group+=n_hit_result;
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_group,
+								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_group+=n_hit_result;
+		}
 	}
 	return hit_cnt_group;
 }
@@ -1440,8 +1464,12 @@ int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *s
 		{
 			memset(&hit_group, 0, sizeof(hit_group));
 			hit_group.group_id=get_group_id_by_location(ip_location_server, level);
-
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_DST_GEO_COUNTRY+level);
+			if(hit_group.group_id <= 0)
+			{
+				continue;
+			}
+			
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_DST_GEO_COUNTRY+level, 1);
 			if(scan_ret > 0)
 			{
 				hit_cnt_ip+=scan_ret; 
@@ -1460,7 +1488,12 @@ int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *s
 		{
 			memset(&hit_group, 0, sizeof(hit_group));
 			hit_group.group_id=get_group_id_by_location(ip_location_client, level);
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_SRC_GEO_COUNTRY+level);
+			if(hit_group.group_id <= 0)
+			{
+				continue;
+			}
+
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_SRC_GEO_COUNTRY+level, 1);
 			if(scan_ret > 0)
 			{
 				hit_cnt_ip+=scan_ret; 	
@@ -1712,7 +1745,7 @@ int tunnel_level_scan(struct request_query_obj *request, struct policy_scan_ctx 
 
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=group_level_array[request->numeric];
-	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_tunnel += scan_ret;
@@ -1763,6 +1796,7 @@ int get_tunnel_type_table_id(char *tunnel_type)
 
 int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct ipaddr *ip_addr)
 {
+	int logic =1;
 	int i=0,hit_path_cnt=0;
 	int n_read=0, hit_cnt_endpoint=0;
 	struct maat_hit_group hit_group;
@@ -1815,13 +1849,18 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 		hit_group.group_id=result[i];
 		if(hit_group.group_id != 0)
 		{
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_TUNNEL);
+			if(ctx->tunnel_endpoint_x == 2 && ctx->tunnel_scan == 0)
+			{
+				logic=0;
+			}
+			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_TUNNEL, logic);
 			if(scan_ret > 0)
 			{
 				hit_cnt_tunnel+=scan_ret; 
 			}
 			if(scan_ret >= MAAT_SCAN_OK)
 			{
+				ctx->tunnel_result[ctx->tunnel_scan]=1;
 				n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 				request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
 				ctx->n_read=n_read;
@@ -1829,6 +1868,7 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 			}
 		}
 	}
+	ctx->tunnel_scan++;
 	request->merge_nth_scan_num = hit_path_cnt;
 finish:
 	return hit_cnt_tunnel;
@@ -1848,7 +1888,7 @@ static int app_id_scan(struct request_query_obj *request, struct policy_scan_ctx
 	}
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=app_dict->group_id;
-	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_app_id += scan_ret;
@@ -1964,7 +2004,7 @@ static int protocol_scan(struct request_query_obj *request, struct policy_scan_c
 	hit_group.group_id=get_group_id_by_protocol(request->numeric);
 	if(hit_group.group_id != 0 && ctx->ip_protocol_num == 0)
 	{
-		scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_PROTOCOL);
+		scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_PROTOCOL, 1);
 		if(scan_ret > 0)
 		{
 			hit_cnt_protocol+=scan_ret; 
@@ -2072,7 +2112,7 @@ static int ssl_extension_scan(struct request_query_obj *request, struct policy_s
 
 	memset(&hit_group, 0, sizeof(hit_group));
 	hit_group.group_id=(request->numeric == 1 ? BOOLEAN_TRUE_GROUP_ID : BOOLEAN_FLASE_GROUP_ID);
-	scan_ret =group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id);
+	scan_ret =group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_ssl += scan_ret;

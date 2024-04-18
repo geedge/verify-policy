@@ -32,6 +32,7 @@ install(DIRECTORY ./resource DESTINATION ${CMAKE_INSTALL_PREFIX}/)
 install(FILES script/service/verify-policy.service DESTINATION /usr/lib/systemd/system/)
 install(FILES script/tmpfiles/verify_policy.conf DESTINATION /usr/lib/tmpfiles.d/)
 install(FILES script/service/service_override_memsw_limit.conf DESTINATION /usr/lib/systemd/system/verify-policy.service.d/)
+install(FILES script/tarball/verify_policy_maat_stat.sh DESTINATION /opt/MESA/bin/)
 
 # Must uninstall the debug package before install release package
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
