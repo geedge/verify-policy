@@ -1550,7 +1550,7 @@ int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, int table_id, struct 
 		}
 		else
 		{
-			table_id = (table_id==TSG_OBJ_INTERNAL_ADDR)?TSG_OBJ_INTERNAL_ASN:TSG_OBJ_EXTERNAL_ADDR;
+			table_id = (table_id==TSG_OBJ_INTERNAL_ADDR)?TSG_OBJ_INTERNAL_ASN:TSG_OBJ_EXTERNAL_ASN;
 		}
 	    scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
 						    	 ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
