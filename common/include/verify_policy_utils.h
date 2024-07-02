@@ -51,7 +51,9 @@
 
 char* rt_strdup(const char* s);
 
+#define	MODULE_VERIFY_POLICY "verify-policy.init"
+
 #define CHECK_OR_EXIT(condition, fmt, ...)                                                                          \
-do { if(!(condition)) { mesa_runtime_log(RLOG_LV_FATAL, fmt, ##__VA_ARGS__); exit(EXIT_FAILURE);   }  } while(0) \
+do { if(!(condition)) { log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, fmt, ##__VA_ARGS__); exit(EXIT_FAILURE);   }  } while(0) \
 
 #endif

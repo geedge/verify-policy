@@ -12,7 +12,6 @@
 #include <pthread.h>
 
 #include <MESA/maat.h>
-#include <MESA/MESA_handle_logger.h>
 #include <MESA/MESA_prof_load.h>
 #include <MESA/stream.h>
 
@@ -20,10 +19,11 @@
 
 #include "verify_policy.h"
 #include "verify_policy_utils.h"
-#include "verify_policy_logging.h"
 
 #define HIT_PATH_SIZE           	4096
 #define	MAX_SCAN_RESULT				16
+
+#define	MODULE_VERIFY_MATCHER "verify-policy.matcher"
 
 enum policy_action
 {
@@ -195,7 +195,7 @@ struct policy_scan_ctx
 struct verify_policy_rt
 {
 	struct maat *feather[VSYS_ID_MAX];
-	void * local_logger;
+	struct log_handle *local_logger;
 	int log_level;
 	int thread_num;
 	int load_ip_location;
@@ -341,7 +341,7 @@ void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, 
 	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id, &group_id, &addr_type, addr_format, start_ip, end_ip, asn, organization, &is_valid);
 	if(ret!=9)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip ASN failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table parse ip ASN failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 	verify_unescape(organization);
@@ -355,7 +355,7 @@ void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, 
 	ip_asn->ref_cnt=1;
 	pthread_mutex_init(&(ip_asn->lock), NULL);
 
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy table add success %d", profile_id);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table add success %d", profile_id);
 	*ad = ip_asn;
 }
 
@@ -379,7 +379,7 @@ void ip_location_table_new_cb(const char *table_name, int table_id, const char* 
 
 	if(ret != 24)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 
@@ -402,7 +402,7 @@ void ip_location_table_new_cb(const char *table_name, int table_id, const char* 
 	ip_location->subdivision_addr=strdup(subdivision_addr);
 	ip_location->ref_cnt=1;
 	pthread_mutex_init(&(ip_location->lock), NULL);
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy table add success %d", profile_id);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table add success %d", profile_id);
 	*ad = ip_location;
 }
 
@@ -458,7 +458,7 @@ void tunnel_catalog_table_new_cb(const char *table_name, int table_id, const cha
 	ret=sscanf(table_line, "%d\t%s\t%s\t%s\t%d\t%d", &tunnel_id, tunnel_name, tunnel_type, composition, &group_id, &is_valid);
 	if(ret!=6)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Policy catalog table parse tunnel catalog failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy catalog table parse tunnel catalog failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 
@@ -472,7 +472,7 @@ void tunnel_catalog_table_new_cb(const char *table_name, int table_id, const cha
 	tunnel->ref_cnt=1;
 	pthread_mutex_init(&(tunnel->lock), NULL);
 
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy table add success %d", tunnel_id);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table add success %d", tunnel_id);
 	*ad = tunnel;
 }
 
@@ -486,7 +486,7 @@ void tunnel_endpoint_table_new_cb(const char *table_name, int table_id, const ch
 	ret=sscanf(table_line, "%d\t%d\t%s\t%s\t%s\t%d", &endpoint_id, &addr_type, start_ip, end_ip, description, &is_valid);
 	if(ret!=6)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Policy table parse tunnel end point failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table parse tunnel end point failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 
@@ -497,7 +497,7 @@ void tunnel_endpoint_table_new_cb(const char *table_name, int table_id, const ch
 	tunnel->ref_cnt=1;
 	pthread_mutex_init(&(tunnel->lock), NULL);
 
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy endpoint table add success %d", endpoint_id);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy endpoint table add success %d", endpoint_id);
 	*ad = tunnel;
 }
 
@@ -509,7 +509,7 @@ void tunnel_label_table_new_cb(const char *table_name, int table_id, const char*
 	ret=sscanf(table_line, "%d\t%d", &label_id, &is_valid);
 	if(ret!=2)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Policy table tunnel label failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table tunnel label failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 
@@ -519,7 +519,7 @@ void tunnel_label_table_new_cb(const char *table_name, int table_id, const char*
 	tunnel->ref_cnt=1;
 	pthread_mutex_init(&(tunnel->lock), NULL);
 
-	mesa_runtime_log(RLOG_LV_DEBUG, "Policy label table add success %d", label_id);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy label table add success %d", label_id);
 	*ad = tunnel;
 }
 
@@ -560,7 +560,7 @@ int maat_tunnel_table_init(int profile_idx,int vsys_id,
 		table_id=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func[profile_idx], free_func, dup_func, 0, NULL);
 		return table_id;
 	}
-	mesa_runtime_log(RLOG_LV_FATAL, "Register table %s failed.", table_name);
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Register table %s failed.", table_name);
 	return -1;
 }
 
@@ -626,7 +626,7 @@ int maat_plugin_table_ex_init(int profile_idx, int vsys_id,
 		ret=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func, free_func, dup_func, 0, NULL);
 		return ret;
 	}
-	mesa_runtime_log(RLOG_LV_FATAL, "Register maat plugin table %s failed.", table_name);
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Register maat plugin table %s failed.", table_name);
 	return -1;
 }
 
@@ -721,7 +721,7 @@ int maat_ip_table_init(int profile_idx,int vsys_id,
 									  				  0, NULL);
 		return 0;
 	}
-	mesa_runtime_log(RLOG_LV_FATAL, "Register table %s failed.", table_name);
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Register table %s failed.", table_name);
 	return -1;
 }
 
@@ -746,7 +746,7 @@ void fqdn_cat_new_data(const char *table_name, int table_id, const char* key, co
 	if(ret!=6)
 	{
 		FREE(&fqdn_cat);
-		mesa_runtime_log(RLOG_LV_FATAL, "Parse fqdn category failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Parse fqdn category failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
 		return;
 	}
 	fqdn_cat->ref_cnt=1;
@@ -795,7 +795,7 @@ void compile_table_new_cb(const char *table_name, int table_id, const char* key,
 	ret=sscanf(table_line, "%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d", &config_id, &service_id, &action, &do_blacklist, &do_log,effective_range,srv_def_large,&group_num,&is_valid);
 	if(ret!=9)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Security compile table parse failed, ret:%d, %s", ret, table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Security compile table parse failed, ret:%d, %s", ret, table_line);
 		return;
 	}
 	do_log=do_log;
@@ -1411,21 +1411,22 @@ static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, str
 	return hit_cnt_group;
 }
 
-static int get_group_id_by_location(struct ip_data_table* ip_location, int level)
+
+static int get_group_id_by_location(const struct ip_data_table* ip_location, size_t level)
 {
-	switch(level)
-	{
-		case 0:
-			return ip_location->country_region_group_id;
-		case 1:
-			return ip_location->province_group_id;
-		case 2:
-			return ip_location->city_group_id;
-		case 3:
-			return ip_location->subdivision_group_id;
-		default:
-			return 0;
-	}
+    const int* group_ids[] = {
+		&ip_location->country_region_group_id,
+        &ip_location->province_group_id,
+        &ip_location->city_group_id,
+        &ip_location->subdivision_group_id
+    };
+
+    if (level >= 0 && level < sizeof(group_ids) / sizeof(group_ids[0]))
+    {
+        return *group_ids[level];
+    }
+
+    return 0;
 }
 
 int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *sip, struct ip_addr *dip, int hit_cnt)
@@ -1804,12 +1805,14 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 	size_t n_hit_result=0;
 	long long result[MAX_SCAN_RESULT]={0};
 
+	int hit_cnt_group=0;
+
 	if(ctx->tunnel_scan_mid == NULL)
 	{
 		ctx->tunnel_scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], ctx->thread_id);
 		maat_state_set_scan_compile_table(ctx->tunnel_scan_mid, g_policy_rt->compile_table_id[TSG_TUNNEL]);
 	}
-
+	
 	int tunnel_table_id = get_tunnel_type_table_id(request->tunnel_type);
 	if (ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
@@ -1853,10 +1856,11 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 			{
 				logic=0;
 			}
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_TUNNEL, logic);
-			if(scan_ret > 0)
+			scan_ret = maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], &hit_group, 1,
+							   		  ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+			if(scan_ret == MAAT_SCAN_HIT)
 			{
-				hit_cnt_tunnel+=scan_ret; 
+				hit_cnt_tunnel+=n_hit_result;
 			}
 			if(scan_ret >= MAAT_SCAN_OK)
 			{
@@ -1868,6 +1872,16 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 			}
 		}
 	}
+	if(logic)
+	{
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], ctx->result+hit_cnt+hit_cnt_group,
+								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_tunnel+=n_hit_result;
+		}
+	}
+
 	ctx->tunnel_scan++;
 	request->merge_nth_scan_num = hit_path_cnt;
 finish:
@@ -2267,7 +2281,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			hit_cnt+=scan_ret;
 		}
 	}
-
+	
 	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								value, strlen(value), ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
 						 	    &n_hit_result, ctx->scan_mid);
@@ -2324,7 +2338,7 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 	}
 	else
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Invalid redis port range %s, MAAT init failed.", redis_port_range);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Invalid redis port range %s, MAAT init failed.", redis_port_range);
 	}
 	MESA_load_profile_string_def(profile, section, "inc_cfg_dir", inc_cfg_dir, sizeof(inc_cfg_dir), "");
 	MESA_load_profile_string_def(profile, section, "full_cfg_dir", ful_cfg_dir, sizeof(ful_cfg_dir), "");
@@ -2347,7 +2361,7 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 		case MAAT_INPUT_FILE:
 			maat_options_set_iris(opts, ful_cfg_dir, inc_cfg_dir);
 			break;
-		default: mesa_runtime_log(RLOG_LV_FATAL, "Invalid MAAT Input Mode: %d.", input_mode);
+		default: log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Invalid MAAT Input Mode: %d.", input_mode);
 			goto error_out;
 			break;
 	}
@@ -2371,13 +2385,13 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 	target = maat_new(opts, table_info);
 	if (!target)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "%s MAAT init failed.", __FUNCTION__);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "%s MAAT init failed.", __FUNCTION__);
 		goto error_out;
 	}
 
-	mesa_runtime_log(RLOG_LV_INFO, "%s:%s", "Maat Redis Ip", redis_ip);
-	mesa_runtime_log(RLOG_LV_INFO, "%s:%s", "Maat Redis Port", redis_port_range);
-	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "Maat Redis_db_index", db_index);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "%s:%s", "Maat Redis Ip", redis_ip);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "%s:%s", "Maat Redis Port", redis_port_range);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "%s:%d", "Maat Redis_db_index", db_index);
 
     maat_options_free(opts);
 	return target;
@@ -2499,6 +2513,9 @@ void verify_reload_loglevel()
 	int load_vsys_num=0, log_level=0;
 	const char * profile_path = "./conf/verify_policy.conf";
 
+	MESA_load_profile_int_def(profile_path, "SYSTEM", "log_level", &log_level, LOG_FATAL);
+	log_options_set_level(g_verify_proxy->logger, log_level);
+
 	MESA_load_profile_int_def(profile_path, "MAAT", "load_vsys_num", &(load_vsys_num), 255);
 	MESA_load_profile_int_def(profile_path, "MAAT", "log_level", &(log_level), LOG_LEVEL_FATAL);
 
@@ -2551,10 +2568,10 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			g_policy_rt->scan_table_id[i] = maat_get_table_id(g_policy_rt->feather[vsys_id], table_name[i]);
 			if (g_policy_rt->scan_table_id[i] < 0)
 			{
-				mesa_runtime_log(RLOG_LV_FATAL, "Maat table %s register failed.", table_name[i]);
+				log_fatal(g_policy_rt->local_logger, MODULE_VERIFY_MATCHER, "Maat table %s register failed.", table_name[i]);
 				goto error_out;
 			}
-			mesa_runtime_log(RLOG_LV_DEBUG, "Register maat %p, table name %s, table id %d", g_policy_rt->feather[vsys_id], table_name[i], g_policy_rt->scan_table_id[i]);
+			log_debug(g_policy_rt->local_logger, MODULE_VERIFY_MATCHER, "Register maat %p, table name %s, table id %d", g_policy_rt->feather[vsys_id], table_name[i], g_policy_rt->scan_table_id[i]);
 		}
 
 		for(int i = 0; i < PXY_TABLE_DEFENCE; i++)

@@ -1,4 +1,4 @@
-add_library(common src/verify_policy_logging.cpp src/verify_policy_utils.cpp)
+add_library(common src/verify_policy_utils.cpp src/log.c)
 target_include_directories(common PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
-target_link_libraries(common PUBLIC MESA_handle_logger libevent-static)
+target_link_libraries(common PUBLIC libevent-static)
 

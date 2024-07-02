@@ -9,6 +9,7 @@
 #define _VERIFY_POLICY_H
 
 #include <event2/event.h>
+#include <log.h>
 #include "verify_policy_utils.h"
 
 struct breakpad_instance;
@@ -116,7 +117,7 @@ struct verify_policy_thread
 struct verify_policy
 {
 	char name[VERIFY_SYMBOL_MAX];
-	void * logger;
+    struct log_handle *logger;
 	unsigned int log_level;
 	unsigned int nr_work_threads;
 	unsigned int listen_port;

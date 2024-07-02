@@ -30,9 +30,7 @@
 
 #include "verify_policy.h"
 #include <MESA/MESA_prof_load.h>
-#include <MESA/MESA_handle_logger.h>
 #include "verify_policy_utils.h"
-#include "verify_policy_logging.h"
 
 struct verify_policy * g_verify_proxy = NULL;
 
@@ -54,15 +52,17 @@ static int load_system_conf(struct verify_policy * verify, const char *profile)
     int xret = -1;
 
     xret = MESA_load_profile_uint_nodef(profile, "CONFIG", "thread-nu", &(verify->nr_work_threads));
-    if (xret < 0){
-        mesa_runtime_log(RLOG_LV_FATAL, "Reading the number of running threads failed");
+    if (xret < 0)
+	{
+        log_fatal(verify->logger, MODULE_VERIFY_POLICY, "Reading the number of running threads failed");
     }
 	xret = MESA_load_profile_short_nodef(profile, "LISTEN", "port", (short *)&(verify->listen_port));
-	if (xret < 0){
-		mesa_runtime_log(RLOG_LV_FATAL, "Listen Port invalid");
+	if (xret < 0)
+	{
+		log_fatal(verify->logger, MODULE_VERIFY_POLICY, "Reading the listening port failed");
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "The Threads", verify->nr_work_threads);
-	mesa_runtime_log(RLOG_LV_INFO, "%s:%d", "Libevent Port", verify->listen_port);
+	log_info(verify->logger, MODULE_VERIFY_POLICY, "%s:%d", "The Threads", verify->nr_work_threads);
+	log_info(verify->logger, MODULE_VERIFY_POLICY, "%s:%d", "Libevent Port", verify->listen_port);
     return xret;
 }
 
@@ -86,7 +86,7 @@ int tsg_policy_type_str2idx(const char *action_str)
 		if (0 == strcasecmp(action_str, policy_name[i]))
 			break;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "[I]   policyType= %s", action_str);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   policyType= %s", action_str);
 	return i;
 }
 
@@ -204,7 +204,7 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=serverPort1;
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
 					clientIp1, clientPort1, serverIp1, serverPort1, addr_type, *protocol);
 
 	return ip_addr;
@@ -227,7 +227,7 @@ struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
 		inet_pton(AF_INET6,Ip,&(v6_addr->saddr));
 		ip_addr->v6=v6_addr;
 	}
-	mesa_runtime_log(RLOG_LV_DEBUG, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
 
 	return ip_addr;
 }
@@ -259,7 +259,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 
 	if(attributeName==NULL)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "The attributeType is of type iP, but the attributeName is empty, resulting in IP type parsing failure.");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "The attributeType is of type iP, but the attributeName is empty, resulting in IP type parsing failure.");
 		return NULL;
 	}
 
@@ -274,7 +274,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 
 	if(strcasecmp(attributeName, "ip_protocol") == 0)
 	{
-		mesa_runtime_log(RLOG_LV_INFO, "  [I]   %s, protocol=%d", buff, *protocol);
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "  [I]   %s, protocol=%d", buff, *protocol);
 		return NULL;
 	}
 
@@ -306,8 +306,8 @@ static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff
 	if(item && item->type==cJSON_Number)
 	{
 		*protocol = item->valueint;
-	} 
-	mesa_runtime_log(RLOG_LV_INFO, "[I]   %s, port=%s, protocol=%d", buff, string, *protocol);
+	}
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   %s, port=%s, protocol=%d", buff, string, *protocol);
 
 	return string;
 }
@@ -354,7 +354,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		policy_query->request_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
 		if(policy_query->request_object[curr_id].table_id == __TSG_OBJ_MAX)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, "Get table id failed form table name:%s", item->valuestring);
+			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Get table id failed form table name:%s", item->valuestring);
 			return xret;
 		}
 	}
@@ -408,7 +408,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->request_object[curr_id].string);
 		}
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "[I]    %s", buff);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    %s", buff);
 	memset(buff, 0, VERIFY_STRING_MAX*2);
 end:
 	xret = 1;
@@ -433,7 +433,7 @@ enum verify_type get_verify_type(cJSON* data_json)
 		{
 			q_type = VERIFY_TYPE_REGEX;
 		}
-		mesa_runtime_log(RLOG_LV_INFO, " [I]   verifyType= %s", item->valuestring);
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   verifyType= %s", item->valuestring);
 	}
 	return q_type;
 }
@@ -508,7 +508,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 		verify_policy->compile_table_id = tsg_policy_type_str2idx(item->valuestring);
 		if (verify_policy->compile_table_id >= __SCAN_POLICY_MAX)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, "policy type error, policy id = %d", verify_policy->compile_table_id);
+			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "policy type error, policy id = %d", verify_policy->compile_table_id);
 			goto free;
 		}
 	}
@@ -518,7 +518,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 	{
 		verify_policy->vsys_id = item->valueint;
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "[I]   vsysId= %d", verify_policy->vsys_id);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   vsysId= %d", verify_policy->vsys_id);
 
 	item = cJSON_GetObjectItem(subitem,"verifySession");
 	if(item == NULL || item->type!=cJSON_Object)
@@ -581,7 +581,7 @@ cJSON *get_query_from_request(const char *data, ssize_t data_len, int thread_id)
 	cJSON* data_json = cJSON_Parse(data);
 	if(data_json == NULL)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "invalid policy parameter");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Failed to parse the request data.");
 		return NULL;
 	}
 	cJSON  *policy_obj=NULL, *data_obj=NULL;
@@ -603,7 +603,7 @@ cJSON *get_query_from_request(const char *data, ssize_t data_len, int thread_id)
 		{
 			if(verify_type == VERIFY_TYPE_REGEX)
 			{
-				mesa_runtime_log(RLOG_LV_INFO, " [I]   data= %.*s", (int)data_len, data);
+				log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   data= %.*s", (int)data_len, data);
 				hit_cnt = get_query_result_regex(subitem, data_obj);
 			}
 
@@ -659,13 +659,13 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 
 	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "FAILED (post type)");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "FAILED (post type)");
 		goto error;
 	}
 	evbuf_body = evhttp_request_get_input_buffer(evh_req);
 	if (!evbuf_body || 0==(inputlen = evbuffer_get_length(evbuf_body)) ||!(input = (char *)evbuffer_pullup(evbuf_body,inputlen)))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Failed to get post data information.");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Failed to get post data information.");
 		goto error;
 	}
 
@@ -676,7 +676,7 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 	}
 
 	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	mesa_runtime_log(RLOG_LV_INFO, "[O]   %s", policy_payload);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[O]   %s", policy_payload);
 	evhttp_socket_send(evh_req, policy_payload);
 
 	cJSON_Delete(policy_obj);
@@ -698,13 +698,13 @@ void * verify_policy_thread_func(void * arg)
     thread_ctx->base = event_base_new();
 	if (! thread_ctx->base)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, "Can'thread_ctx allocate event base");
+        log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Can'thread_ctx allocate event base");
         goto finish;
     }
     thread_ctx->http = evhttp_new(thread_ctx->base);
 	if (!thread_ctx->http)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, "couldn'thread_ctx create evhttp. Exiting.");
+        log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "couldn'thread_ctx create evhttp. Exiting.");
 		goto error;
 	}
 
@@ -713,10 +713,10 @@ void * verify_policy_thread_func(void * arg)
 	bound = evhttp_accept_socket_with_handle(thread_ctx->http, thread_ctx->accept_fd);
 	if (bound != NULL)
 	{
-		mesa_runtime_log(RLOG_LV_INFO, "Bound(%p) to port %d - Awaiting connections ... ", bound,
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Bound(%p) to port %d - Awaiting connections ... ", bound,
 						g_verify_proxy->listen_port);
 	}
-	mesa_runtime_log(RLOG_LV_FATAL, "Work thread %u is run...", thread_ctx->id);
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Work thread %u is run...", thread_ctx->id);
 
 	event_base_dispatch(thread_ctx->base);
 error:
@@ -832,7 +832,7 @@ int verify_policy_work_thread_run(struct verify_policy * verify)
     evutil_socket_t accept_fd = evhttp_listen_socket_byuser((struct sockaddr*)&sin, sizeof(struct sockaddr_in),LEV_OPT_REUSEABLE_PORT|LEV_OPT_CLOSE_ON_FREE, -1);
     if (accept_fd < 0)
 	{
-        mesa_runtime_log(RLOG_LV_FATAL, "Could not create a listen!");
+        log_fatal(verify->logger, MODULE_VERIFY_POLICY, "Could not create a listen!");
         goto finish;
     }
 
@@ -846,12 +846,12 @@ int verify_policy_work_thread_run(struct verify_policy * verify)
 
 		if (pthread_create(&thread_ctx->pid, thread_ctx->attr, thread_ctx->routine, thread_ctx))
 		{
-            mesa_runtime_log(RLOG_LV_FATAL, "%s", strerror(errno));
+            log_fatal(verify->logger, MODULE_VERIFY_POLICY, "%s", strerror(errno));
 			goto finish;
 		}
 		if (pthread_detach(thread_ctx->pid))
 		{
-            mesa_runtime_log(RLOG_LV_FATAL, "%s", strerror(errno));
+            log_fatal(verify->logger, MODULE_VERIFY_POLICY, "%s", strerror(errno));
 			goto finish;
 		}
 	}
@@ -910,14 +910,14 @@ int breakpad_init_minidump_upload(struct breakpad_instance * instance, const cha
 
 	if (unlikely(ret < 0))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "breakpad_upload_url is necessary, failed. ");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "breakpad_upload_url is necessary, failed. ");
 		goto errout;
 	}
 
 	ret = readlink("/proc/self/exe", execpath, sizeof(execpath));
 	if(unlikely(ret < 0))
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Failed at readlink /proc/self/exec: %s", strerror(errno));
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Failed at readlink /proc/self/exec: %s", strerror(errno));
 		/* after log, reset errno */
 		errno = 0;
 		goto errout;
@@ -1018,7 +1018,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
+			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
 			/* after log, reset errno */
 			errno = 0;
 		}
@@ -1027,7 +1027,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 	MESA_load_profile_uint_def(profile, "system", "enable_breakpad", &instance->en_breakpad, 1);
 	if (instance->en_breakpad <= 0)
 	{
-		mesa_runtime_log(RLOG_LV_FATAL, "Breakpad Crash Reporting System is disabled. ");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad Crash Reporting System is disabled. ");
 		return instance;
 	}
 
@@ -1046,7 +1046,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = breakpad_init_minidump_upload(instance, profile);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, "Breakpad upload init failed, using local breakpad dumpfile");
+			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad upload init failed, using local breakpad dumpfile");
 			instance->en_breakpad_upload = 0;
 		}
 
@@ -1055,7 +1055,7 @@ struct breakpad_instance * breakpad_init(const char * profile)
 		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
 		if (ret < 0)
 		{
-			mesa_runtime_log(RLOG_LV_FATAL, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
+			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
 			/* after log, reset errno */
 			errno = 0;
 		}
@@ -1073,8 +1073,8 @@ struct breakpad_instance * breakpad_init(const char * profile)
 			google_breakpad::MinidumpDescriptor(instance->minidump_dir_prefix), NULL,
 			tfe_breakpad_dump_to_file, NULL, true, -1);
 	}
-	mesa_runtime_log(RLOG_LV_INFO, "Breakpad Crash Report is enable. ");
-	mesa_runtime_log(RLOG_LV_INFO, "Minidump Dir: %s", instance->minidump_dir_prefix);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad Crash Report is enable. ");
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Minidump Dir: %s", instance->minidump_dir_prefix);
 	return instance;
 }
 
@@ -1083,8 +1083,7 @@ void __signal_handler_cb(int sig)
 	switch (sig)
 	{
 		case SIGHUP:
-			mesa_runtime_log(RLOG_LV_INFO, "Reload log config");
-            MESA_handle_runtime_log_reconstruction(NULL);
+			log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Reload log config");
 			verify_reload_loglevel();
             break;
 		case SIGPIPE:
@@ -1102,7 +1101,7 @@ int main(int argc, char * argv[])
 	const char * main_profile = "./conf/verify_policy.conf";
 	struct timespec start_time, end_time;
 
-	int ret = 0, opt = 0;
+	int ret = 0, opt = 0, log_level=0;
 	while ((opt = getopt(argc, argv, "v")) != -1)
 	{
 		switch (opt)
@@ -1118,7 +1117,9 @@ int main(int argc, char * argv[])
 	assert(g_verify_proxy);
 	strcpy(g_verify_proxy->name, "verify_policy");
 
-	g_verify_proxy->logger = verify_syslog_init(main_profile);
+	const char *log_path="./logs/verify_policy.log";
+	MESA_load_profile_int_def(main_profile, "SYSTEM", "log_level", &log_level, LOG_FATAL);
+	g_verify_proxy->logger = log_handle_create(log_path, log_level);
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
 	ret = load_system_conf(g_verify_proxy, main_profile);
@@ -1128,7 +1129,8 @@ int main(int argc, char * argv[])
 	ret = maat_table_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
 	clock_gettime(CLOCK_REALTIME, &(end_time));
-	mesa_runtime_log(RLOG_LV_FATAL, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
+
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
 	printf("Read table_info.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
 	g_verify_proxy->breakpad = breakpad_init(main_profile);

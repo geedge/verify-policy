@@ -9,7 +9,6 @@ add_executable(verify-policy src/verify_policy.cpp src/verify_matcher.cpp)
 target_link_libraries(verify-policy common cjson maatframe)
 target_link_libraries(verify-policy pthread dl
 		libevent-static
-		MESA_handle_logger
 		MESA_prof_load
 		breakpad-client-static
 		cjson
