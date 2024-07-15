@@ -64,6 +64,8 @@ enum verify_profile_table
 	PROFILE_TUNNEL_ENDPOINT,
 	PROFILE_TUNNEL_LABEL,
 	PROFILE_APP_DI_DICT,
+	PROFILE_FQDN_ENTRY,
+	PROFILE_IP_ADDR_ENTRY,
 	PROFILE_TABLE_MAX,
 };
 
@@ -160,7 +162,14 @@ struct app_id_dict
 	int ref_cnt;
 	int app_id;
 	long long int group_id;
+	pthread_mutex_t lock;
+};
 
+struct library_entry_ctx
+{
+	int ref_cnt;
+	int entry_id;
+	char *tag_ids;
 	pthread_mutex_t lock;
 };
 
@@ -523,7 +532,6 @@ void tunnel_label_table_new_cb(const char *table_name, int table_id, const char*
 	*ad = tunnel;
 }
 
-
 const char *table_name_map[] = {"TSG_OBJ_IP_ASN_USER_DEFINED",
 								"TSG_OBJ_IP_ASN_BUILT_IN",
 								"TSG_IP_LOCATION_USER_DEFINED",
@@ -533,7 +541,9 @@ const char *table_name_map[] = {"TSG_OBJ_IP_ASN_USER_DEFINED",
 								"TSG_TUNNEL_CATALOG",
 								"TSG_TUNNEL_ENDPOINT",
 								"TSG_TUNNEL_LABEL",
-								"APP_ID_DICT"};
+								"APP_ID_DICT",
+								"FQDN_ENTRY",
+								"IP_ADDR_ENTRY"};
 
 int maat_tunnel_table_init(int profile_idx,int vsys_id,
 					   	   maat_ex_free_func_t* free_func,
@@ -698,6 +708,76 @@ void app_dict_table_dup_cb(int table_id, void **to, void **from, long argl, void
 	*to=app_dict;
 
 	return;
+}
+
+void library_search_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
+{
+	int ret=0;
+	size_t offset=0, len=0;
+	char *entry_id_str=NULL;
+	struct library_entry_ctx *entry_ctx=ALLOC(struct library_entry_ctx, 1);
+
+	ret = maat_helper_read_column(table_line, 1, &offset, &len);
+	if(ret >= 0)
+	{
+		entry_id_str=ALLOC(char, len+1);
+		memcpy(entry_id_str, table_line+offset, len);
+		entry_ctx->entry_id=atoi(entry_id_str);
+		FREE(&entry_id_str);
+	}
+
+	ret = maat_helper_read_column(table_line, 2, &offset, &len);
+	if(ret >= 0)
+	{
+		entry_ctx->tag_ids=ALLOC(char, len+1);
+		memcpy(entry_ctx->tag_ids, table_line+offset, len);
+	}
+
+	entry_ctx->ref_cnt=1;
+	pthread_mutex_init(&(entry_ctx->lock), NULL);
+	*ad=entry_ctx;
+	return;
+}
+
+void library_search_free_cb(int table_id, void **ad, long argl, void* argp)
+{
+	if(*ad==NULL)
+	{
+		return;
+	}
+
+	struct library_entry_ctx *entry_ctx=(struct library_entry_ctx *)(*ad);
+	pthread_mutex_lock(&(entry_ctx->lock));
+	entry_ctx->ref_cnt--;
+	if(entry_ctx->ref_cnt>0)
+	{
+		pthread_mutex_unlock(&(entry_ctx->lock));
+		return;
+	}
+	pthread_mutex_unlock(&(entry_ctx->lock));
+	pthread_mutex_destroy(&(entry_ctx->lock));
+
+	if(entry_ctx->tag_ids)
+	{
+		FREE(&entry_ctx->tag_ids);
+	}
+	FREE(&entry_ctx);
+	*ad=NULL;
+	return;
+}
+
+void library_search_free(struct library_entry_ctx *entry_ctx)
+{
+	library_search_free_cb(0, (void **)&entry_ctx, 0, NULL);
+}
+
+void library_search_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
+{
+	struct library_entry_ctx *entry_ctx=(struct library_entry_ctx *)(*from);
+	pthread_mutex_lock(&(entry_ctx->lock));
+	entry_ctx->ref_cnt++;
+	pthread_mutex_unlock(&(entry_ctx->lock));
+	*to=entry_ctx;
 }
 
 int maat_ip_table_init(int profile_idx,int vsys_id,
@@ -1429,6 +1509,62 @@ static int get_group_id_by_location(const struct ip_data_table* ip_location, siz
     return 0;
 }
 
+int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn)
+{
+	int ret=0, hit_fqdn_entry=0;
+	cJSON *fqdn_entry_item=NULL;
+	struct library_entry_ctx *entry_ctx[8]={0};
+
+	if(fqdn == NULL)
+	{
+		return 0;
+	}
+	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_ENTRY], fqdn, (void **)entry_ctx, 8);
+	for(int i=0; i <ret; i++)
+	{
+		if(i < 8)
+		{
+			fqdn_entry_item=cJSON_CreateObject();
+			cJSON_AddNumberToObject(fqdn_entry_item, "entry_id", entry_ctx[i]->entry_id);
+			cJSON_AddStringToObject(fqdn_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
+			cJSON_AddItemToArray(hit_library, fqdn_entry_item);
+			hit_fqdn_entry++;
+		}
+		library_search_free(entry_ctx[i]);
+	}
+	return hit_fqdn_entry; 
+}
+
+int get_ip_entry_tag_ids(cJSON *hit_library, int vsys_id, struct ipaddr *ip_addr)
+{
+	int ret=0, hit_ip_entry=0;
+	cJSON *ip_entry_item=NULL;
+	struct ip_addr dest_ip, source_ip;
+	struct library_entry_ctx *entry_ctx[8]={0};
+
+	if(ip_addr == NULL)
+	{
+		return 0;
+	}
+
+	ip_addr_to_address(ip_addr, &dest_ip, &source_ip);
+	ret = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_IP_ADDR_ENTRY], &source_ip, (void **)&entry_ctx, 8);
+	for(int i=0; i <ret; i++)
+	{
+		if(i < 8)
+		{
+			ip_entry_item=cJSON_CreateObject();
+			cJSON_AddNumberToObject(ip_entry_item, "entry_id", entry_ctx[i]->entry_id);
+			cJSON_AddStringToObject(ip_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
+			cJSON_AddItemToArray(hit_library, ip_entry_item);
+			hit_ip_entry++;
+		}
+		library_search_free(entry_ctx[i]);
+	}
+	
+	return hit_ip_entry;
+}
+
 int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *sip, struct ip_addr *dip, int hit_cnt)
 {
 	int scan_ret=0, hit_cnt_ip=0;
@@ -1875,7 +2011,7 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 	if(logic)
 	{
 		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[TSG_OBJ_TUNNEL], ctx->result+hit_cnt+hit_cnt_group,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+								       MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
 		if (scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_tunnel+=n_hit_result;
@@ -2611,6 +2747,15 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 		if(ret<0)
 		{
 			goto error_out;
+		}
+		
+		for(int i=PROFILE_FQDN_ENTRY; i <=PROFILE_IP_ADDR_ENTRY; i++)
+		{
+			ret = maat_plugin_table_ex_init(i, vsys_id, library_search_new_cb, library_search_free_cb, library_search_dup_cb);
+			if(ret<0)
+			{
+				goto error_out;
+			}
 		}
 	}
 	ret = 0;

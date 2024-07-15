@@ -45,8 +45,8 @@
                     "virtual_table": "ATTR_SOURCE_IP",
                     "regions": [
                         {
-                            "table_type": "ip_plus",
-                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_type": "ip",
+                            "table_name": "TSG_IP_ADDR",
                             "table_content": {
                                 "addr_type": "ipv4",
                                 "addr_format": "range",
@@ -321,6 +321,20 @@
             "table_content": [
                 "0\t3\t126.com\t1\t701\t1",
                 "1\t4\tbaidu.com\t1\t702\t1"
+            ]
+        },
+	    {
+            "table_name": "FQDN_ENTRY",
+            "table_content": [
+                "1\t2,4,5\twww.126.com\t1\t1",
+                "2\t6,7,8\twww.baidu.com\t1\t1"
+            ]
+        },
+        {
+            "table_name": "IP_ADDR_ENTRY",
+            "table_content": [
+                "1\t2,4,5\t4\tsingle\t192.168.55.4\t192.168.55.4\t0\t1",
+                "1\t2,4,5\t4\tsingle\t192.168.55.4\t192.168.55.4\t0\t1"
             ]
         }
     ]

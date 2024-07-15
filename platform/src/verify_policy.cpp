@@ -18,6 +18,7 @@
 
 #include <event2/listener.h>
 #include <event2/http.h>
+#include <event2/keyvalq_struct.h>
 #include <cjson/cJSON.h>
 #include <event2/buffer.h>
 
@@ -86,7 +87,7 @@ int tsg_policy_type_str2idx(const char *action_str)
 		if (0 == strcasecmp(action_str, policy_name[i]))
 			break;
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   policyType= %s", action_str);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] policyType= %s", action_str);
 	return i;
 }
 
@@ -204,9 +205,15 @@ struct ipaddr *ip_to_stream_addr(const char *clientIp1, unsigned int clientPort1
 		v6_addr->dest=serverPort1;
 		ip_addr->v6=v6_addr;
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
-					clientIp1, clientPort1, serverIp1, serverPort1, addr_type, *protocol);
-
+	if(buff != NULL)
+	{
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] %s, clientIp1=%s, clientPort1=%d, serverIp=%s, serverPort=%d, addr_type=%d, protocol=%d", buff,
+				 clientIp1, clientPort1, serverIp1, serverPort1, addr_type, *protocol);
+	}
+	else
+	{
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] Ip=%s, Port=%d, addr_type=%d", clientIp1, clientPort1, addr_type);
+	}
 	return ip_addr;
 }
 
@@ -274,7 +281,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 
 	if(strcasecmp(attributeName, "ip_protocol") == 0)
 	{
-		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "  [I]   %s, protocol=%d", buff, *protocol);
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] %s, protocol=%d", buff, *protocol);
 		return NULL;
 	}
 
@@ -307,7 +314,7 @@ static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff
 	{
 		*protocol = item->valueint;
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   %s, port=%s, protocol=%d", buff, string, *protocol);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] %s, port=%s, protocol=%d", buff, string, *protocol);
 
 	return string;
 }
@@ -408,7 +415,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 			p += snprintf(p, sizeof(buff) - (p - buff), ", content = %s",policy_query->request_object[curr_id].string);
 		}
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    %s", buff);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] %s", buff);
 	memset(buff, 0, VERIFY_STRING_MAX*2);
 end:
 	xret = 1;
@@ -416,29 +423,29 @@ finish:
 	return xret;
 }
 
-enum verify_type get_verify_type(cJSON* data_json)
+enum verify_type get_verify_type(cJSON* http_respone)
 {
 	cJSON *item = NULL;
-	enum verify_type q_type = VERIFY_TYPE_POLICY;
+	enum verify_type type = VERIFY_TYPE_POLICY;
 
-	item = cJSON_GetObjectItem(data_json,"verifyType");
+	item = cJSON_GetObjectItem(http_respone,"verifyType");
 	if(item && item->type==cJSON_String)
 	{
 		if(0 == strcasecmp(item->valuestring, "policy"))
 		{
-			q_type = VERIFY_TYPE_POLICY;
+			type = VERIFY_TYPE_POLICY;
 		}
 
 		if(0 == strcasecmp(item->valuestring, "regex"))
 		{
-			q_type = VERIFY_TYPE_REGEX;
+			type = VERIFY_TYPE_REGEX;
 		}
-		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   verifyType= %s", item->valuestring);
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] verifyType= %s", item->valuestring);
 	}
-	return q_type;
+	return type;
 }
 
-static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
+static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body)
 {
 	int cur_id=0, i=0, is_valid[32]={0};
 	cJSON *regexstr_obj[32],*attributes=NULL;
@@ -464,7 +471,7 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *data_obj)
 	cJSON *verify_regex_obj=NULL;
 
 	cJSON *verifyRegex=cJSON_CreateArray();
-	cJSON_AddItemToObject(data_obj, "verifyRegex", verifyRegex);
+	cJSON_AddItemToObject(http_body, "verifyRegex", verifyRegex);
 	for (i = 0; i < cur_id; i++)
 	{
 		verify_regex_obj=cJSON_CreateObject();
@@ -494,7 +501,7 @@ static void get_count_form_attributeName(void *ctx, cJSON *subchild)
 	return;
 }
 
-int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
+int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int thread_id)
 {
 	int i = 0;
 	int hit_cnt = 0, xret =0;
@@ -502,7 +509,7 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 	struct verify_policy_query *verify_policy = NULL;
 
 	verify_policy = ALLOC(struct verify_policy_query, 1);
-	item = cJSON_GetObjectItem(subitem,"type");
+	item = cJSON_GetObjectItem(verifylist_array_item,"type");
 	if(item && item->type==cJSON_String)
 	{
 		verify_policy->compile_table_id = tsg_policy_type_str2idx(item->valuestring);
@@ -513,14 +520,14 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 		}
 	}
 
-	item = cJSON_GetObjectItem(subitem, "vsysId");
+	item = cJSON_GetObjectItem(verifylist_array_item, "vsysId");
 	if(item && item->type==cJSON_Number)
 	{
 		verify_policy->vsys_id = item->valueint;
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]   vsysId= %d", verify_policy->vsys_id);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] vsysId= %d", verify_policy->vsys_id);
 
-	item = cJSON_GetObjectItem(subitem,"verifySession");
+	item = cJSON_GetObjectItem(verifylist_array_item,"verifySession");
 	if(item == NULL || item->type!=cJSON_Object)
 	{
 		goto free;
@@ -550,16 +557,16 @@ int get_query_result_policy(cJSON *subitem, cJSON *data_obj, int thread_id)
 			}
 			i++;
 		}
-		http_hit_policy_list(verify_policy, i, hit_cnt, data_obj, ctx);
+		http_hit_policy_list(verify_policy, i, hit_cnt, http_body, ctx);
 
 		int item = 0;
 		cJSON *verfifySession = cJSON_CreateObject();
-		cJSON_AddItemToObject(data_obj, "verifySession", verfifySession);
+		cJSON_AddItemToObject(http_body, "verifySession", verfifySession);
 		cJSON *attributes=cJSON_CreateArray();
 		cJSON_AddItemToObject(verfifySession, "attributes", attributes);
 		for (item = 0; item < i; item++)
 		{
-			http_get_scan_status(&verify_policy->request_object[item], verify_policy->compile_table_id, attributes,data_obj, ctx);
+			http_get_scan_status(&verify_policy->request_object[item], verify_policy->compile_table_id, attributes, http_body, ctx);
 		}
 		policy_scan_ctx_free(ctx);
 	}
@@ -574,55 +581,169 @@ free:
 	return hit_cnt;
 }
 
-cJSON *get_query_from_request(const char *data, ssize_t data_len, int thread_id)
+cJSON *get_verify_policy_query(const char *data, ssize_t data_len, int thread_id)
 {
 	int hit_cnt = 0;
 
-	cJSON* data_json = cJSON_Parse(data);
-	if(data_json == NULL)
+	cJSON* http_request = cJSON_Parse(data);
+	if(http_request == NULL)
 	{
 		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Failed to parse the request data.");
 		return NULL;
 	}
-	cJSON  *policy_obj=NULL, *data_obj=NULL;
-	policy_obj=cJSON_CreateObject();
+	cJSON  *http_respone=NULL, *http_body=NULL;
+	http_respone=cJSON_CreateObject();
 
-	cJSON_AddNumberToObject(policy_obj, "code", 200);
-	cJSON_AddStringToObject(policy_obj, "msg", "Success");
+	cJSON_AddNumberToObject(http_respone, "code", 200);
+	cJSON_AddStringToObject(http_respone, "msg", "Success");
 
-	data_obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(policy_obj, "data", data_obj);
+	http_body = cJSON_CreateObject();
+	cJSON_AddItemToObject(http_respone, "data", http_body);
 
-	int verify_type=get_verify_type(data_json);
+	int type=get_verify_type(http_request);
 	cJSON *item = NULL, *subitem = NULL;
 
-	item = cJSON_GetObjectItem(data_json,"verifyList");
+	item = cJSON_GetObjectItem(http_request,"verifyList");
 	if(item && item->type==cJSON_Array)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
 		{
-			if(verify_type == VERIFY_TYPE_REGEX)
+			if(type == VERIFY_TYPE_REGEX)
 			{
-				log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, " [I]   data= %.*s", (int)data_len, data);
-				hit_cnt = get_query_result_regex(subitem, data_obj);
+				log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] data= %.*s", (int)data_len, data);
+				hit_cnt = get_query_result_regex(subitem, http_body);
 			}
 
-			if(verify_type == VERIFY_TYPE_POLICY)
+			if(type == VERIFY_TYPE_POLICY)
 			{
-				hit_cnt = get_query_result_policy(subitem, data_obj, thread_id);
+				hit_cnt = get_query_result_policy(subitem, http_body, thread_id);
 			}
 		}
 		if (hit_cnt >= 0)
 		{
-			cJSON_AddBoolToObject(policy_obj, "success", true);
+			cJSON_AddBoolToObject(http_respone, "success", true);
 		}
 		else
 		{
-			cJSON_AddBoolToObject(policy_obj, "success", false);
+			cJSON_AddBoolToObject(http_respone, "success", false);
 		}
 	}
-	cJSON_Delete(data_json);
-	return policy_obj;
+	cJSON_Delete(http_request);
+	return http_respone;
+}
+
+int http_get_headers(struct evhttp_request *evh_req, struct evkeyvalq *headers)
+{
+	int xret = -1;
+
+	const char *uri = evhttp_request_get_uri(evh_req);
+	if(!uri)
+	{
+		return xret;
+	}
+	return evhttp_parse_query(uri, headers);
+}
+
+int http_get_int_param(struct evhttp_request *evh_req, const char *key)
+{
+	int xret=-1;
+	struct evkeyvalq headers;
+	
+	xret = http_get_headers(evh_req, &headers);
+	if(xret != 0)
+	{
+		return -1;
+	}
+	const char *value = evhttp_find_header(&headers, key);
+	if (value)
+	{
+		xret = atoi(value);
+	}
+	evhttp_clear_headers(&headers);
+	return xret;
+}
+
+char *http_get_string_param(struct evhttp_request *evh_req, const char *key)
+{
+	int xret=-1;
+	char *param=NULL;
+	struct evkeyvalq headers;
+
+	xret = http_get_headers(evh_req, &headers);
+	if(xret != 0)
+	{
+		return NULL;
+	}
+	const char *value = evhttp_find_header(&headers, key);
+	if (value)
+	{
+		param = strdup(value);
+	}
+	evhttp_clear_headers(&headers);
+	return param;
+}
+
+int get_ip_type(const char *ip)
+{
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
+    int addr_type = 0;
+
+    if (inet_pton(AF_INET, ip, &(sa.sin_addr)) > 0)
+	{
+        addr_type = 4;
+    } 
+	else if (inet_pton(AF_INET6, ip, &(sa6.sin6_addr)) > 0) 
+	{
+        addr_type = 6;
+    }
+    return addr_type;
+}
+
+cJSON *get_library_search_query(struct evhttp_request *evh_req)
+{
+	int hit_library_cnt=0;
+	cJSON *http_respone=cJSON_CreateObject();
+	cJSON_AddNumberToObject(http_respone, "code", 200);
+	cJSON_AddStringToObject(http_respone, "msg", "Success");
+
+	cJSON *http_body = cJSON_CreateObject();
+	cJSON_AddItemToObject(http_respone, "data", http_body);
+
+	cJSON *hit_library=cJSON_CreateArray();
+	cJSON_AddItemToObject(http_body, "hit_library", hit_library);
+
+	int vsys_id = http_get_int_param(evh_req, "vsys_id");
+	if(vsys_id < 0)
+	{
+		return NULL;
+	}
+
+	char *ip = http_get_string_param(evh_req, "ip");
+	if(ip) 
+	{
+		struct ipaddr *ip_addr = ip_to_stream_addr(ip, 0, "0.0.0.0", 0, get_ip_type(ip), NULL, 0);
+		hit_library_cnt=get_ip_entry_tag_ids(hit_library, vsys_id, ip_addr);
+		FREE(&ip);
+		ipaddr_free(ip_addr);
+	}
+	
+	char *fqdn = http_get_string_param(evh_req, "fqdn");
+	if(fqdn)
+	{
+		hit_library_cnt=get_fqdn_entry_tag_ids(hit_library, vsys_id, fqdn);
+		FREE(&fqdn);
+	}
+
+	if (hit_library_cnt > 0)
+	{
+		cJSON_AddBoolToObject(http_body, "success", true);
+	}
+	else
+	{
+		cJSON_AddBoolToObject(http_body, "success", false);
+	}
+	return http_respone;
 }
 
 static int evhttp_socket_send(struct evhttp_request *req, char *sendbuf)
@@ -649,9 +770,9 @@ done:
     return 0;
 }
 
-void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
+void verify_policy_request_cb(struct evhttp_request *evh_req, void *arg)
 {
-	char *policy_payload= NULL; cJSON  *policy_obj;
+	char *http_payload_string= NULL; cJSON  *http_payload=NULL;
 	struct evbuffer * evbuf_body = NULL;
 	char *input = NULL; ssize_t inputlen=0;
 
@@ -662,6 +783,8 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "FAILED (post type)");
 		goto error;
 	}
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] Request policy verify: %s", evhttp_request_get_uri(evh_req));
+
 	evbuf_body = evhttp_request_get_input_buffer(evh_req);
 	if (!evbuf_body || 0==(inputlen = evbuffer_get_length(evbuf_body)) ||!(input = (char *)evbuffer_pullup(evbuf_body,inputlen)))
 	{
@@ -669,18 +792,49 @@ void evhttp_request_cb(struct evhttp_request *evh_req, void *arg)
 		goto error;
 	}
 
- 	policy_obj = get_query_from_request(input, inputlen, thread_ctx->id);
-	if(policy_obj == NULL)
+ 	http_payload = get_verify_policy_query(input, inputlen, thread_ctx->id);
+	if(http_payload == NULL)
 	{
 		goto error;
 	}
 
-	policy_payload = cJSON_PrintUnformatted(policy_obj);
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[O]   %s", policy_payload);
-	evhttp_socket_send(evh_req, policy_payload);
+	http_payload_string = cJSON_PrintUnformatted(http_payload);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[O] %s", http_payload_string);
+	evhttp_socket_send(evh_req, http_payload_string);
 
-	cJSON_Delete(policy_obj);
-	free(policy_payload);
+	cJSON_Delete(http_payload);
+	free(http_payload_string);
+
+	goto finish;
+
+error:
+	evhttp_send_error(evh_req, HTTP_BADREQUEST, 0);
+finish:
+	return;
+}
+
+void library_search_request_cb(struct evhttp_request *evh_req, void *arg)
+{
+	char *http_payload_string= NULL; cJSON  *http_payload=NULL;
+
+	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
+	{
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "FAILED (post type)");
+		goto error;
+	}
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] Request library search: %s", evhttp_request_get_uri(evh_req));
+
+	http_payload = get_library_search_query(evh_req);
+	if(http_payload == NULL)
+	{
+		goto error;
+	}
+	http_payload_string = cJSON_PrintUnformatted(http_payload);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[O] %s", http_payload_string);
+	evhttp_socket_send(evh_req, http_payload_string);
+
+	cJSON_Delete(http_payload);
+	free(http_payload_string);
 
 	goto finish;
 
@@ -708,13 +862,13 @@ void * verify_policy_thread_func(void * arg)
 		goto error;
 	}
 
-	evhttp_set_cb(thread_ctx->http, "/v1/policy/verify", evhttp_request_cb, thread_ctx);
+	evhttp_set_cb(thread_ctx->http, "/v1/policy/trouble_shooting/policy_verification", verify_policy_request_cb, thread_ctx);
+	evhttp_set_cb(thread_ctx->http, "/v1/policy/trouble_shooting/library_search", library_search_request_cb, thread_ctx);
 
 	bound = evhttp_accept_socket_with_handle(thread_ctx->http, thread_ctx->accept_fd);
-	if (bound != NULL)
+	if (bound == NULL)
 	{
-		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Bound(%p) to port %d - Awaiting connections ... ", bound,
-						g_verify_proxy->listen_port);
+		goto error;
 	}
 	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Work thread %u is run...", thread_ctx->id);
 
