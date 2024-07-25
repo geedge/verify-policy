@@ -33,32 +33,46 @@
                     ]
                 },
 				{
+	                "virtual_table":"ATTR_SERVER_FQDN",
+                    "group_name":"http_fqdn",
+                    "group_id":1011,
+                    "not_flag":0,
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_FQDN",
+                            "table_type": "expr",
+                            "table_content": {
+                                "keywords": "baidu.com",
+                                "expr_type": "regex",
+                                "match_method": "sub",
+                                "format": "uncase plain"
+                            }
+                        }
+                    ]
+                },
+				{
+	                "virtual_table":"ATTR_SSL_SAN",
+                    "group_name":"ssl_san",
+                    "group_id":11011,
+                    "not_flag":0,
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_FQDN",
+                            "table_type": "expr",
+                            "table_content": {
+                                "keywords": "baidu.com",
+                                "expr_type": "regex",
+                                "match_method": "sub",
+                                "format": "uncase plain"
+                            }
+                        }
+                    ]
+                },
+				{
 					"virtual_table":"ATTR_APP_ID",
                     "group_name":"app_id",
 					"group_id":201,
 					"not_flag":0
-                },
-		        {
-                    "not_flag": 0,
-                    "group_id": 301,
-                    "group_name":"ipv4_addr",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.55.4",
-                                "ip2": "192.168.55.4",
-                                "port_format": "range",
-                                "port1": "80",
-                                "port2": "80",
-                                "protocol": -1
-                            }
-                        }
-                    ] 
                 }
             ]
         },
@@ -74,8 +88,132 @@
             "is_valid": "yes",
             "groups": [
                 {
-					"group_name":"http_url",
-					"virtual_table":"ATTR_HTTP_URL"
+					"group_name":"http_fqdn",
+					"virtual_table":"ATTR_SERVER_FQDN"
+                },
+				{
+					"group_name":"ssl_san",
+					"virtual_table":"ATTR_SSL_SAN"
+                },
+				{
+                    "not_flag": 0,
+                    "group_id": 604,
+                    "group_name":"IPv4TCPSoureServiceChaining604",
+                    "virtual_table": "ATTR_SOURCE_IP",
+                    "regions": [
+                        {
+                            "table_type": "ip",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.55.4",
+                                "ip2": "192.168.55.4"
+                            }
+                        }
+                    ] 
+                },
+				{
+                    "group_id": 9,
+                    "group_name": "ip.source.ip12",
+                    "virtual_table": "ATTR_SOURCE_IP"
+                },
+				{
+                    "group_id": 10,
+                    "group_name": "ip.source.ip13",
+                    "virtual_table": "ATTR_DESTINATION_IP"
+                },
+				{
+                    "group_id": 6,
+                    "group_name": "host.fqdn6",
+                    "virtual_table": "ATTR_SERVER_FQDN"
+                },
+				{
+                    "group_id": 9,
+                    "group_name": "ip.source.ip14",
+                    "virtual_table": "ATTR_INTERNAL_IP"
+                },
+				{
+                    "group_id": 10,
+                    "group_name": "ip.source.ip15",
+                    "virtual_table": "ATTR_EXTERNAL_IP"
+                }
+            ]
+        },
+		{
+            "compile_id": 11022,
+            "service": 1,
+            "action": 48,
+            "do_blacklist": 1,
+			"do_log": 1,
+            "effective_range": 0,
+            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
+            "is_valid": "no",
+            "groups": [
+				{
+                    "not_flag": 0,
+                    "group_id": 704,
+                    "group_name":"IPv4TCPSoureServiceChaining604",
+                    "virtual_table": "ATTR_SOURCE_IP",
+                    "regions": [
+                        {
+                            "table_type": "ip",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.55.7",
+                                "ip2": "192.168.55.7"
+                            }
+                        }
+                    ] 
+                }
+            ]
+        },
+		{
+            "compile_id": 11023,
+            "service": 1,
+            "action": 48,
+            "do_blacklist": 1,
+			"do_log": 1,
+            "effective_range": 0,
+            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
+            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
+            "is_valid": "yes",
+            "groups": [
+				{
+                    "not_flag": 0,
+                    "group_id": 604,
+                    "group_name":"IPv4TCPSoureServiceChaining604",
+                    "virtual_table": "ATTR_SOURCE_IP",
+                    "regions": [
+                        {
+                            "table_type": "ip",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.55.4",
+                                "ip2": "192.168.55.4"
+                            }
+                        }
+                    ] 
+                },
+				{
+                    "group_id": 9,
+                    "group_name": "ip.source.ip12",
+                    "virtual_table": "ATTR_SOURCE_IP"
+                },
+				{
+                    "group_id": 10,
+                    "group_name": "ip.source.ip13",
+                    "virtual_table": "ATTR_DESTINATION_IP"
+                },
+				{
+                    "group_id": 9,
+                    "group_name": "ip.source.ip14",
+                    "virtual_table": "ATTR_INTERNAL_IP"
                 }
             ]
         },
@@ -309,33 +447,34 @@
                 "68\thttps\t0\tnull\tnetworking\tinfrastructure\tnetwork-protocol\t3\tused-by-malware,vulnerability,widely-used\tnull\tnull\t{\"method\":\"rate_limit\",\"bps\":1000}\t0\t0\t0\t0\t0\t68000\t1"
             ]
         },
-        {
-            "table_name": "TSG_FQDN_CATEGORY_BUILT_IN",
-            "table_content": [
-                "0\t1\t126.com\t1\t601\t1",
-                "1\t2\tbaidu.com\t1\t602\t1"
-            ]
-        },
-        {
-            "table_name": "TSG_FQDN_CATEGORY_USER_DEFINED",
-            "table_content": [
-                "0\t3\t126.com\t1\t701\t1",
-                "1\t4\tbaidu.com\t1\t702\t1"
-            ]
-        },
-	    {
+		{
             "table_name": "FQDN_ENTRY",
             "table_content": [
                 "1\t2,4,5\twww.126.com\t1\t1",
                 "2\t6,7,8\twww.baidu.com\t1\t1"
             ]
         },
-        {
+		{
             "table_name": "IP_ADDR_ENTRY",
             "table_content": [
-                "1\t2,4,5\t4\tsingle\t192.168.55.4\t192.168.55.4\t0\t1",
-                "1\t2,4,5\t4\tsingle\t192.168.55.4\t192.168.55.4\t0\t1"
+                "7\t12,14,15\t4\tsingle\t192.168.55.5\t192.168.55.5\t1",
+                "8\t22,24,25\t4\tsingle\t192.168.55.5\t192.168.55.5\t1",
+				"9\t9,15\t4\trange\t192.168.55.4\t192.168.55.4\t1",
+				"10\t10\t4\trange\t192.168.55.6\t192.168.55.6\t1"
             ]
-        }
+        },
+		{
+            "table_name": "LIBRARY_TAG",
+            "table_content": [
+                "6\tnone\twebsite_category\twebsite_category\tsearch\\bengines\t1",
+                "7\tnone\twebsite_category\twebsite_category\tbusiness\t1",
+                "8\tnone\twebsite_category\twebsite_category\tsearch\\bengines\t1",
+                "12\tnone\tgeoip\ttest1\ttest1\t1",
+                "14\tnone\tgeoip\ttest2\ttest2\t1",
+                "15\tnone\tgeoip\ttest3\ttest3\t1",
+				"9\tnone\tgeoip\ttest4\ttest4\t1",
+				"10\tnone\tgeoip\ttest5\ttest5\t1"
+			]
+		}
     ]
 }

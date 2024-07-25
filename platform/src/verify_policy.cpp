@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <event2/listener.h>
 #include <event2/http.h>
@@ -105,9 +106,7 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_HTTP_RES_HDR] = "ATTR_HTTP_RES_HDR";
 	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
 	table_name[TSG_OBJ_SSL_CN] = "ATTR_SSL_CN";
-	table_name[TSG_OBJ_SSL_CN_CAT] = "ATTR_SSL_CN_CAT";
 	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
-	table_name[TSG_OBJ_SSL_SAN_CAT] = "ATTR_SSL_SAN_CAT";
 	table_name[TSG_OBJ_DOH_QNAME]="ATTR_DOH_QNAME";
 	table_name[TSG_OBJ_DNS_QNAME] = "ATTR_DNS_QNAME";
 	table_name[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT";
@@ -128,18 +127,7 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
 	table_name[TSG_OBJ_FLAG]="ATTR_FLAG";
 	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
-	table_name[TSG_OBJ_IP_SRC_ASN]="ATTR_SOURCE_ASN";
-	table_name[TSG_OBJ_IP_DST_ASN]="ATTR_DESTINATION_ASN";
-	table_name[TSG_OBJ_IP_SRC_GEO_COUNTRY]="ATTR_SOURCE_GEO_COUNTRY";
-	table_name[TSG_OBJ_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUPER_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_SRC_GEO_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUB_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_COUNTRY]="ATTR_DESTINATION_GEO_COUNTRY";
-	table_name[TSG_OBJ_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUPER_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUB_ADMINISTRATIVE_AREA";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_SERVER_FQDN_CAT";
 	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
 	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
 	table_name[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT";
@@ -151,12 +139,10 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
 	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
 	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
-	table_name[TSG_OBJ_INTERNAL_ASN]="ATTR_INTERNAL_ASN";
-	table_name[TSG_OBJ_EXTERNAL_ASN]="ATTR_EXTERNAL_ASN";
 	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
 	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
 	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
-	
+
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
 	{
@@ -234,7 +220,7 @@ struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
 		inet_pton(AF_INET6,Ip,&(v6_addr->saddr));
 		ip_addr->v6=v6_addr;
 	}
-	log_debug(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    attributeName = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    attribute_name = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
 
 	return ip_addr;
 }
@@ -266,7 +252,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 
 	if(attributeName==NULL)
 	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "The attributeType is of type iP, but the attributeName is empty, resulting in IP type parsing failure.");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "The attribute_type is of type iP, but the attribute_name is empty, resulting in IP type parsing failure.");
 		return NULL;
 	}
 
@@ -276,7 +262,7 @@ static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attri
 	if(item && item->type==cJSON_String) Port =atoi(item->valuestring);
 	item = cJSON_GetObjectItem(attributeValue,"protocol");
 	if(item && item->type==cJSON_Number) *protocol = item->valueint;
-	item=cJSON_GetObjectItem(attributeValue,"addrType");
+	item=cJSON_GetObjectItem(attributeValue,"addr_type");
 	if(item && item->type==cJSON_Number) addr_type = item->valueint;
 
 	if(strcasecmp(attributeName, "ip_protocol") == 0)
@@ -305,7 +291,7 @@ static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff
 	char *string=NULL;
 
 	item = cJSON_GetObjectItem(attributeValue,"port");
-	if(item && item->type==cJSON_String) 
+	if(item && item->type==cJSON_String)
 	{
 		string = item->valuestring;
 	}
@@ -321,7 +307,7 @@ static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff
 
 static inline int match_attributeType_in_numeric(const char *attribute_type, int table_id)
 {
-	if(0 == strcasecmp(attribute_type, "numeric") || 0 == strcasecmp(attribute_type, "flag") || 
+	if(0 == strcasecmp(attribute_type, "numeric") || 0 == strcasecmp(attribute_type, "flag") ||
 	   0 == strcasecmp(attribute_type, "boolean") || table_id == TSG_OBJ_IP_PROTOCOL)
 	{
 		return 1;
@@ -340,22 +326,22 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	cJSON* item = NULL, *attributeValue=NULL, *tunnelType_item=NULL;
 
 	p = buff;
-	item = cJSON_GetObjectItem(subchild, "attributeType");
+	item = cJSON_GetObjectItem(subchild, "attribute_type");
 	if(item && item->type==cJSON_String)
 	{
 		attribute_type = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), "attributeType = %s", attribute_type);
+		p += snprintf(p, sizeof(buff) - (p - buff), "attribute_type = %s", attribute_type);
 	}
 
-	item = cJSON_GetObjectItem(subchild, "attributeName");
+	item = cJSON_GetObjectItem(subchild, "attribute_name");
 	if(item && item->type==cJSON_String)
 	{
 		policy_query->request_object[curr_id].attri_name = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), ", attributeName = %s",policy_query->request_object[curr_id].attri_name);
+		p += snprintf(p, sizeof(buff) - (p - buff), ", attribute_name = %s",policy_query->request_object[curr_id].attri_name);
 	}
 	policy_query->request_object[curr_id].attributes=cJSON_Duplicate(subchild, 1);
 
-	item = cJSON_GetObjectItem(subchild, "tableName");
+	item = cJSON_GetObjectItem(subchild, "table_name");
 	if(item && item->type==cJSON_String)
 	{
 		policy_query->request_object[curr_id].table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
@@ -366,17 +352,17 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 		}
 	}
 
-	attributeValue = cJSON_GetObjectItem(subchild, "attributeValue");
+	attributeValue = cJSON_GetObjectItem(subchild, "atrribute_value");
 	if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
 	{
 		goto finish;
 	}
 
-	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnelType");
+	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnel_type");
 	if(tunnelType_item && tunnelType_item->type==cJSON_String)
 	{
 		policy_query->request_object[curr_id].tunnel_type=tunnelType_item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), ", tunnelType=%s",policy_query->request_object[curr_id].tunnel_type);
+		p += snprintf(p, sizeof(buff) - (p - buff), ", tunnel_type=%s",policy_query->request_object[curr_id].tunnel_type);
 	}
 
 	if(0 == strcasecmp(attribute_type, "ip"))
@@ -386,7 +372,7 @@ static int get_attribute_from_json(int curr_id, cJSON* subchild, struct verify_p
 	}
 	if(0 == strcasecmp(attribute_type, "port"))
 	{
-		policy_query->request_object[curr_id].string = get_port_from_json(attributeValue, &(policy_query->request_object[curr_id].numeric), buff);		
+		policy_query->request_object[curr_id].string = get_port_from_json(attributeValue, &(policy_query->request_object[curr_id].numeric), buff);
 		goto end;
 	}
 
@@ -428,7 +414,7 @@ enum verify_type get_verify_type(cJSON* http_respone)
 	cJSON *item = NULL;
 	enum verify_type type = VERIFY_TYPE_POLICY;
 
-	item = cJSON_GetObjectItem(http_respone,"verifyType");
+	item = cJSON_GetObjectItem(http_respone,"verify_type");
 	if(item && item->type==cJSON_String)
 	{
 		if(0 == strcasecmp(item->valuestring, "policy"))
@@ -440,7 +426,7 @@ enum verify_type get_verify_type(cJSON* http_respone)
 		{
 			type = VERIFY_TYPE_REGEX;
 		}
-		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] verifyType= %s", item->valuestring);
+		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] verify_type= %s", item->valuestring);
 	}
 	return type;
 }
@@ -451,7 +437,7 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 	cJSON *regexstr_obj[32],*attributes=NULL;
 	cJSON *item = NULL, *subchild = NULL;
 
-	attributes = cJSON_GetObjectItem(verifylist_array_item, "verifyRegex");
+	attributes = cJSON_GetObjectItem(verifylist_array_item, "verify_regex");
 	if(attributes==NULL || attributes->type != cJSON_Array)
 	{
 		return -1;
@@ -459,7 +445,7 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 
 	for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 	{
-		item = cJSON_GetObjectItem(subchild, "regexStr");
+		item = cJSON_GetObjectItem(subchild, "regex_str");
 		if(item && item->type==cJSON_String)
 		{
 			is_valid[cur_id] = policy_verify_regex_expression(item->valuestring);
@@ -471,12 +457,12 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 	cJSON *verify_regex_obj=NULL;
 
 	cJSON *verifyRegex=cJSON_CreateArray();
-	cJSON_AddItemToObject(http_body, "verifyRegex", verifyRegex);
+	cJSON_AddItemToObject(http_body, "verify_regex", verifyRegex);
 	for (i = 0; i < cur_id; i++)
 	{
 		verify_regex_obj=cJSON_CreateObject();
-		cJSON_AddItemToObject(verify_regex_obj, "regexStr", regexstr_obj[i]);
-		cJSON_AddNumberToObject(verify_regex_obj, "isValid", is_valid[i]);
+		cJSON_AddItemToObject(verify_regex_obj, "regex_str", regexstr_obj[i]);
+		cJSON_AddNumberToObject(verify_regex_obj, "is_valid", is_valid[i]);
 		cJSON_AddItemToArray(verifyRegex, verify_regex_obj);
 	}
 	return 1;
@@ -486,7 +472,7 @@ static void get_count_form_attributeName(void *ctx, cJSON *subchild)
 {
 	cJSON *item = NULL;
 
-	item = cJSON_GetObjectItem(subchild, "attributeName");
+	item = cJSON_GetObjectItem(subchild, "attribute_name");
 	if(item && item->type==cJSON_String)
 	{
 		if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
@@ -503,7 +489,7 @@ static void get_count_form_attributeName(void *ctx, cJSON *subchild)
 
 int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int thread_id)
 {
-	int i = 0;
+	int attribute_num = 0;
 	int hit_cnt = 0, xret =0;
 	cJSON *item = NULL, *subchild = NULL, *attributes=NULL;
 	struct verify_policy_query *verify_policy = NULL;
@@ -520,14 +506,14 @@ int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int 
 		}
 	}
 
-	item = cJSON_GetObjectItem(verifylist_array_item, "vsysId");
+	item = cJSON_GetObjectItem(verifylist_array_item, "vsys_id");
 	if(item && item->type==cJSON_Number)
 	{
 		verify_policy->vsys_id = item->valueint;
 	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] vsysId= %d", verify_policy->vsys_id);
+	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] vsys_id= %d", verify_policy->vsys_id);
 
-	item = cJSON_GetObjectItem(verifylist_array_item,"verifySession");
+	item = cJSON_GetObjectItem(verifylist_array_item,"verify_session");
 	if(item == NULL || item->type!=cJSON_Object)
 	{
 		goto free;
@@ -545,33 +531,33 @@ int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int 
 
 		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 		{
-			xret = get_attribute_from_json(i, subchild, verify_policy);
+			xret = get_attribute_from_json(attribute_num, subchild, verify_policy);
 			if (xret < 0)
 			{
 				goto free;
 			}
-			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->request_object[i], ctx);
-			if(match_ip_attribute_name(verify_policy->request_object[i].attri_name) >= 0)
+			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &verify_policy->request_object[attribute_num], ctx);
+			if(match_ip_attribute_name(verify_policy->request_object[attribute_num].attri_name) >= 0)
 			{
-				ipaddr_free(verify_policy->request_object[i].ip_addr);
+				ipaddr_free(verify_policy->request_object[attribute_num].ip_addr);
 			}
-			i++;
+			attribute_num++;
 		}
-		http_hit_policy_list(verify_policy, i, hit_cnt, http_body, ctx);
+		http_hit_policy_list(verify_policy, attribute_num, hit_cnt, http_body, ctx);
 
 		int item = 0;
 		cJSON *verfifySession = cJSON_CreateObject();
-		cJSON_AddItemToObject(http_body, "verifySession", verfifySession);
+		cJSON_AddItemToObject(http_body, "verify_session", verfifySession);
 		cJSON *attributes=cJSON_CreateArray();
 		cJSON_AddItemToObject(verfifySession, "attributes", attributes);
-		for (item = 0; item < i; item++)
+		for (item = 0; item < attribute_num; item++)
 		{
 			http_get_scan_status(&verify_policy->request_object[item], verify_policy->compile_table_id, attributes, http_body, ctx);
 		}
 		policy_scan_ctx_free(ctx);
 	}
 
-	i=0;
+	attribute_num=0;
 free:
 	if (verify_policy)
 	{
@@ -603,7 +589,7 @@ cJSON *get_verify_policy_query(const char *data, ssize_t data_len, int thread_id
 	int type=get_verify_type(http_request);
 	cJSON *item = NULL, *subitem = NULL;
 
-	item = cJSON_GetObjectItem(http_request,"verifyList");
+	item = cJSON_GetObjectItem(http_request,"verify_list");
 	if(item && item->type==cJSON_Array)
 	{
 		for (subitem = item->child; subitem != NULL; subitem = subitem->next)
@@ -646,9 +632,9 @@ int http_get_headers(struct evhttp_request *evh_req, struct evkeyvalq *headers)
 
 int http_get_int_param(struct evhttp_request *evh_req, const char *key)
 {
-	int xret=-1;
+	int xret=-1, vsys_id=-1;
 	struct evkeyvalq headers;
-	
+
 	xret = http_get_headers(evh_req, &headers);
 	if(xret != 0)
 	{
@@ -657,10 +643,10 @@ int http_get_int_param(struct evhttp_request *evh_req, const char *key)
 	const char *value = evhttp_find_header(&headers, key);
 	if (value)
 	{
-		xret = atoi(value);
+		vsys_id = atoi(value);
 	}
 	evhttp_clear_headers(&headers);
-	return xret;
+	return vsys_id;
 }
 
 char *http_get_string_param(struct evhttp_request *evh_req, const char *key)
@@ -692,8 +678,8 @@ int get_ip_type(const char *ip)
     if (inet_pton(AF_INET, ip, &(sa.sin_addr)) > 0)
 	{
         addr_type = 4;
-    } 
-	else if (inet_pton(AF_INET6, ip, &(sa6.sin6_addr)) > 0) 
+    }
+	else if (inet_pton(AF_INET6, ip, &(sa6.sin6_addr)) > 0)
 	{
         addr_type = 6;
     }
@@ -716,6 +702,7 @@ cJSON *get_library_search_query(struct evhttp_request *evh_req)
 	int vsys_id = http_get_int_param(evh_req, "vsys_id");
 	if(vsys_id < 0)
 	{
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "invalid vsys_id");
 		return NULL;
 	}
 
@@ -776,7 +763,7 @@ void verify_policy_request_cb(struct evhttp_request *evh_req, void *arg)
 	struct evbuffer * evbuf_body = NULL;
 	char *input = NULL; ssize_t inputlen=0;
 
-	struct verify_policy_thread *thread_ctx  = (struct verify_policy_thread *)arg;
+	struct verify_policy_thread *thread  = (struct verify_policy_thread *)arg;
 
 	if (evhttp_request_get_command(evh_req) != EVHTTP_REQ_POST)
 	{
@@ -792,7 +779,7 @@ void verify_policy_request_cb(struct evhttp_request *evh_req, void *arg)
 		goto error;
 	}
 
- 	http_payload = get_verify_policy_query(input, inputlen, thread_ctx->id);
+ 	http_payload = get_verify_policy_query(input, inputlen, thread->id);
 	if(http_payload == NULL)
 	{
 		goto error;
@@ -847,163 +834,92 @@ finish:
 void * verify_policy_thread_func(void * arg)
 {
 	struct evhttp_bound_socket *bound = NULL;
-	struct verify_policy_thread *thread_ctx  = (struct verify_policy_thread *)arg;
+	struct verify_policy_thread *thread  = (struct verify_policy_thread *)arg;
 
-    thread_ctx->base = event_base_new();
-	if (! thread_ctx->base)
+    thread->http = evhttp_new(thread->base);
+	if (!thread->http)
 	{
-        log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Can'thread_ctx allocate event base");
-        goto finish;
-    }
-    thread_ctx->http = evhttp_new(thread_ctx->base);
-	if (!thread_ctx->http)
-	{
-        log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "couldn'thread_ctx create evhttp. Exiting.");
+        log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "couldn'thread create evhttp. Exiting.");
 		goto error;
 	}
 
-	evhttp_set_cb(thread_ctx->http, "/v1/policy/trouble_shooting/policy_verification", verify_policy_request_cb, thread_ctx);
-	evhttp_set_cb(thread_ctx->http, "/v1/policy/trouble_shooting/library_search", library_search_request_cb, thread_ctx);
+	evhttp_set_cb(thread->http, "/v1/policy/trouble_shooting/policy_verification", verify_policy_request_cb, thread);
+	evhttp_set_cb(thread->http, "/v1/policy/trouble_shooting/library_search", library_search_request_cb, thread);
 
-	bound = evhttp_accept_socket_with_handle(thread_ctx->http, thread_ctx->accept_fd);
+	bound = evhttp_accept_socket_with_handle(thread->http, thread->accept_fd);
 	if (bound == NULL)
 	{
 		goto error;
 	}
-	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Work thread %u is run...", thread_ctx->id);
+	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Work thread %u is run...", thread->id);
 
-	event_base_dispatch(thread_ctx->base);
+	event_base_dispatch(thread->base);
 error:
-	event_base_free(thread_ctx->base);
-finish:
+	event_base_free(thread->base);
 	return NULL;
 }
 
-static int
-evutil_fast_socket_nonblocking(evutil_socket_t fd)
+int create_and_listen_socket(const struct sockaddr *sa, int socklen, int backlog)
 {
-#ifdef _WIN32
-	return evutil_make_socket_nonblocking(fd);
-#else
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
-		return -1;
-	}
-	return 0;
-#endif
-}
+    int fd;
+    int on = 1;
+    int family = sa ? sa->sa_family : AF_UNSPEC;
+    int socktype = SOCK_STREAM | EVUTIL_SOCK_NONBLOCK;
 
-static int
-evutil_fast_socket_closeonexec(evutil_socket_t fd)
-{
-#if !defined(_WIN32) && defined(EVENT__HAVE_SETFD)
-	if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
-		return -1;
-	}
-#endif
-	return 0;
-}
-
-evutil_socket_t
-evutil_socket_(int domain, int type, int protocol)
-{
-	evutil_socket_t r;
-#if defined(SOCK_NONBLOCK) && defined(SOCK_CLOEXEC)
-	r = socket(domain, type, protocol);
-	if (r >= 0)
-		return r;
-	else if ((type & (SOCK_NONBLOCK|SOCK_CLOEXEC)) == 0)
-		return -1;
-#endif
-#define SOCKET_TYPE_MASK (~(EVUTIL_SOCK_NONBLOCK|EVUTIL_SOCK_CLOEXEC))
-	r = socket(domain, type & SOCKET_TYPE_MASK, protocol);
-	if (r < 0)
-		return -1;
-	if (type & EVUTIL_SOCK_NONBLOCK) {
-		if (evutil_fast_socket_nonblocking(r) < 0) {
-			evutil_closesocket(r);
-			return -1;
-		}
-	}
-	if (type & EVUTIL_SOCK_CLOEXEC) {
-		if (evutil_fast_socket_closeonexec(r) < 0) {
-			evutil_closesocket(r);
-			return -1;
-		}
-	}
-	return r;
-}
-
-static evutil_socket_t
-evhttp_listen_socket_byuser(const struct sockaddr *sa, int socklen,
-                            unsigned flags, int backlog)
-{
-	evutil_socket_t fd;
-	int on = 1;
-	int family = sa ? sa->sa_family : AF_UNSPEC;
-	int socktype = SOCK_STREAM | EVUTIL_SOCK_NONBLOCK;
-
-	if (flags & LEV_OPT_CLOSE_ON_EXEC)
-		socktype |= EVUTIL_SOCK_CLOEXEC;
-
-	fd = evutil_socket_(family, socktype, 0);
-	if (fd == -1)
-		return fd;
-
-	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&on, sizeof(on))<0)
-		goto err;
-	if (flags & LEV_OPT_REUSEABLE) {
-		if (evutil_make_listen_socket_reuseable(fd) < 0)
-			goto err;
-	}
-	if (flags & LEV_OPT_REUSEABLE_PORT) {
-		if (evutil_make_listen_socket_reuseable_port(fd) < 0){
-			goto err;
-        }
-	}
-	if (sa) {
-		if (bind(fd, sa, socklen)<0)
-			goto err;
-	}
-    if (listen(fd, backlog) == -1) {
-        goto err;
+    fd = socket(family, socktype, 0);
+    if (fd == -1)
+    {
+        return fd;
     }
-	return fd;
-err:
-	evutil_closesocket(fd);
-	return fd;
+
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) != 0 ||
+        setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on)) != 0)
+    {
+        evutil_closesocket(fd);
+        return -1;
+    }
+
+    if (bind(fd, sa, socklen) < 0)
+    {
+        evutil_closesocket(fd);
+        return -1;
+    }
+
+    listen(fd, backlog);
+    return fd;
 }
 
 int verify_policy_work_thread_run(struct verify_policy * verify)
 {
 	int xret = 0;
-	unsigned int tid = 0;
-	struct verify_policy_thread *thread_ctx = NULL;
+	struct verify_policy_thread *thread = NULL;
 
 	struct sockaddr_in sin;
     memset(&sin, 0, sizeof(struct sockaddr_in));
     sin.sin_family = AF_INET;
     sin.sin_port   = htons(verify->listen_port);
-    evutil_socket_t accept_fd = evhttp_listen_socket_byuser((struct sockaddr*)&sin, sizeof(struct sockaddr_in),LEV_OPT_REUSEABLE_PORT|LEV_OPT_CLOSE_ON_FREE, -1);
+    evutil_socket_t accept_fd = create_and_listen_socket((struct sockaddr*)&sin, sizeof(struct sockaddr_in), -1);
     if (accept_fd < 0)
 	{
         log_fatal(verify->logger, MODULE_VERIFY_POLICY, "Could not create a listen!");
         goto finish;
     }
 
-	for (tid = 0; tid < verify->nr_work_threads; tid++)
+	for (unsigned tid = 0; tid < verify->nr_work_threads; tid++)
 	{
 		verify->work_threads[tid] = ALLOC(struct verify_policy_thread, 1);
-		thread_ctx = verify->work_threads[tid];
-		thread_ctx->id = tid;
-		thread_ctx->accept_fd =accept_fd;
-        thread_ctx->routine = verify_policy_thread_func;
+		thread = verify->work_threads[tid];
+		thread->id = tid;
+		thread->accept_fd = accept_fd;
+		thread->base = event_base_new();
+        thread->routine = verify_policy_thread_func;
 
-		if (pthread_create(&thread_ctx->pid, thread_ctx->attr, thread_ctx->routine, thread_ctx))
+		if (pthread_create(&thread->pid, thread->attr, thread->routine, thread))
 		{
             log_fatal(verify->logger, MODULE_VERIFY_POLICY, "%s", strerror(errno));
 			goto finish;
 		}
-		if (pthread_detach(thread_ctx->pid))
+		if (pthread_detach(thread->pid))
 		{
             log_fatal(verify->logger, MODULE_VERIFY_POLICY, "%s", strerror(errno));
 			goto finish;

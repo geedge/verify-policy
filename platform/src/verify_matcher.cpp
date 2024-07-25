@@ -20,6 +20,7 @@
 #include "verify_policy.h"
 #include "verify_policy_utils.h"
 
+#define MAX_EX_DATA_LEN 			16
 #define HIT_PATH_SIZE           	4096
 #define	MAX_SCAN_RESULT				16
 
@@ -54,38 +55,14 @@ enum http_std_field
 
 enum verify_profile_table
 {
-	PROFILE_ASN_USER_DEFINED,
-	PROFILE_ASN_BUILT_IN,
-	PROFILE_LOCATION_USER_DEFINED,
-	PROFILE_LOCATION_BUILT_IN,
-	PROFILE_FQDN_CAT_USER_DEFINED,
-	PROFILE_FQDN_CAT_BUILT_IN,
 	PROFILE_TUNNEL_CATALOG,
 	PROFILE_TUNNEL_ENDPOINT,
 	PROFILE_TUNNEL_LABEL,
 	PROFILE_APP_DI_DICT,
 	PROFILE_FQDN_ENTRY,
 	PROFILE_IP_ADDR_ENTRY,
+	PROFILE_LIBRARY_TAG,
 	PROFILE_TABLE_MAX,
-};
-
-struct ip_data_table
-{
-	int profile_id;
-	int asn_group_id;
-	int geoname_group_id;
-	int country_region_group_id;
-	int province_group_id;
-	int city_group_id;
-	int subdivision_group_id;
-	char *asn;
-	char *organization;
-	char *country_full;
-	char *province_full;
-	char *city_full;
-	char *subdivision_addr;
-	int ref_cnt;
-	pthread_mutex_t lock;
 };
 
 struct http_field_name
@@ -94,45 +71,24 @@ struct http_field_name
 	enum http_std_field field_id;
 };
 
-enum nth_scan_type
-{
-	NTH_SCAN_IP_SRC_GEO_COUNTRY = 0,
-	NTH_SCAN_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_SRC_GEO_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_DST_GEO_COUNTRY,
-	NTH_SCAN_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_DST_GEO_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA,
-	NTH_SCAN_IP_DST_ASN,
-	NTH_SCAN_IP_SRC_ASN,
-	NTH_SCAN_IP_INTERNAL_ASN,
-	NTH_SCAN_IP_EXTERNAL_ASN,
-	NTH_SCAN_MAX
-};
-
 /** Nth_scan: Since there is no virtual table name in the request due to IP location and IP protocol,
  * the current hit path scan count needs to be recorded to correspond to the virtual table name */
-struct ip_data_ctx
+struct ip_entry_hit_path
 {
-	char *asn_client;
-	char *asn_server;
-	char *organization_client;
-	char *organization_server;
-	char *location_client;
-	char *location_server;
-	int Nth_scan[NTH_SCAN_MAX];
+	int entry_num;
+	int Nth_scan_num;
+	int category[MAX_TAG_ID_NUM];
+	int Nth_scan[MAX_TAG_ID_NUM];
+	long long entry_id[MAX_TAG_ID_NUM];
+	int tag_id[MAX_TAG_ID_NUM];
 };
 
-struct fqdn_category_ctx
+struct ip_data_ctx
 {
-	int ref_cnt;
-	unsigned int fqdn_cat_id;
-	int match_method;
-	char fqdn[VERIFY_ARRAY_MAX];
-
-	long long int group_id;
-	pthread_mutex_t lock;
+	struct ip_entry_hit_path source_entry;
+	struct ip_entry_hit_path internal_entry;
+	struct ip_entry_hit_path destination_entry;
+	struct ip_entry_hit_path external_entry;
 };
 
 struct tunnel_data_ctx
@@ -165,11 +121,46 @@ struct app_id_dict
 	pthread_mutex_t lock;
 };
 
+enum statistics_option_type
+{
+	STATISTICS_OPTION_NONE=0,
+	STATISTICS_OPTION_BRIEF,
+	STATISTICS_OPTION_ELABORATE,
+	STATISTICS_OPTION_MAX
+};
+
+enum category_type
+{
+	CATEGORY_TYPE_UNKNOWN = 0,
+	CATEGORY_TYPE_GEOIP,
+	CATEGORY_TYPE_CONTRY_CODE,
+	CATEGORY_TYPE_ASN,
+	CATEGORY_TYPE_WEBSITE_CATEGORY,
+	CATEGORY_TYPE_INTERNET_SERVICE,
+	CATEGORY_TYPE_IOC,
+	CATEGORY_TYPE_RISK,
+	CATEGORY_TYPE_MAX
+};
+
 struct library_entry_ctx
 {
 	int ref_cnt;
 	int entry_id;
+	int n_tag_ids;
+	long long tag_id_array[MAX_TAG_ID_NUM];
 	char *tag_ids;
+
+	pthread_mutex_t lock;
+};
+
+struct library_tag_ctx
+{
+	int ref_cnt;
+	int tag_id;
+	char tag_key[VERIFY_SYMBOL_MAX];
+	char tag_value[VERIFY_ARRAY_MAX];
+	enum category_type category;
+	enum statistics_option_type option_type;
 	pthread_mutex_t lock;
 };
 
@@ -192,9 +183,9 @@ struct policy_scan_ctx
 	int tunnel_endpoint_x;
 	int bool_id_array_idx;
     unsigned long long bool_id_array[256];
-	
+
 	struct ip_data_ctx ip_ctx;
-	
+
 	/*exception handling*/
 	int tunnel_scan;
 	long long tunnel_result[2];
@@ -263,20 +254,6 @@ void policy_scan_ctx_free(void * pme)
 		maat_state_free(ctx->tunnel_scan_mid);
 		ctx->tunnel_scan_mid = NULL;
 	}
-
-	struct ip_data_ctx *ip_ctx = &ctx->ip_ctx;
-	if(ip_ctx->asn_client)
-		FREE(&ip_ctx->asn_client);
-	if(ip_ctx->asn_server)
-		FREE(&ip_ctx->asn_server);
-	if(ip_ctx->organization_client)
-		FREE(&ip_ctx->organization_client);
-	if(ip_ctx->organization_server)
-		FREE(&ip_ctx->organization_server);
-	if(ip_ctx->location_client)
-		FREE(&ip_ctx->location_client);
-	if(ip_ctx->location_server)
-		FREE(&ip_ctx->location_server);
 	FREE(&ctx);
 }
 
@@ -302,6 +279,7 @@ static inline int action_cmp(enum policy_action a1, enum policy_action a2)
 	return policy_action_weight[a1] - policy_action_weight[a2];
 }
 
+#ifdef INCLUDE_UNUSED_FUNCTIONS
 static char* verify_unescape(char* s)
 {
 	int i=0,j=0;
@@ -338,125 +316,7 @@ static char* verify_unescape(char* s)
 	s[j]='\0';
 	return s;
 }
-
-void ip_asn_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
-{
-	int addr_type, group_id=0;
-	int ret=0,profile_id=0,is_valid=0;
-	char addr_format[40]={0};
-	char start_ip[40], end_ip[40],asn[40]={0};
-	char organization[VERIFY_ARRAY_MAX];
-
-	ret=sscanf(table_line, "%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d", &profile_id, &group_id, &addr_type, addr_format, start_ip, end_ip, asn, organization, &is_valid);
-	if(ret!=9)
-	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table parse ip ASN failed, ret:%d, %s", ret, table_line);
-		return;
-	}
-	verify_unescape(organization);
-
-	struct ip_data_table* ip_asn=ALLOC(struct ip_data_table, 1);
-	memset(ip_asn, 0, sizeof(struct ip_data_table));
-	ip_asn->profile_id=profile_id;
-	ip_asn->asn=strdup(asn);
-	ip_asn->organization=strdup(organization);
-	ip_asn->asn_group_id=group_id;
-	ip_asn->ref_cnt=1;
-	pthread_mutex_init(&(ip_asn->lock), NULL);
-
-	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table add success %d", profile_id);
-	*ad = ip_asn;
-}
-
-void ip_location_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
-{
-	int ret=0,profile_id=0,is_valid=0;
-	int geoname_id=0, addr_type=0;
-	char addr_format[VERIFY_PATH_MAX];
-	int country_region_group_id=0;
-	int province_group_id=0,city_group_id=0,subdivision_group_id=0;
-	double latitude, longitude, coords;
-	char language[40], start_ip[40], end_ip[40];
-	char continent_abbr[VERIFY_ARRAY_MAX],continent_full[VERIFY_ARRAY_MAX];
-	char country_abbr[VERIFY_ARRAY_MAX],province_abbr[VERIFY_ARRAY_MAX], time_zone[VERIFY_ARRAY_MAX];
-	char country_full[VERIFY_ARRAY_MAX],province_full[VERIFY_ARRAY_MAX], city_full[VERIFY_ARRAY_MAX];
-	char subdivision_addr[VERIFY_STRING_MAX];
-
-	ret=sscanf(table_line, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t %s\t%s\t%s\t%lf\t%lf\t%lf\t%s\t %s\t%s\t%s\t%s\t%s\t%s \t%s\t%s\t%s\t%d", &profile_id,&geoname_id,
-			   &country_region_group_id,&province_group_id,&city_group_id,&subdivision_group_id,&addr_type,addr_format,start_ip,end_ip,&latitude,&longitude,&coords,language,
-			   continent_abbr,continent_full,country_abbr,country_full,province_abbr,province_full,city_full,subdivision_addr,time_zone,&is_valid);
-
-	if(ret != 24)
-	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table parse ip location failed, ret:%d, %s", ret, table_line);
-		return;
-	}
-
-	verify_unescape(continent_full);
-	verify_unescape(country_full);
-	verify_unescape(province_full);
-	verify_unescape(city_full);
-	verify_unescape(subdivision_addr);
-
-	struct ip_data_table* ip_location=ALLOC(struct ip_data_table, 1);
-	memset(ip_location, 0, sizeof(struct ip_data_table));
-	ip_location->profile_id=profile_id;
-	ip_location->country_region_group_id=country_region_group_id;
-	ip_location->province_group_id=province_group_id;
-	ip_location->city_group_id=city_group_id;
-	ip_location->subdivision_group_id=subdivision_group_id;
-	ip_location->country_full=strdup(country_full);
-	ip_location->province_full=strdup(province_full);
-	ip_location->city_full=strdup(city_full);
-	ip_location->subdivision_addr=strdup(subdivision_addr);
-	ip_location->ref_cnt=1;
-	pthread_mutex_init(&(ip_location->lock), NULL);
-	log_debug(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Policy table add success %d", profile_id);
-	*ad = ip_location;
-}
-
-void ip_table_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
-{
-	struct ip_data_table* ip_asn=(struct ip_data_table*)(*from);
-	pthread_mutex_lock(&(ip_asn->lock));
-	ip_asn->ref_cnt++;
-	pthread_mutex_unlock(&(ip_asn->lock));
-	*to=ip_asn;
-}
-
-void ip_table_free_cb(int table_id, void **ad, long argl, void* argp)
-{
-	if(*ad==NULL)
-	{
-		return;
-	}
-	struct ip_data_table* ip_asn=(struct ip_data_table*)(*ad);
-	pthread_mutex_lock(&(ip_asn->lock));
-	ip_asn->ref_cnt--;
-	if(ip_asn->ref_cnt>0)
-	{
-		pthread_mutex_unlock(&(ip_asn->lock));
-		return;
-	}
-	pthread_mutex_unlock(&(ip_asn->lock));
-	pthread_mutex_destroy(&(ip_asn->lock));
-
-	if(ip_asn->asn)	FREE(&ip_asn->asn);
-	if(ip_asn->organization) FREE(&ip_asn->organization);
-	if(ip_asn->country_full) FREE(&ip_asn->country_full);
-	if(ip_asn->province_full) FREE(&ip_asn->province_full);
-	if(ip_asn->city_full) FREE(&ip_asn->city_full);
-	if(ip_asn->subdivision_addr) FREE(&ip_asn->subdivision_addr);
-
-	FREE(&ip_asn);
-	*ad=NULL;
-	return;
-}
-
-void ip_table_free(struct ip_data_table* ip_asn)
-{
-	ip_table_free_cb(0, (void **)&ip_asn, 0, NULL);
-}
+#endif
 
 void tunnel_catalog_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
@@ -532,18 +392,13 @@ void tunnel_label_table_new_cb(const char *table_name, int table_id, const char*
 	*ad = tunnel;
 }
 
-const char *table_name_map[] = {"TSG_OBJ_IP_ASN_USER_DEFINED",
-								"TSG_OBJ_IP_ASN_BUILT_IN",
-								"TSG_IP_LOCATION_USER_DEFINED",
-								"TSG_IP_LOCATION_BUILT_IN",
-								"TSG_FQDN_CATEGORY_USER_DEFINED",
-								"TSG_FQDN_CATEGORY_BUILT_IN",
-								"TSG_TUNNEL_CATALOG",
+const char *table_name_map[] = {"TSG_TUNNEL_CATALOG",
 								"TSG_TUNNEL_ENDPOINT",
 								"TSG_TUNNEL_LABEL",
 								"APP_ID_DICT",
 								"FQDN_ENTRY",
-								"IP_ADDR_ENTRY"};
+								"IP_ADDR_ENTRY",
+								"LIBRARY_TAG"};
 
 int maat_tunnel_table_init(int profile_idx,int vsys_id,
 					   	   maat_ex_free_func_t* free_func,
@@ -552,12 +407,6 @@ int maat_tunnel_table_init(int profile_idx,int vsys_id,
 	int table_id=0;
 
 	maat_ex_new_func_t *new_func[] = {
-			[PROFILE_ASN_USER_DEFINED] = NULL,
-			[PROFILE_ASN_BUILT_IN] = NULL,
-			[PROFILE_LOCATION_USER_DEFINED] = NULL,
-			[PROFILE_LOCATION_BUILT_IN] = NULL,
-			[PROFILE_FQDN_CAT_USER_DEFINED] = NULL,
-			[PROFILE_FQDN_CAT_BUILT_IN] = NULL,
 			[PROFILE_TUNNEL_CATALOG] = tunnel_catalog_table_new_cb,
 			[PROFILE_TUNNEL_ENDPOINT] = tunnel_endpoint_table_new_cb,
 			[PROFILE_TUNNEL_LABEL] = tunnel_label_table_new_cb
@@ -655,7 +504,7 @@ void app_dict_table_new_cb(const char *table_name, int table_id, const char* key
 		app_dict->app_id=atoi(app_id_str);
 		FREE(&app_id_str);
 	}
-	
+
 	ret = maat_helper_read_column(table_line, 18, &offset, &len);
 	if(ret >= 0)
 	{
@@ -710,7 +559,28 @@ void app_dict_table_dup_cb(int table_id, void **to, void **from, long argl, void
 	return;
 }
 
-void library_search_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
+int get_tag_id_array(char *tag_ids, long long *tag_id_array)
+{
+	if(tag_ids==NULL)
+	{
+		return 0;
+	}
+
+	int n_tag_ids=0;
+	char *tag_ids_tmp = ALLOC(char, strlen(tag_ids)+1);
+	strncpy(tag_ids_tmp, tag_ids, strlen(tag_ids));
+
+    char *tag_ids_str=strtok(tag_ids_tmp, ",");
+    while(tag_ids_str!=NULL && n_tag_ids < MAX_TAG_ID_NUM)
+	{
+        tag_id_array[n_tag_ids++]=strtoll(tag_ids_str, NULL, 10);
+        tag_ids_str=strtok(NULL, ",");
+    }
+	FREE(&tag_ids_tmp);
+	return n_tag_ids;
+}
+
+void library_entry_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
 	int ret=0;
 	size_t offset=0, len=0;
@@ -732,6 +602,7 @@ void library_search_new_cb(const char *table_name, int table_id, const char* key
 		entry_ctx->tag_ids=ALLOC(char, len+1);
 		memcpy(entry_ctx->tag_ids, table_line+offset, len);
 	}
+	entry_ctx->n_tag_ids = get_tag_id_array(entry_ctx->tag_ids, entry_ctx->tag_id_array);
 
 	entry_ctx->ref_cnt=1;
 	pthread_mutex_init(&(entry_ctx->lock), NULL);
@@ -739,7 +610,7 @@ void library_search_new_cb(const char *table_name, int table_id, const char* key
 	return;
 }
 
-void library_search_free_cb(int table_id, void **ad, long argl, void* argp)
+void library_entry_free_cb(int table_id, void **ad, long argl, void* argp)
 {
 	if(*ad==NULL)
 	{
@@ -766,12 +637,12 @@ void library_search_free_cb(int table_id, void **ad, long argl, void* argp)
 	return;
 }
 
-void library_search_free(struct library_entry_ctx *entry_ctx)
+void library_entry_free(struct library_entry_ctx *entry_ctx)
 {
-	library_search_free_cb(0, (void **)&entry_ctx, 0, NULL);
+	library_entry_free_cb(0, (void **)&entry_ctx, 0, NULL);
 }
 
-void library_search_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
+void library_entry_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
 {
 	struct library_entry_ctx *entry_ctx=(struct library_entry_ctx *)(*from);
 	pthread_mutex_lock(&(entry_ctx->lock));
@@ -780,88 +651,91 @@ void library_search_dup_cb(int table_id, void **to, void **from, long argl, void
 	*to=entry_ctx;
 }
 
-int maat_ip_table_init(int profile_idx,int vsys_id,
-					   maat_ex_free_func_t* free_func,
-					   maat_ex_dup_func_t* dup_func)
+int get_statistics_option_type_str2idx(const char *statistics_option_type)
 {
-	int table_id=0;
-
-	maat_ex_new_func_t *new_func[] = {
-			[PROFILE_ASN_USER_DEFINED] = ip_asn_table_new_cb,
-			[PROFILE_ASN_BUILT_IN] = ip_asn_table_new_cb,
-			[PROFILE_LOCATION_USER_DEFINED] = ip_location_table_new_cb,
-			[PROFILE_LOCATION_BUILT_IN] = ip_location_table_new_cb,
-	};
-
-	const char *table_name = table_name_map[profile_idx];
-	table_id=g_policy_rt->profile_table_id[profile_idx]=maat_get_table_id(g_policy_rt->feather[vsys_id], table_name);
-	if(table_id >= 0)
+	size_t i = 0;
+	const char *statistics_option_name[] = {"none", "brief", "elaborate"};
+	for (i = 0; i < sizeof(statistics_option_name) / sizeof(const char *); i++)
 	{
-		table_id=maat_plugin_table_ex_schema_register(g_policy_rt->feather[vsys_id], table_name, new_func[profile_idx], free_func, dup_func,
-									  				  0, NULL);
-		return 0;
+		if (0 == strcasecmp(statistics_option_type, statistics_option_name[i]))
+			break;
 	}
-	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Register table %s failed.", table_name);
-	return -1;
+	return i;
 }
 
-void fqdn_cat_dup_data(int table_id, void **to, void **from, long argl, void* argp)
+int get_category_type_str2idx(const char *category)
 {
-	struct fqdn_category_ctx *fqdn_cat=(struct fqdn_category_ctx *)(*from);
-	pthread_mutex_lock(&(fqdn_cat->lock));
-	fqdn_cat->ref_cnt++;
-	pthread_mutex_unlock(&(fqdn_cat->lock));
-	*to=fqdn_cat;
-
-	return;
+	size_t i = 0;
+	const char *category_name[] = {"unknown", "geoip", "country_code", "asn", "website_category", "internet_service", "ioc", "compliance_risk"};
+	for (i = 0; i < sizeof(category_name) / sizeof(const char *); i++)
+	{
+		if (0 == strcasecmp(category, category_name[i]))
+			break;
+	}
+	return i;
 }
 
-void fqdn_cat_new_data(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
+void library_tag_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
-	int ret=0,id=0,is_valid=0;
+	int ret=0,is_valid=0;
+	char statistics_option[VERIFY_ARRAY_MAX]={0};
+	char category[VERIFY_ARRAY_MAX]={0};
 
-	struct fqdn_category_ctx *fqdn_cat = ALLOC(struct fqdn_category_ctx, 1);
+	struct library_tag_ctx *tag_ctx = ALLOC(struct library_tag_ctx, 1);
 
-	ret=sscanf(table_line, "%d\t%u\t%s\t%d\t%llu\t%d",&id, &fqdn_cat->fqdn_cat_id, fqdn_cat->fqdn, &fqdn_cat->match_method, &fqdn_cat->group_id, &is_valid);
+	ret=sscanf(table_line, "%d\t%s\t%s\t%s\t%s\t%d",&tag_ctx->tag_id, statistics_option, category, tag_ctx->tag_key, tag_ctx->tag_value, &is_valid);
 	if(ret!=6)
 	{
-		FREE(&fqdn_cat);
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Parse fqdn category failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
+		FREE(&tag_ctx);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_MATCHER, "Parse library tag failed, ret: %d table_id: %d table_line: %s", ret, table_id, table_line);
 		return;
 	}
-	fqdn_cat->ref_cnt=1;
-	pthread_mutex_init(&(fqdn_cat->lock), NULL);
+	tag_ctx->ref_cnt=1;
+	tag_ctx->option_type=(enum statistics_option_type)get_statistics_option_type_str2idx(statistics_option);
+	tag_ctx->category=(enum category_type)get_category_type_str2idx(category);
+	pthread_mutex_init(&(tag_ctx->lock), NULL);
 
-	*ad=fqdn_cat;
+	*ad=tag_ctx;
 	return;
 }
 
-void fqdn_cat_free_data(int table_id, void **ad, long argl, void* argp)
+void library_tag_free_cb(int table_id, void **ad, long argl, void* argp)
 {
 	if(*ad==NULL)
 	{
 		return;
 	}
 
-	struct fqdn_category_ctx *fqdn_cat=(struct fqdn_category_ctx *)(*ad);
-	pthread_mutex_lock(&(fqdn_cat->lock));
-	fqdn_cat->ref_cnt--;
-	if(fqdn_cat->ref_cnt>0)
+	struct library_tag_ctx *tag_ctx=(struct library_tag_ctx *)(*ad);
+	pthread_mutex_lock(&(tag_ctx->lock));
+	tag_ctx->ref_cnt--;
+	if(tag_ctx->ref_cnt>0)
 	{
-		pthread_mutex_unlock(&(fqdn_cat->lock));
+		pthread_mutex_unlock(&(tag_ctx->lock));
 		return;
 	}
-	pthread_mutex_unlock(&(fqdn_cat->lock));
-	pthread_mutex_destroy(&(fqdn_cat->lock));
+	pthread_mutex_unlock(&(tag_ctx->lock));
+	pthread_mutex_destroy(&(tag_ctx->lock));
 
-	FREE(&fqdn_cat);
+	FREE(&tag_ctx);
 	*ad=NULL;
 	return;
 }
 
-void fqdn_cat_table_free(struct fqdn_category_ctx *fqdn_cat)
+void library_tag_dup_cb(int table_id, void **to, void **from, long argl, void* argp)
 {
-	fqdn_cat_free_data(0, (void **)&fqdn_cat, 0, NULL);
+	struct library_tag_ctx *tag_ctx=(struct library_tag_ctx *)(*from);
+	pthread_mutex_lock(&(tag_ctx->lock));
+	tag_ctx->ref_cnt++;
+	pthread_mutex_unlock(&(tag_ctx->lock));
+	*to=tag_ctx;
+
+	return;
+}
+
+void library_tag_free(struct library_tag_ctx *tag_ctx)
+{
+	library_tag_free_cb(0, (void **)&tag_ctx, 0, NULL);
 }
 
 void compile_table_new_cb(const char *table_name, int table_id, const char* key, const char* table_line, void **ad, long argl, void* argp)
@@ -1058,87 +932,83 @@ static inline int request_in_fqdn_cat(int table_id)
 	}
 }
 
-void http_get_fqdn_cat_id(struct request_query_obj *query_obj, cJSON *attributeObj)
+void http_add_ip_entry_to_hit_paths(cJSON *hitPaths, cJSON *attributeObj, struct ip_data_ctx *ip_ctx)
 {
 	int i=0;
-	cJSON *sniCategory=NULL;
+	cJSON *histObj=NULL;
+	cJSON *item=NULL;
+	char *attri_name=NULL;
 
-	if(!request_in_fqdn_cat(query_obj->table_id))
-	{
-		return;
-	}
-
-	sniCategory=cJSON_CreateArray();
-	if(query_obj->table_id == TSG_OBJ_DST_SERVER_FQDN)
-	{
-		cJSON_AddItemToObject(attributeObj, "serverCategory", sniCategory);
-	}
-	else
-	{
-		cJSON_AddItemToObject(attributeObj, "sniCategory", sniCategory);
-	}
-
-	cJSON *fqdnObj=NULL;
-	for(i=0; i<query_obj->fqdn_user.fqdn_cat_num; i++)
-	{
-		fqdnObj=cJSON_CreateObject();
-		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "objectId", query_obj->fqdn_user.group_id[i]);
-	}
-
-	for(i=0; i<query_obj->fqdn_builtin.fqdn_cat_num; i++)
-	{
-		fqdnObj=cJSON_CreateObject();
-		cJSON_AddItemToArray(sniCategory, fqdnObj);
-		cJSON_AddNumberToObject(fqdnObj, "objectId", query_obj->fqdn_builtin.group_id[i]);
-	}
-}
-
-void http_get_location_status(cJSON *attributes, cJSON *attributeObj, struct ip_data_ctx *ip_ctx )
-{
-	int i=0;
-	cJSON* item=NULL; char *attri_name=NULL;
-	cJSON* ipAsn=NULL;
-
-	item = cJSON_GetObjectItem(attributeObj, "attributeType");
+	item = cJSON_GetObjectItem(attributeObj, "attribute_type");
 	if(item == NULL || item->type!=cJSON_String || strcasecmp(item->valuestring, "ip") != 0)
 	{
 		return;
 	}
-	item = cJSON_GetObjectItem(attributeObj, "attributeName");
+	item = cJSON_GetObjectItem(attributeObj, "attribute_name");
 	if(item && item->type==cJSON_String)
 	{
 		attri_name = item->valuestring;
-		if((strcasecmp(attri_name, "source") == 0) || (strcasecmp(attri_name, "internal") == 0))
+		if(strcasecmp(attri_name, "source") == 0)
 		{
-			cJSON_AddStringToObject(attributeObj, "ipGeoLocation",ip_ctx->location_client);
-			ipAsn=cJSON_CreateArray();
-			cJSON_AddItemToObject(attributeObj, "ipAsn", ipAsn);
-			cJSON *ipAsnObj=NULL;
-			for(i=0; i< 1; i++)
+			for(i=0; i < ip_ctx->source_entry.entry_num; i++)
 			{
-				ipAsnObj=cJSON_CreateObject();
-				cJSON_AddItemToArray(ipAsn, ipAsnObj);
-				cJSON_AddStringToObject(ipAsnObj, "asn", ip_ctx->asn_client);
-				cJSON_AddStringToObject(ipAsnObj, "organization", ip_ctx->organization_client);
+				histObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(hitPaths, histObj);
+				cJSON_AddNumberToObject(histObj, "entry_id", ip_ctx->source_entry.entry_id[i]);
+				cJSON_AddNumberToObject(histObj, "tag_id", ip_ctx->source_entry.tag_id[i]);
 			}
 		}
-		if((strcasecmp(attri_name, "destination") == 0) || (strcasecmp(attri_name, "external") == 0))
+		if(strcasecmp(attri_name, "internal") == 0)
 		{
-			cJSON_AddStringToObject(attributeObj, "ipGeoLocation",ip_ctx->location_server);
-			ipAsn=cJSON_CreateArray();
-			cJSON_AddItemToObject(attributeObj, "ipAsn", ipAsn);
-			cJSON *ipAsnObj=NULL;
-			for(i=0; i< 1; i++)
+			for(i=0; i < ip_ctx->internal_entry.entry_num; i++)
 			{
-				ipAsnObj=cJSON_CreateObject();
-				cJSON_AddItemToArray(ipAsn, ipAsnObj);
-				cJSON_AddStringToObject(ipAsnObj, "asn", ip_ctx->asn_server);
-				cJSON_AddStringToObject(ipAsnObj, "organization", ip_ctx->organization_server);
+				histObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(hitPaths, histObj);
+				cJSON_AddNumberToObject(histObj, "entry_id", ip_ctx->internal_entry.entry_id[i]);
+				cJSON_AddNumberToObject(histObj, "tag_id", ip_ctx->internal_entry.tag_id[i]);
+			}
+		}
+		if(strcasecmp(attri_name, "destination") == 0)
+		{
+			for(i=0; i < ip_ctx->destination_entry.entry_num; i++)
+			{
+				histObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(hitPaths, histObj);
+				cJSON_AddNumberToObject(histObj, "entry_id", ip_ctx->destination_entry.entry_id[i]);
+				cJSON_AddNumberToObject(histObj, "tag_id", ip_ctx->destination_entry.tag_id[i]);
+			}
+		}
+		if(strcasecmp(attri_name, "external") == 0)
+		{
+			for(i=0; i < ip_ctx->external_entry.entry_num; i++)
+			{
+				histObj=cJSON_CreateObject();
+				cJSON_AddItemToArray(hitPaths, histObj);
+				cJSON_AddNumberToObject(histObj, "entry_id", ip_ctx->external_entry.entry_id[i]);
+				cJSON_AddNumberToObject(histObj, "tag_id", ip_ctx->external_entry.tag_id[i]);
 			}
 		}
 	}
 	return;
+}
+
+void http_add_fqdn_entry_to_hit_paths(cJSON *hitPaths, int table_id, struct fqdn_category_entry *fqdn_entry)
+{
+	int i=0;
+	cJSON *histObj=NULL;
+
+	if(!request_in_fqdn_cat(table_id))
+	{
+		return;
+	}
+
+	for(i=0; i<fqdn_entry->fqdn_entry_num; i++)
+	{
+		histObj=cJSON_CreateObject();
+		cJSON_AddItemToArray(hitPaths, histObj);
+		cJSON_AddNumberToObject(histObj, "entry_id", fqdn_entry->entry_id[i]);
+		cJSON_AddNumberToObject(histObj, "tag_id",fqdn_entry->tag_id[i]);
+	}
 }
 
 /*In the case of multiple hits, the hit path is append behavior to obtain the last hit path force***/
@@ -1195,10 +1065,10 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 		/*temp repair**/
 		if (ctx->tunnel_scan ==2 && ctx->tunnel_result[0] == 1 && ctx->tunnel_result[1] == 0)
 		{
-			item = cJSON_GetObjectItem(attributeObj, "attributeName");
+			item = cJSON_GetObjectItem(attributeObj, "attribute_name");
 			if(item && item->type==cJSON_String)
 			{
-				if(0 == strcasecmp(item->valuestring, "tunnel_endpointb"))
+				if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
 				{
 					cJSON_Delete(attributeObj);
 					return;
@@ -1207,7 +1077,7 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 		}
 		else
 		{
-			item = cJSON_GetObjectItem(attributeObj, "attributeName");
+			item = cJSON_GetObjectItem(attributeObj, "attribute_name");
 			if(item && item->type==cJSON_String)
 			{
 				if(0 == strcasecmp(item->valuestring, "tunnel_endpointa"))
@@ -1221,14 +1091,17 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 
 	if(compile_table_id == TSG_TABLE_SECURITY && query_obj->table_id == TSG_OBJ_TUNNEL)
 	{
-		cJSON_DeleteItemFromObject(attributeObj, "attributeName");
-		cJSON_AddStringToObject(attributeObj, "attributeName", "tunnel_endpoint_object");
-		cJSON_DeleteItemFromObject(attributeObj, "attributeValue");
+		cJSON_DeleteItemFromObject(attributeObj, "attribute_name");
+		cJSON_AddStringToObject(attributeObj, "attribute_name", "tunnel_endpoint_object");
+		cJSON_DeleteItemFromObject(attributeObj, "atrribute_value");
 	}
 	cJSON_AddItemToArray(attributes, attributeObj);
 
 	hitPaths=cJSON_CreateArray();
-	cJSON_AddItemToObject(attributeObj, "hitPaths", hitPaths);
+	cJSON_AddItemToObject(attributeObj, "hit_paths", hitPaths);
+
+	http_add_ip_entry_to_hit_paths(hitPaths, attributeObj, &ctx->ip_ctx);
+	http_add_fqdn_entry_to_hit_paths(hitPaths, query_obj->table_id, &query_obj->fqdn_entry);
 
 	cJSON *histObj=NULL;
 	for(i=0; i< ctx->n_read; i++)
@@ -1255,19 +1128,16 @@ void http_get_scan_status(struct request_query_obj *query_obj, int compile_table
 				}
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
-				cJSON_AddNumberToObject(histObj, "itemId", ctx->hit_path[i].item_id);
-				cJSON_AddNumberToObject(histObj, "objectId", ctx->hit_path[i].sub_group_id);
+				cJSON_AddNumberToObject(histObj, "itemt_id", ctx->hit_path[i].item_id);
 				if (ctx->hit_path[i].top_group_id < 0)
 				{
 					ctx->hit_path[i].top_group_id = ctx->hit_path[i].sub_group_id;
 				}
-				cJSON_AddNumberToObject(histObj, "superiorObjectId", ctx->hit_path[i].top_group_id);
+				cJSON_AddNumberToObject(histObj, "superior_object_id", ctx->hit_path[i].top_group_id);
 				break;
 			}
 		}
 	}
-	http_get_location_status(attributes, attributeObj, &ctx->ip_ctx);
-	http_get_fqdn_cat_id(query_obj, attributeObj);
 }
 
 int policy_verify_regex_expression(const char *expression)
@@ -1275,89 +1145,74 @@ int policy_verify_regex_expression(const char *expression)
 	return maat_helper_verify_regex_expression(expression);
 }
 
-static int get_ip_location_asn_table_name(struct ip_data_ctx *ip_ctx, int Nth_scan, cJSON *topObject)
-{
-	/*ip location**/
-	int xret = 0, level=0;
-	const char *client_table_name[]={"ATTR_SOURCE_GEO_COUNTRY", "ATTR_SOURCE_GEO_SUPER_ADMINISTRATIVE_AREA",
-							 "ATTR_SOURCE_GEO_ADMINISTRATIVE_AREA", "ATTR_SOURCE_GEO_SUB_ADMINISTRATIVE_AREA"};
-	const char *server_tabel_name[]={"ATTR_DESTINATION_GEO_COUNTRY", "ATTR_DESTINATION_GEO_SUPER_ADMINISTRATIVE_AREA",
-							 "ATTR_DESTINATION_GEO_ADMINISTRATIVE_AREA", "ATTR_DESTINATION_GEO_SUB_ADMINISTRATIVE_AREA"}; 
-
-	for(level = NTH_SCAN_IP_SRC_GEO_COUNTRY; level <= NTH_SCAN_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA; level++)
-	{
-		if(ip_ctx->Nth_scan[level] == Nth_scan)
-		{
-			cJSON_AddStringToObject(topObject, "tableName", client_table_name[level]);
-			goto finish;
-		}
-	}
-
-	for(level = NTH_SCAN_IP_DST_GEO_COUNTRY; level <= NTH_SCAN_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA; level ++)
-	{
-		if(ip_ctx->Nth_scan[level] == Nth_scan)
-		{
-			cJSON_AddStringToObject(topObject, "tableName", server_tabel_name[level-NTH_SCAN_IP_DST_GEO_COUNTRY]);
-			goto finish;
-		}
-	}
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_SRC_ASN] == Nth_scan)
-	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_SOURCE_ASN");
-		goto finish;
-	}
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_DST_ASN] == Nth_scan)
-	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_DESTINATION_ASN");
-		goto finish;
-	}
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_INTERNAL_ASN] == Nth_scan)
-	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_INTERNAL_ASN");
-		goto finish;
-	}
-	if(ip_ctx->Nth_scan[NTH_SCAN_IP_EXTERNAL_ASN] == Nth_scan)
-	{
-		cJSON_AddStringToObject(topObject, "tableName", "ATTR_EXTERNAL_ASN");
-		goto finish;
-	}
-	return xret;
-finish:
-	xret = 1;
-	return xret;
-}
-
-int get_attributes_table_name(struct request_query_obj *request, int num, int Nth_scan, struct ip_data_ctx *ip_ctx, int tunnel_endpoint_x, cJSON *topObject)
+int get_attributes_table_name(struct request_query_obj *request, struct ip_data_ctx *ip_ctx, int attribute_num, int Nth_scan, int top_group_id, cJSON *topObject)
 {
 	int i=0, j=0;
 	cJSON *attributeObj=NULL, *subchild=NULL;
 
-	/*ip location**/
-	if(get_ip_location_asn_table_name(ip_ctx, Nth_scan, topObject))
+	/* set soruce entry table name **/
+	for(i = 0; i < ip_ctx->source_entry.Nth_scan_num; i++)
 	{
-		return 0;
+		if(ip_ctx->source_entry.Nth_scan[i] == Nth_scan)
+		{
+			cJSON_AddNumberToObject(topObject, "tag_id", top_group_id);
+			cJSON_AddStringToObject(topObject, "table_name", "ATTR_SOURCE_IP");
+			goto finish;
+		}
+	}
+	/* set internal entry table name **/
+	for(i = 0; i < ip_ctx->internal_entry.Nth_scan_num; i++)
+	{
+		if(ip_ctx->internal_entry.Nth_scan[i] == Nth_scan)
+		{
+			cJSON_AddNumberToObject(topObject, "tag_id", top_group_id);
+			cJSON_AddStringToObject(topObject, "table_name", "ATTR_INTERNAL_IP");
+			goto finish;
+		}
+	}
+	/* set destination entry table name **/
+	for(i = 0; i < ip_ctx->destination_entry.Nth_scan_num; i++)
+	{
+		if(ip_ctx->destination_entry.Nth_scan[i] == Nth_scan)
+		{
+			cJSON_AddNumberToObject(topObject, "tag_id", top_group_id);
+			cJSON_AddStringToObject(topObject, "table_name", "ATTR_DESTINATION_IP");
+			goto finish;
+		}
+	}
+	/* set external entry table name **/
+	for(i = 0; i < ip_ctx->external_entry.Nth_scan_num; i++)
+	{
+		if(ip_ctx->external_entry.Nth_scan[i] == Nth_scan)
+		{
+			cJSON_AddNumberToObject(topObject, "tag_id", top_group_id);
+			cJSON_AddStringToObject(topObject, "table_name", "ATTR_EXTERNAL_IP");
+			goto finish;
+		}
 	}
 
-	for(i=0; i<num; i++)
+	cJSON_AddNumberToObject(topObject, "object_id", top_group_id);
+	for(i = 0; i<attribute_num; i++)
 	{
 		for(j=0; j<= request[i].merge_nth_scan_num; j++)
 		{
 			if (request[i].merge_nth_scan[j] == Nth_scan)
 			{
 				attributeObj=request[i].attributes;
-				subchild = cJSON_GetObjectItem(attributeObj, "tableName");
+				subchild = cJSON_GetObjectItem(attributeObj, "table_name");
 				if(subchild && subchild->type==cJSON_String)
 				{
-					cJSON_AddStringToObject(topObject, "tableName", subchild->valuestring);
+					cJSON_AddStringToObject(topObject, "table_name", subchild->valuestring);
 				}
 				break;
 			}
 		}
 	}
+finish:
 	return 0;
 }
 
-int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, size_t hit_cnt, cJSON *data_obj, void *pme)
+int http_hit_policy_list(struct verify_policy_query *verify_policy, int attribute_num, size_t hit_cnt, cJSON *data_obj, void *pme)
 {
 	bool succeeded = false;
 	size_t rules=0, i=0,j=0;
@@ -1399,20 +1254,20 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 			{
 				if (ctx->enforce_rules[rules].config_id == ctx->hit_rules[i].config_id)
 				{
-					cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", true);
+					cJSON_AddBoolToObject(policy_obj, "is_execute_policy", true);
 					succeeded = true;
 				}
 			}
 			if (succeeded == false)
 			{
-				cJSON_AddBoolToObject(policy_obj, "isExecutePolicy", false);
+				cJSON_AddBoolToObject(policy_obj, "is_execute_policy", false);
 			}
 			cJSON_AddItemToArray(hit_obj, policy_obj);
 			result_config[i] = ctx->hit_rules[i].config_id;
 			struct maat_hit_path result_hit_path[MAX_SCAN_RESULT]={0}; int result_cnt=0;
 
 			topObjectList=cJSON_CreateArray();
-			cJSON_AddItemToObject(policy_obj, "topObjectList", topObjectList);
+			cJSON_AddItemToObject(policy_obj, "top_object_list", topObjectList);
 			for(j=0; j<=(size_t)ctx->n_read; j++)
 			{
 				if(ctx->hit_path[j].compile_id > 0 && ctx->hit_path[j].compile_id == ctx->hit_rules[i].config_id)
@@ -1426,17 +1281,10 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, siz
 						memcpy(&result_hit_path[result_cnt], &ctx->hit_path[j], sizeof(struct maat_hit_path));
 						result_cnt++;
 					}
-					#if 0
-					if(http_hit_policy_match(result_object_id, j, ctx->hit_path[j].top_group_id))
-					{
-						continue;
-					}
-					#endif
 					topObject=cJSON_CreateObject();
-					cJSON_AddNumberToObject(topObject, "objectId", ctx->hit_path[j].top_group_id);
-					cJSON_AddNumberToObject(topObject, "notFlag", ctx->hit_path[j].NOT_flag);
-					cJSON_AddNumberToObject(topObject, "nthClause", ctx->hit_path[j].clause_index);
-					get_attributes_table_name(verify_policy->request_object, num, ctx->hit_path[j].Nth_scan, &ctx->ip_ctx, ctx->tunnel_endpoint_x, topObject);
+					get_attributes_table_name(verify_policy->request_object, &ctx->ip_ctx, attribute_num, ctx->hit_path[j].Nth_scan, ctx->hit_path[j].top_group_id, topObject);
+					cJSON_AddNumberToObject(topObject, "not_flag", ctx->hit_path[j].NOT_flag);
+					cJSON_AddNumberToObject(topObject, "nth_clause", ctx->hit_path[j].clause_index);
 					cJSON_AddItemToArray(topObjectList, topObject);
 				}
 			}
@@ -1491,332 +1339,214 @@ static int group_scan(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, str
 	return hit_cnt_group;
 }
 
-
-static int get_group_id_by_location(const struct ip_data_table* ip_location, size_t level)
-{
-    const int* group_ids[] = {
-		&ip_location->country_region_group_id,
-        &ip_location->province_group_id,
-        &ip_location->city_group_id,
-        &ip_location->subdivision_group_id
-    };
-
-    if (level >= 0 && level < sizeof(group_ids) / sizeof(group_ids[0]))
-    {
-        return *group_ids[level];
-    }
-
-    return 0;
-}
-
 int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn)
 {
 	int ret=0, hit_fqdn_entry=0;
 	cJSON *fqdn_entry_item=NULL;
-	struct library_entry_ctx *entry_ctx[8]={0};
 
 	if(fqdn == NULL)
 	{
 		return 0;
 	}
+
+	struct library_entry_ctx *entry_ctx[8]={0};
 	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_ENTRY], fqdn, (void **)entry_ctx, 8);
-	for(int i=0; i <ret; i++)
+	for(int i=0; i < ret && i < 8; i++)
 	{
-		if(i < 8)
-		{
-			fqdn_entry_item=cJSON_CreateObject();
-			cJSON_AddNumberToObject(fqdn_entry_item, "entry_id", entry_ctx[i]->entry_id);
-			cJSON_AddStringToObject(fqdn_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
-			cJSON_AddItemToArray(hit_library, fqdn_entry_item);
-			hit_fqdn_entry++;
-		}
-		library_search_free(entry_ctx[i]);
+		fqdn_entry_item=cJSON_CreateObject();
+		cJSON_AddNumberToObject(fqdn_entry_item, "entry_id", entry_ctx[i]->entry_id);
+		cJSON_AddStringToObject(fqdn_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
+		cJSON_AddItemToArray(hit_library, fqdn_entry_item);
+		hit_fqdn_entry++;
+
+		library_entry_free(entry_ctx[i]);
 	}
-	return hit_fqdn_entry; 
+	return hit_fqdn_entry;
 }
 
 int get_ip_entry_tag_ids(cJSON *hit_library, int vsys_id, struct ipaddr *ip_addr)
 {
 	int ret=0, hit_ip_entry=0;
 	cJSON *ip_entry_item=NULL;
-	struct ip_addr dest_ip, source_ip;
-	struct library_entry_ctx *entry_ctx[8]={0};
 
 	if(ip_addr == NULL)
 	{
 		return 0;
 	}
 
+	struct ip_addr dest_ip, source_ip;
 	ip_addr_to_address(ip_addr, &dest_ip, &source_ip);
+
+	struct library_entry_ctx *entry_ctx[8]={0};
 	ret = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_IP_ADDR_ENTRY], &source_ip, (void **)&entry_ctx, 8);
-	for(int i=0; i <ret; i++)
+	for(int i=0; i < ret && i < 8; i++)
 	{
-		if(i < 8)
-		{
-			ip_entry_item=cJSON_CreateObject();
-			cJSON_AddNumberToObject(ip_entry_item, "entry_id", entry_ctx[i]->entry_id);
-			cJSON_AddStringToObject(ip_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
-			cJSON_AddItemToArray(hit_library, ip_entry_item);
-			hit_ip_entry++;
-		}
-		library_search_free(entry_ctx[i]);
+		ip_entry_item=cJSON_CreateObject();
+		cJSON_AddNumberToObject(ip_entry_item, "entry_id", entry_ctx[i]->entry_id);
+		cJSON_AddStringToObject(ip_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
+		cJSON_AddItemToArray(hit_library, ip_entry_item);
+		hit_ip_entry++;
+
+		library_entry_free(entry_ctx[i]);
 	}
-	
 	return hit_ip_entry;
 }
 
-int ip_location_scan(struct policy_scan_ctx *ctx, int vsys_id, struct ip_addr *sip, struct ip_addr *dip, int hit_cnt)
+enum category_type get_library_tag_category(long long tag_id, int vsys_id)
 {
-	int scan_ret=0, hit_cnt_ip=0;
-	char buff[VERIFY_STRING_MAX * 2]={0};
-	struct maat_hit_group hit_group;
-	struct maat_hit_path hit_path[HIT_PATH_SIZE];
-	struct ip_data_table* ip_location_client=NULL, *ip_location_server=NULL;
-
-	if(!g_policy_rt->load_ip_location)
+	struct library_tag_ctx *tag_ctx =(struct library_tag_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_LIBRARY_TAG],
+																							 (const char *)&tag_id, sizeof(long long));
+	if(tag_ctx != NULL)
 	{
-		return 0;
+		enum category_type category = tag_ctx->category;
+		library_tag_free(tag_ctx);
+		return category;
 	}
 
-	memset(hit_path, 0, sizeof(struct maat_hit_path)*HIT_PATH_SIZE);
-	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_LOCATION_USER_DEFINED], sip, (void **)&ip_location_client, 1);
-	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_LOCATION_USER_DEFINED], dip, (void **)&ip_location_server, 1);
-
-	if (ip_location_client == NULL)
-	{
-		maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_LOCATION_BUILT_IN], sip,(void **)&ip_location_client, 1);
-	}
-	if (ip_location_server == NULL)
-	{
-		maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_LOCATION_BUILT_IN], dip, (void **)&ip_location_server, 1);
-	}
-
-	if(ip_location_server!=NULL)
-	{
-		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_server->country_full, ip_location_server->province_full, ip_location_server->city_full, ip_location_server->subdivision_addr);
-		ctx->ip_ctx.location_server=strdup(buff);
-		
-		for(int level=0; level < 4; level++)
-		{
-			memset(&hit_group, 0, sizeof(hit_group));
-			hit_group.group_id=get_group_id_by_location(ip_location_server, level);
-			if(hit_group.group_id <= 0)
-			{
-				continue;
-			}
-			
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_DST_GEO_COUNTRY+level, 1);
-			if(scan_ret > 0)
-			{
-				hit_cnt_ip+=scan_ret; 
-			}
-			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_DST_GEO_COUNTRY+level] = maat_state_get_scan_count(ctx->scan_mid);		
-		}
-	}
-	if(ip_location_client!=NULL)
-	{
-		memset(buff,0,sizeof(buff));
-		snprintf(buff, sizeof(buff), "%s.%s.%s.%s", ip_location_client->country_full, ip_location_client->province_full, ip_location_client->city_full, ip_location_client->subdivision_addr);
-		ctx->ip_ctx.location_client=strdup(buff);
-
-		for(int level=0; level < 4; level++)
-		{
-			memset(&hit_group, 0, sizeof(hit_group));
-			hit_group.group_id=get_group_id_by_location(ip_location_client, level);
-			if(hit_group.group_id <= 0)
-			{
-				continue;
-			}
-
-			scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_SRC_GEO_COUNTRY+level, 1);
-			if(scan_ret > 0)
-			{
-				hit_cnt_ip+=scan_ret; 	
-			}
-			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-			ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_SRC_GEO_COUNTRY+level] = maat_state_get_scan_count(ctx->scan_mid);	
-		}
-	}
-
-	if(ip_location_server)
-		ip_table_free(ip_location_server);
-	if(ip_location_client)
-		ip_table_free(ip_location_client);
-	return hit_cnt_ip;
+	return CATEGORY_TYPE_UNKNOWN;
 }
 
-int ip_asn_scan(struct policy_scan_ctx * ctx, int vsys_id, int table_id, struct ip_addr* sip, struct ip_addr* dip, int hit_cnt)
+int ip_entry_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
 {
-	size_t n_hit_result=0;
-	int scan_ret=0, hit_cnt_ip=0, Nth_scan_cnt=0;
+	int scan_ret=0, hit_cnt_ip=0;
+	struct maat_hit_group hit_group;
 	struct maat_hit_path hit_path[HIT_PATH_SIZE];
-	struct ip_data_table* ip_asn_client=NULL, *ip_asn_server=NULL;
+	struct library_entry_ctx *source_entry_ctx[MAX_EX_DATA_LEN]={0};
+	struct library_entry_ctx *destination_entry_ctx[MAX_EX_DATA_LEN]={0};
 
 	if(!g_policy_rt->load_ip_location)
 	{
 		return 0;
 	}
-	
+
+	struct ip_addr dip, sip;
+	ip_addr_to_address(request->ip_addr, &dip, &sip);
+
 	memset(hit_path, 0, sizeof(struct maat_hit_path)*HIT_PATH_SIZE);
-	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_ASN_USER_DEFINED], sip, (void **)&ip_asn_client, 1);
-	maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_ASN_USER_DEFINED], dip, (void **)&ip_asn_server, 1);
+	int ret1 = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_IP_ADDR_ENTRY], &sip, (void **)&source_entry_ctx, MAX_EX_DATA_LEN);
+	int ret2 = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_IP_ADDR_ENTRY], &dip, (void **)&destination_entry_ctx, MAX_EX_DATA_LEN);
 
-	if (ip_asn_client == NULL)
+	if(ret1 > 0)
 	{
-		maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_ASN_BUILT_IN], sip,(void **)&ip_asn_client, 1);
-	}
-	if (ip_asn_server == NULL)
-	{
-		maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_ASN_BUILT_IN], dip,(void **)&ip_asn_server, 1);
-	}
-
-	struct maat_hit_group hit_group;
-	if(ip_asn_server!=NULL)
-	{
-		ctx->ip_ctx.asn_server=strdup(ip_asn_server->asn);
-		ctx->ip_ctx.organization_server=strdup(ip_asn_server->organization);
-
-		memset(&hit_group, 0, sizeof(hit_group));
-		hit_group.group_id=ip_asn_server->asn_group_id;
-
-		if(table_id == TSG_OBJ_DESTINATION_ADDR)
+		for(int i=0; i < ret1 && i < MAX_EX_DATA_LEN; i++)
 		{
-			table_id = TSG_OBJ_IP_DST_ASN;
-		}
-		else
-		{
-			table_id = (table_id==TSG_OBJ_INTERNAL_ADDR)?TSG_OBJ_INTERNAL_ASN:TSG_OBJ_EXTERNAL_ASN;
-		}
-	    scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-						    	 ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
-		if(scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-                          			  &n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		if(scan_ret >= MAAT_SCAN_OK)
-		{
-			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-			if(table_id ==	TSG_OBJ_IP_DST_ASN)
+			if(source_entry_ctx[i] == NULL)
 			{
-				ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_DST_ASN] = maat_state_get_scan_count(ctx->scan_mid);
+				continue;
 			}
-			else
+
+			for(int tag_id=0; tag_id<source_entry_ctx[i]->n_tag_ids; tag_id++)
 			{
-				Nth_scan_cnt = (table_id == TSG_OBJ_INTERNAL_ASN) ? NTH_SCAN_IP_INTERNAL_ASN : NTH_SCAN_IP_EXTERNAL_ASN;
-				ctx->ip_ctx.Nth_scan[Nth_scan_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+				memset(&hit_group, 0, sizeof(hit_group));
+				hit_group.group_id=source_entry_ctx[i]->tag_id_array[tag_id];
+				if(hit_group.group_id <= 0)
+				{
+					continue;
+				}
+
+				scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id, 1);
+				if(scan_ret > 0)
+				{
+					hit_cnt_ip+=scan_ret;
+				}
+
+				struct ip_entry_hit_path *entry_hit_path = (request->table_id == TSG_OBJ_SOURCE_ADDR) ? &ctx->ip_ctx.source_entry : &ctx->ip_ctx.internal_entry;
+				entry_hit_path->entry_id[entry_hit_path->entry_num]=source_entry_ctx[i]->entry_id;
+				entry_hit_path->tag_id[entry_hit_path->entry_num]=source_entry_ctx[i]->tag_id_array[tag_id];
+				entry_hit_path->category[entry_hit_path->entry_num]= get_library_tag_category(source_entry_ctx[i]->tag_id_array[tag_id], vsys_id);
+				entry_hit_path->entry_num++;
+
+				ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
+				entry_hit_path->Nth_scan[entry_hit_path->Nth_scan_num++] = maat_state_get_scan_count(ctx->scan_mid);
 			}
+			library_entry_free(source_entry_ctx[i]);
 		}
 	}
-	if(ip_asn_client!=NULL)
+
+	if(ret2 > 0)
 	{
-		ctx->ip_ctx.asn_client=strdup(ip_asn_client->asn);
-		ctx->ip_ctx.organization_client=strdup(ip_asn_client->organization);
-
-		memset(&hit_group, 0, sizeof(hit_group));
-		hit_group.group_id=ip_asn_client->asn_group_id;
-
-		if(table_id == TSG_OBJ_SOURCE_ADDR)
+		for(int i=0; i < ret2 && i < MAX_EX_DATA_LEN; i++)
 		{
-			table_id = TSG_OBJ_IP_SRC_ASN;
-		}
-		else
-		{
-			table_id = (table_id==TSG_OBJ_INTERNAL_ADDR)?TSG_OBJ_INTERNAL_ASN:TSG_OBJ_EXTERNAL_ADDR;
-		}
-		scan_ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-								ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
-		if(scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
-                          			  &n_hit_result, ctx->scan_mid);
-		if (scan_ret == MAAT_SCAN_HIT)
-		{
-			hit_cnt_ip+=n_hit_result;
-		}
-		if(scan_ret >= MAAT_SCAN_OK)
-		{
-			ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
-
-			if(table_id == TSG_OBJ_IP_SRC_ASN)
+			if(destination_entry_ctx[i] == NULL)
 			{
-				ctx->ip_ctx.Nth_scan[NTH_SCAN_IP_SRC_ASN] = maat_state_get_scan_count(ctx->scan_mid);
+				continue;
 			}
-			else
+
+			for(int tag_id=0; tag_id<destination_entry_ctx[i]->n_tag_ids; tag_id++)
 			{
-				Nth_scan_cnt = (table_id == TSG_OBJ_INTERNAL_ASN) ? NTH_SCAN_IP_INTERNAL_ASN : NTH_SCAN_IP_EXTERNAL_ASN;
-				ctx->ip_ctx.Nth_scan[Nth_scan_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+				memset(&hit_group, 0, sizeof(hit_group));
+				hit_group.group_id=destination_entry_ctx[i]->tag_id_array[tag_id];
+				if(hit_group.group_id <= 0)
+				{
+					continue;
+				}
+
+				scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, request->table_id, 1);
+				if(scan_ret > 0)
+				{
+					hit_cnt_ip+=scan_ret;
+				}
+
+				struct ip_entry_hit_path *entry_hit_path = (request->table_id == TSG_OBJ_DESTINATION_ADDR) ? &ctx->ip_ctx.destination_entry : &ctx->ip_ctx.external_entry;
+				entry_hit_path->entry_id[entry_hit_path->entry_num]=destination_entry_ctx[i]->entry_id;
+				entry_hit_path->tag_id[entry_hit_path->entry_num]=destination_entry_ctx[i]->tag_id_array[tag_id];
+				entry_hit_path->category[entry_hit_path->entry_num]= get_library_tag_category(destination_entry_ctx[i]->tag_id_array[tag_id], vsys_id);
+				entry_hit_path->entry_num++;
+
+				ctx->n_read=maat_state_get_hit_paths(ctx->scan_mid, hit_path, HIT_PATH_SIZE);
+				entry_hit_path->Nth_scan[entry_hit_path->Nth_scan_num++] = maat_state_get_scan_count(ctx->scan_mid);
 			}
+			library_entry_free(destination_entry_ctx[i]);
 		}
 	}
-	if(ip_asn_server)
-		ip_table_free(ip_asn_server);
-	if(ip_asn_client)
-		ip_table_free(ip_asn_client);
+
 	return hit_cnt_ip;
 }
 
 int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_ctx * ctx, int vsys_id, const char *fqdn, int table_id, int hit_cnt)
 {
-	int j=0, k=0;
 	size_t n_read=0, n_hit_result=0;
 	int hit_path_cnt=0;
-	int i=0,ret=0, hit_cnt_fqdn=0;
-	struct fqdn_category_ctx *fqdn_cat_user[8]={0},*fqdn_cat_built[8]={0};
+	int i=0, j=0, ret=0, hit_cnt_fqdn=0;
+	enum category_type category=CATEGORY_TYPE_UNKNOWN;
+	struct library_entry_ctx *fqdn_entry_ctx[MAX_EX_DATA_LEN]={0};
 
 	if(!g_policy_rt->load_fqdn_cat)
 	{
 		return 0;
 	}
 
-	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_CAT_USER_DEFINED], fqdn, (void **)fqdn_cat_user, 8);
-	for(i=0; i <ret; i++)
+	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_ENTRY], fqdn, (void **)fqdn_entry_ctx, MAX_EX_DATA_LEN);
+	for(i=0; i < ret && i < MAX_EX_DATA_LEN; i++)
 	{
-		if(i < 8)
+		if(fqdn_entry_ctx[i] == NULL)
 		{
-			if(http_hit_policy_match((int *)(request->fqdn_user.group_id), j, (int)fqdn_cat_user[i]->group_id))
+			continue;
+		}
+
+		for(int tag_id=0; tag_id<fqdn_entry_ctx[i]->n_tag_ids; tag_id++)
+		{
+			category = get_library_tag_category(fqdn_entry_ctx[i]->tag_id_array[tag_id], vsys_id);
+			if(category != CATEGORY_TYPE_WEBSITE_CATEGORY)
 			{
 				continue;
 			}
-			request->fqdn_user.group_id[j] = fqdn_cat_user[i]->group_id;
+			request->fqdn_entry.entry_id[j] = fqdn_entry_ctx[i]->entry_id;
+			request->fqdn_entry.tag_id[j] = fqdn_entry_ctx[i]->tag_id_array[tag_id];
 			j++;
 		}
-		fqdn_cat_table_free(fqdn_cat_user[i]);
+		library_entry_free(fqdn_entry_ctx[i]);
 	}
-	request->fqdn_user.fqdn_cat_num = j< 8 ? j : 8;
+	request->fqdn_entry.fqdn_entry_num = j< MAX_EX_DATA_LEN ? j : MAX_EX_DATA_LEN;
 
-	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_CAT_BUILT_IN], fqdn, (void **)fqdn_cat_built, 8);
-	for(i=0; i <ret; i++)
-	{
-		if(i < 8)
-		{
-			if(http_hit_policy_match((int *)(request->fqdn_builtin.group_id), k, (int)fqdn_cat_built[i]->group_id))
-			{
-				continue;
-			}
-			request->fqdn_builtin.group_id[k] = fqdn_cat_built[i]->group_id;
-			k++;
-		}
-		fqdn_cat_table_free(fqdn_cat_built[i]);
-	}
-	request->fqdn_builtin.fqdn_cat_num  = k < 8 ? k : 8;
 	struct maat_hit_group hit_group;
 
-	if(request->fqdn_user.fqdn_cat_num > 0)
+	if(request->fqdn_entry.fqdn_entry_num > 0)
 	{
-		for(i=0; i<request->fqdn_user.fqdn_cat_num; i++)
+		for(i=0; i<request->fqdn_entry.fqdn_entry_num; i++)
 		{
 			memset(&hit_group, 0, sizeof(hit_group));
-			hit_group.group_id=request->fqdn_user.group_id[i];
+			hit_group.group_id=request->fqdn_entry.tag_id[i];
 	    	ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
 							    ctx->result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
 			if(ret == MAAT_SCAN_HIT)
@@ -1838,37 +1568,7 @@ int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_c
 				hit_path_cnt++;
 			}
 		}
-		goto finish;
 	}
-	if (request->fqdn_builtin.fqdn_cat_num > 0)
-	{
-		for(i=0; i<request->fqdn_builtin.fqdn_cat_num; i++)
-		{
-			memset(&hit_group, 0, sizeof(hit_group));
-			hit_group.group_id=request->fqdn_builtin.group_id[i];
-			ret=maat_scan_group(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], &hit_group, 1,
-							    ctx->result+hit_cnt+hit_cnt_fqdn, MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
-			if(ret>0)
-			{
-				hit_cnt_fqdn+=n_hit_result;
-			}
-			ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], ctx->result+hit_cnt+hit_cnt_fqdn,
-								      MAX_SCAN_RESULT-hit_cnt-hit_cnt_fqdn, &n_hit_result, ctx->scan_mid);
-			if (ret == MAAT_SCAN_HIT)
-			{
-				hit_cnt_fqdn+=n_hit_result;
-			}
-			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
-			if(ret >= MAAT_SCAN_OK)
-			{
-				request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
-				request->exclude_nth_scan[hit_path_cnt] = 1;
-				ctx->n_read=n_read;
-				hit_path_cnt++;
-			}
-		}
-	}
-finish:
 	request->merge_nth_scan_num = hit_path_cnt;
 	return hit_cnt_fqdn;
 }
@@ -1948,18 +1648,18 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 		ctx->tunnel_scan_mid = maat_state_new(g_policy_rt->feather[vsys_id], ctx->thread_id);
 		maat_state_set_scan_compile_table(ctx->tunnel_scan_mid, g_policy_rt->compile_table_id[TSG_TUNNEL]);
 	}
-	
+
 	int tunnel_table_id = get_tunnel_type_table_id(request->tunnel_type);
 	if (ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
-		scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], ip_addr->v4->saddr, ip_addr->v4->source, 
+		scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], ip_addr->v4->saddr, ip_addr->v4->source,
 			 					  	   result, MAX_SCAN_RESULT, &n_hit_result, ctx->tunnel_scan_mid);
 		if(scan_ret == MAAT_SCAN_HIT)
 		{
 			hit_cnt_endpoint+=n_hit_result;
 		}
 	}
-	
+
 	if (ip_addr->addrtype == ADDR_TYPE_IPV6)
 	{
 		scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[tunnel_table_id], ip_addr->v6->saddr, ip_addr->v6->source,
@@ -2120,28 +1820,22 @@ enum ip_protocol_type
 	PROCOCOL_TCP=6,
 	PROCOCOL_UDP=17,
 };
+
 static int get_group_id_by_protocol(int protocol)
 {
-	int group_id = 0;
 	switch(protocol)
 	{
 		case PROCOCOL_ANY:
-			group_id = PROTOCOL_ANY_GROUP_ID;
-			break;
+			return PROTOCOL_ANY_GROUP_ID;
 		case PROTOCOL_ICMP:
-			group_id = PROTOCOL_ICMP_GROUP_ID;
-			break;
+			return PROTOCOL_ICMP_GROUP_ID;
 		case PROCOCOL_TCP:
-			group_id = PROTOCOL_TCP_GROUP_ID;
-			break;
+			return PROTOCOL_TCP_GROUP_ID;
 		case PROCOCOL_UDP:
-			group_id = PROTOCOL_UDP_GROUP_ID;
-			break;
+			return PROTOCOL_UDP_GROUP_ID;
 		default:
-			group_id = 0;
-			break;
+			return 0;
 	}
-	return group_id;
 }
 
 static int protocol_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
@@ -2157,7 +1851,7 @@ static int protocol_scan(struct request_query_obj *request, struct policy_scan_c
 		scan_ret = group_scan(ctx, vsys_id, hit_cnt, hit_group, TSG_OBJ_IP_PROTOCOL, 1);
 		if(scan_ret > 0)
 		{
-			hit_cnt_protocol+=scan_ret; 
+			hit_cnt_protocol+=scan_ret;
 		}
 		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 		request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
@@ -2177,7 +1871,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 	{
 		if(0 == strcasecmp(request->attri_name, "source") || 0 == strcasecmp(request->attri_name, "internal"))
 		{
-			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->saddr, request->ip_addr->v4->source, 
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->saddr, request->ip_addr->v4->source,
 			 						      ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
@@ -2192,7 +1886,7 @@ static int ip_addr_scan(struct request_query_obj *request, struct policy_scan_ct
 		}
 		if(0 == strcasecmp(request->attri_name, "destination") || 0 == strcasecmp(request->attri_name, "external"))
 		{
-			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->daddr, request->ip_addr->v4->dest, 
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id], request->ip_addr->v4->daddr, request->ip_addr->v4->dest,
 			 						       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
@@ -2320,15 +2014,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			{
 				goto decide;
 			}
-			struct ip_addr dest_ip, source_ip;
-			ip_addr_to_address(request->ip_addr, &dest_ip, &source_ip);
-
-			scan_ret = ip_location_scan(ctx, vsys_id, &source_ip, &dest_ip, hit_cnt);
-			if(scan_ret > 0)
-			{
-				hit_cnt+=scan_ret;
-			}
-			scan_ret = ip_asn_scan(ctx, vsys_id, table_id, &source_ip, &dest_ip, hit_cnt);
+			scan_ret = ip_entry_scan(request, ctx, vsys_id, hit_cnt);
 			if(scan_ret > 0)
 			{
 				hit_cnt+=scan_ret;
@@ -2364,8 +2050,7 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 			}
 			goto decide;
 		case TSG_OBJ_TUNNEL:
-			memset(&dest_ip, 0, sizeof(dest_ip));
-			memset(&source_ip, 0, sizeof(source_ip));
+			struct ip_addr dest_ip, source_ip;
 			ip_addr_to_address(request->ip_addr, &dest_ip, &source_ip);
 			scan_ret = tunnel_scan(request, ctx, vsys_id, hit_cnt, request->ip_addr);
 			if(scan_ret)
@@ -2410,14 +2095,13 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_quer
 
 	if(request_in_fqdn_cat(table_id))
 	{
-		/*TSG_HOST, TSG_HOST+1=TSG_HOST_CAT**/
-		scan_ret = get_fqdn_category_id(request, ctx, vsys_id, value, table_id+1, hit_cnt);
+		scan_ret = get_fqdn_category_id(request, ctx, vsys_id, value, TSG_OBJ_DST_SERVER_FQDN, hit_cnt);
 		if(scan_ret>0)
 		{
 			hit_cnt+=scan_ret;
 		}
 	}
-	
+
 	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], g_policy_rt->scan_table_id[table_id],
 								value, strlen(value), ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
 						 	    &n_hit_result, ctx->scan_mid);
@@ -2545,9 +2229,7 @@ static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_HTTP_RES_HDR] =  "ATTR_HTTP_RES_HDR";
 	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
 	table_name[TSG_OBJ_SSL_CN] =  "ATTR_SSL_CN";
-	table_name[TSG_OBJ_SSL_CN_CAT] = "ATTR_SSL_CN_CAT";
 	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
-	table_name[TSG_OBJ_SSL_SAN_CAT] = "ATTR_SSL_SAN_CAT";
 	return;
 }
 
@@ -2583,18 +2265,7 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
 	table_name[TSG_OBJ_FLAG]="ATTR_FLAG";
 	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
-	table_name[TSG_OBJ_IP_SRC_ASN]="ATTR_SOURCE_ASN";
-	table_name[TSG_OBJ_IP_DST_ASN]="ATTR_DESTINATION_ASN";
-	table_name[TSG_OBJ_IP_SRC_GEO_COUNTRY]="ATTR_SOURCE_GEO_COUNTRY";
-	table_name[TSG_OBJ_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUPER_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_SRC_GEO_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_SOURCE_GEO_SUB_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_COUNTRY]="ATTR_DESTINATION_GEO_COUNTRY";
-	table_name[TSG_OBJ_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUPER_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_ADMINISTRATIVE_AREA";
-	table_name[TSG_OBJ_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA]="ATTR_DESTINATION_GEO_SUB_ADMINISTRATIVE_AREA";
 	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_DST_SERVER_FQDN_CAT]="ATTR_SERVER_FQDN_CAT";
 	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
 	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
 	table_name[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT";
@@ -2606,8 +2277,6 @@ static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
 	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
 	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
 	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
-	table_name[TSG_OBJ_INTERNAL_ASN]="ATTR_INTERNAL_ASN";
-	table_name[TSG_OBJ_EXTERNAL_ASN]="ATTR_EXTERNAL_ASN";
 	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
 	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
 	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
@@ -2620,7 +2289,7 @@ int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
 	const char *table_name=NULL;
 
 	const char *conjunction_table_name_map[] = {"SECURITY_COMPILE_CONJUNCTION", "PXY_CTRL_COMPILE_CONJUNCTION", "TRAFFIC_SHAPING_COMPILE_CONJUNCTION",
-												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION", 
+												"SERVICE_CHAINING_COMPILE_CONJUNCTION", "PXY_INTERCEPT_COMPILE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION",
 												"MONITOR_COMPILE_CONJUNCTION", "DOS_PROTECTION_COMPILE_CONJUNCTION", "TUNNEL_COMPILE_CONJUNCTION"};
 
 	table_name = conjunction_table_name_map[compile_type_id];
@@ -2719,23 +2388,7 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 			}
 		}
 
-		for(int i = PROFILE_ASN_USER_DEFINED; i < PROFILE_FQDN_CAT_USER_DEFINED && g_policy_rt->load_ip_location; i++)
-		{
-			ret = maat_ip_table_init(i, vsys_id, ip_table_free_cb, ip_table_dup_cb);
-			if(ret<0)
-			{
-				goto error_out;
-			}
-		}
-		for(int i = PROFILE_FQDN_CAT_USER_DEFINED; i <= PROFILE_FQDN_CAT_BUILT_IN && g_policy_rt->load_fqdn_cat; i++)
-		{
-			ret = maat_plugin_table_ex_init(i, vsys_id, fqdn_cat_new_data, fqdn_cat_free_data, fqdn_cat_dup_data);
-			if(ret<0)
-			{
-				goto error_out;
-			}
-		}
-		for(int i=PROFILE_TUNNEL_CATALOG; i <=PROFILE_TUNNEL_LABEL; i++)
+		for(int i=0; i <=PROFILE_TUNNEL_LABEL; i++)
 		{
 			ret = maat_tunnel_table_init(i, vsys_id, tunnel_table_free_data, tunnel_table_dup_data);
 			if(ret<0)
@@ -2743,19 +2396,29 @@ int maat_table_init(struct verify_policy * verify, const char* profile_path)
 				goto error_out;
 			}
 		}
+
 		ret = maat_plugin_table_ex_init(PROFILE_APP_DI_DICT, vsys_id, app_dict_table_new_cb, app_dict_table_free_cb, app_dict_table_dup_cb);
 		if(ret<0)
 		{
 			goto error_out;
 		}
-		
-		for(int i=PROFILE_FQDN_ENTRY; i <=PROFILE_IP_ADDR_ENTRY; i++)
+
+		ret = maat_plugin_table_ex_init(PROFILE_FQDN_ENTRY, vsys_id, library_entry_new_cb, library_entry_free_cb, library_entry_dup_cb);
+		if(ret<0)
 		{
-			ret = maat_plugin_table_ex_init(i, vsys_id, library_search_new_cb, library_search_free_cb, library_search_dup_cb);
-			if(ret<0)
-			{
-				goto error_out;
-			}
+			goto error_out;
+		}
+
+		ret = maat_plugin_table_ex_init(PROFILE_IP_ADDR_ENTRY, vsys_id, library_entry_new_cb, library_entry_free_cb, library_entry_dup_cb);
+		if(ret<0)
+		{
+			goto error_out;
+		}
+
+		ret = maat_plugin_table_ex_init(PROFILE_LIBRARY_TAG, vsys_id, library_tag_new_cb, library_tag_free_cb, library_tag_dup_cb);
+		if(ret<0)
+		{
+			goto error_out;
 		}
 	}
 	ret = 0;

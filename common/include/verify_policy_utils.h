@@ -8,6 +8,7 @@
 #define VERIFY_PATH_MAX             258
 #define VERIFY_STRING_MAX			2048
 #define VERIFY_ARRAY_MAX			512
+#define MAX_TAG_ID_NUM              128
 
 /** Alway treated the expr as true */
 #ifndef likely

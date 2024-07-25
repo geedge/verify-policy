@@ -49,9 +49,7 @@ enum tsg_obj_table
 	TSG_OBJ_HTTP_RES_HDR,
 	TSG_OBJ_HTTP_RES_BODY,
     TSG_OBJ_SSL_CN,
-    TSG_OBJ_SSL_CN_CAT,
     TSG_OBJ_SSL_SAN,
-    TSG_OBJ_SSL_SAN_CAT,
     TSG_OBJ_DOH_QNAME,
     TSG_OBJ_DNS_QNAME,
     TSG_OBJ_MAIL_ACCOUNT,
@@ -72,18 +70,7 @@ enum tsg_obj_table
     TSG_OBJ_TUNNEL,
     TSG_OBJ_FLAG,
     TSG_OBJ_GTP_IMEI,
-    TSG_OBJ_IP_SRC_ASN,
-	TSG_OBJ_IP_DST_ASN,
-    TSG_OBJ_IP_SRC_GEO_COUNTRY,
-    TSG_OBJ_IP_SRC_GEO_SUPER_ADMINISTRATIVE_AREA,
-    TSG_OBJ_IP_SRC_GEO_ADMINISTRATIVE_AREA,
-    TSG_OBJ_IP_SRC_GEO_SUB_ADMINISTRATIVE_AREA,
-    TSG_OBJ_IP_DST_GEO_COUNTRY,
-    TSG_OBJ_IP_DST_GEO_SUPER_ADMINISTRATIVE_AREA,
-    TSG_OBJ_IP_DST_GEO_ADMINISTRATIVE_AREA,
-    TSG_OBJ_IP_DST_GEO_SUB_ADMINISTRATIVE_AREA,
     TSG_OBJ_DST_SERVER_FQDN,
-    TSG_OBJ_DST_SERVER_FQDN_CAT,
     TSG_OBJ_INTERNAL_ADDR,
     TSG_OBJ_EXTERNAL_ADDR,
     TSG_OBJ_SOURCE_PORT,
@@ -95,8 +82,6 @@ enum tsg_obj_table
     TSG_OBJ_SSL_ESNI,
     TSG_OBJ_SSL_NO_SNI,
     TSG_OBJ_TUNNEL_LEVEL,
-    TSG_OBJ_INTERNAL_ASN,
-    TSG_OBJ_EXTERNAL_ASN,
     TSG_OBJ_TUNNEL_GTP_ENDPOINT,
     TSG_OBJ_TUNNEL_GRE_ENDPOINT,
     TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT,
@@ -125,10 +110,11 @@ struct verify_policy
 	struct verify_policy_thread *work_threads[VERIFY_ARRAY_MAX];
 };
 
-struct fqdn_category_id
+struct fqdn_category_entry
 {
-    int fqdn_cat_num;
-    long long int group_id[8];
+    int fqdn_entry_num;
+    long long entry_id[MAX_TAG_ID_NUM];
+    long long tag_id[MAX_TAG_ID_NUM];
 };
 
 #define MERGE_SCAN_NTH 128
@@ -147,8 +133,7 @@ struct request_query_obj
     int exclude_nth_scan[MERGE_SCAN_NTH];
     int merge_nth_scan[MERGE_SCAN_NTH];
     cJSON* attributes;
-    struct fqdn_category_id fqdn_user;
-    struct fqdn_category_id fqdn_builtin;
+    struct fqdn_category_entry fqdn_entry;
 };
 
 struct verify_policy_query
