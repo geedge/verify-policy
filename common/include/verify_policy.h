@@ -9,8 +9,8 @@
 #define _VERIFY_POLICY_H
 
 #include <event2/event.h>
-#include <log.h>
-#include "verify_policy_utils.h"
+#include "log.h"
+#include "utils.h"
 
 struct breakpad_instance;
 
@@ -146,15 +146,8 @@ struct verify_policy_query
 extern struct verify_policy * g_verify_proxy;
 
 int maat_table_init(struct verify_policy * verify, const char* profile_path);
-int policy_verify_regex_expression(const char *expression);
-int get_ip_entry_tag_ids(cJSON *hit_library, int vsys_id, struct ipaddr *ip_addr);
-int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn);
-int http_hit_policy_list(struct verify_policy_query *verify_policy, int num, size_t hit_cnt, cJSON *data_obj, void *pme);
-size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_query_obj *query_obj, void *pme);
-void policy_scan_ctx_free(void * pme);
+cJSON *get_library_search_query(const char *data, ssize_t data_len);
+cJSON *get_verify_policy_query(const char *data, ssize_t data_len, int thread_id);
 void verify_reload_loglevel();
-void verify_policy_tunnle_add(void * pme);
-void http_get_scan_status(struct request_query_obj *query_obj, int type, cJSON *attributes, cJSON  *data_obj, void *pme);
-void *policy_scan_ctx_new(unsigned int thread_id, int vsys_id, int compile_table_id);
 
 #endif

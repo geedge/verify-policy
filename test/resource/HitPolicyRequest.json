@@ -1,0 +1,70 @@
+{
+    "Verify_Policy_Request": [
+        {
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "attribute_name": "source",
+                                "attribute_value": {
+                                    "ip": "192.168.0.1",
+                                    "port":"8080",
+                                    "addr_type": 4
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "attribute_name": "source",
+                                "attribute_value": {
+                                    "ip": "192.168.1.1",
+                                    "port":"8080",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_INTERNAL_IP",
+                                "attribute_name": "internal",
+                                "attribute_value": {
+                                    "ip": "192.168.1.2",
+                                    "port": "80",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "string",
+                                "table_name": "ATTR_SERVER_FQDN",
+                                "attribute_name": "server_fqdn",
+                                "attribute_value": {
+                                    "string": "www.126.com"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        }
+    ]
+}

@@ -48,9 +48,8 @@ add_custom_target("install-profile" COMMAND ${CMAKE_COMMAND} ARGS -DCOMPONENT=Pr
 add_custom_target("tarball" COMMAND sh ${CMAKE_SCRIPT_PATH}/tarball/tarball.sh ${TARGET_VERSION} ${TARGET_DESCRIBE})
 
 enable_testing()
-#add_subdirectory(conf)
-#add_subdirectory(resource)
 add_subdirectory(vendor)
 add_subdirectory(common)
 add_subdirectory(platform)
+add_subdirectory(test)
 

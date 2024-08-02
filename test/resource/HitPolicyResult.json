@@ -1,0 +1,134 @@
+{
+    "Verify_Policy_Result": [
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hitPolicyList": [
+                    {
+                        "id": 1021,
+                        "policyName": "",
+                        "is_execute_policy": true,
+                        "top_object_list": [
+                            {
+                                "object_id": 101,
+                                "table_name": "ATTR_SOURCE_IP",
+                                "not_flag": 0,
+                                "nth_clause": 0
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_SOURCE_IP",
+                            "attribute_name": "source",
+                            "attribute_value": {
+                                "ip": "192.168.0.1",
+                                "port": "8080",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_id": 1,
+                                    "superior_object_id": 101
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200, 
+            "msg": "Success", 
+            "data": {
+                "hitPolicyList": [
+                    {
+                        "id": 1022, 
+                        "policyName": "", 
+                        "is_execute_policy": true, 
+                        "top_object_list": [
+                            {
+                                "tag_id": 11, 
+                                "table_name": "ATTR_SOURCE_IP", 
+                                "not_flag": 0, 
+                                "nth_clause": 0
+                            }, 
+                            {
+                                "tag_id": 12, 
+                                "table_name": "ATTR_INTERNAL_IP", 
+                                "not_flag": 0, 
+                                "nth_clause": 1
+                            }, 
+                            {
+                                "tag_id": 1, 
+                                "table_name": "ATTR_SERVER_FQDN", 
+                                "not_flag": 0, 
+                                "nth_clause": 2
+                            }
+                        ]
+                    }
+                ], 
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip", 
+                            "table_name": "ATTR_SOURCE_IP", 
+                            "attribute_name": "source", 
+                            "attribute_value": {
+                                "ip": "192.168.1.1", 
+                                "port": "8080", 
+                                "addr_type": 4
+                            }, 
+                            "hit_paths": [
+                                {
+                                    "entry_id": 1, 
+                                    "tag_id": 11
+                                }
+                            ]
+                        }, 
+                        {
+                            "attribute_type": "ip", 
+                            "table_name": "ATTR_INTERNAL_IP", 
+                            "attribute_name": "internal", 
+                            "attribute_value": {
+                                "ip": "192.168.1.2", 
+                                "port": "80", 
+                                "addr_type": 4
+                            }, 
+                            "hit_paths": [
+                                {
+                                    "entry_id": 2, 
+                                    "tag_id": 12
+                                }, 
+                                {
+                                    "entry_id": 2, 
+                                    "tag_id": 13
+                                }
+                            ]
+                        }, 
+                        {
+                            "attribute_type": "string", 
+                            "table_name": "ATTR_SERVER_FQDN", 
+                            "attribute_name": "server_fqdn", 
+                            "attribute_value": {
+                                "string": "www.126.com"
+                            }, 
+                            "hit_paths": [
+                                {
+                                    "entry_id": 1, 
+                                    "tag_id": 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }, 
+            "success": true
+        }
+    ]
+}
