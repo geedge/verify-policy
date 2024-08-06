@@ -1,6 +1,7 @@
 {
     "Verify_Policy_Request": [
         {
+            "__item_id": 0,
             "vsys_id": 1,
             "verify_list": [
                 {
@@ -25,6 +26,7 @@
             "verify_type": "policy"
         },
         {
+            "__item_id": 1,
             "vsys_id": 1,
             "verify_list": [
                 {
@@ -58,6 +60,91 @@
                                 "attribute_name": "server_fqdn",
                                 "attribute_value": {
                                     "string": "www.126.com"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 2,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "security",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value": {
+                                    "ip": "192.168.0.1",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 3,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "security",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value": {
+                                    "ip": "192.168.0.2",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 4,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "security",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value": {
+                                    "ip": "192.168.0.2",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value": {
+                                    "ip": "192.168.0.3",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
                                 }
                             }
                         ]

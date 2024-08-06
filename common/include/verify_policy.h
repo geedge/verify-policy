@@ -110,44 +110,39 @@ struct verify_policy
 	struct verify_policy_thread *work_threads[VERIFY_ARRAY_MAX];
 };
 
-struct fqdn_category_entry
-{
-    int fqdn_entry_num;
-    long long entry_id[MAX_TAG_ID_NUM];
-    long long tag_id[MAX_TAG_ID_NUM];
-};
-
 #define MERGE_SCAN_NTH 128
+#define REQUEST_QUERY_OBJ_MAX 32
 
 struct request_query_obj
-{
-	int table_id;
-    int numeric;
-	char *string;
-    char *district;
-	char *attri_name;
-	struct ipaddr *ip_addr;
-	char *subscriberid;
-    char *tunnel_type;
-    int merge_nth_scan_num;
-    int exclude_nth_scan[MERGE_SCAN_NTH];
-    int merge_nth_scan[MERGE_SCAN_NTH];
-    cJSON* attributes;
-    struct fqdn_category_entry fqdn_entry;
+{  
+    int table_id;  
+    int numeric;  
+    int merge_nth_scan_num;  
+    int merge_nth_scan[MERGE_SCAN_NTH];  
+    int exclude_nth_scan[MERGE_SCAN_NTH];  
+    char *string;  
+    char *district;  
+    char *attri_name;  
+    char *tunnel_type;  
+    struct ipaddr *ip_addr;  
+    cJSON *attributes;
 };
 
 struct verify_policy_query
 {
     int vsys_id;
 	int compile_table_id;
-	struct request_query_obj request_object[32];
+	struct request_query_obj request_object[REQUEST_QUERY_OBJ_MAX];
 };
 
 extern struct verify_policy * g_verify_proxy;
 
-int maat_table_init(struct verify_policy * verify, const char* profile_path);
+int verify_policy_table_init(struct verify_policy * verify, const char* profile_path);
+void verify_policy_table_free(const char* profile_path);
+
 cJSON *get_library_search_query(const char *data, ssize_t data_len);
 cJSON *get_verify_policy_query(const char *data, ssize_t data_len, int thread_id);
+
 void verify_reload_loglevel();
 
 #endif

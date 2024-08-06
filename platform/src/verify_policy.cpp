@@ -539,7 +539,7 @@ int main(int argc, char * argv[])
 	CHECK_OR_EXIT(ret == 0, "Failed at loading profile %s, Exit.", main_profile);
 
 	clock_gettime(CLOCK_REALTIME, &(start_time));
-	ret = maat_table_init(g_verify_proxy, main_profile);
+	ret = verify_policy_table_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
 	clock_gettime(CLOCK_REALTIME, &(end_time));
 

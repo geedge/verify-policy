@@ -129,6 +129,68 @@
                 }
             }, 
             "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "verify_session": {
+                    "attributes": [{
+                        "attribute_type": "ip",
+                        "table_name": "ATTR_TUNNEL",
+                        "attribute_name": "tunnel_endpoint_object",
+                        "hit_paths": [{
+                            "item_id": 0,
+                            "superior_object_id": 3021
+                        }]
+                    }]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "verify_session": {
+                    "attributes": [{
+                        "attribute_type": "ip",
+                        "table_name": "ATTR_TUNNEL",
+                        "attribute_name": "tunnel_endpoint_object",
+                        "hit_paths": [{
+                            "item_id": 0,
+                            "superior_object_id": 3022
+                        }]
+                    }]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_TUNNEL",
+                            "attribute_name": "tunnel_endpoint_object",
+                            "hit_paths": [
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 3022
+                                },
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 3023
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
         }
     ]
 }

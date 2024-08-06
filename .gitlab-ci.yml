@@ -7,6 +7,7 @@ variables:
 
 stages:
 - build
+- test
 
 ###############################################################################
 # The script is set to el7 or el8
@@ -27,6 +28,18 @@ stages:
     - ./ci/travis.sh
   tags:
     - share
+
+###############################################################################
+# make test: centos8
+###############################################################################
+run_test_for_centos8:
+  stage: test
+  extends: .build_by_travis_for_centos8
+  script:
+    - yum makecache
+    - ./ci/travis.sh
+    - cd build
+    - make test
 
 ###############################################################################
 # compile use image: centos8

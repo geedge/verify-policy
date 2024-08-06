@@ -1,0 +1,118 @@
+{
+    "compile_table": "TUNNEL_COMPILE",
+    "group2compile_table": "GROUP_TUNNEL_COMPILE_RELATION",
+    "group2group_table": "GROUP_GROUP_RELATION",
+    "rules": [
+		{
+            "compile_id": 3021,
+            "service": 13,
+            "action": 1,
+            "do_blacklist": 0,
+            "do_log": 1,
+            "tags": "{}",
+            "user_region": "anything",
+            "evaluation_order": "0.0",
+            "is_valid": "yes",
+            "groups": [
+                {
+                    "not_flag": 0,
+                    "group_id": 1,
+                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy01",
+                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_type": "ip",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.1",
+                                "ip2": "192.168.0.1"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+		{
+            "compile_id": 3022,
+            "service": 13,
+            "action": 1,
+            "do_blacklist": 0,
+            "do_log": 1,
+            "tags": "{}",
+            "user_region": "anything",
+            "evaluation_order": "0.0",
+            "is_valid": "yes",
+            "groups": [
+                {
+                    "not_flag": 0,
+                    "group_id": 2,
+                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy02",
+                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_type": "ip",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.2",
+                                "ip2": "192.168.0.2"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+		{
+            "compile_id": 3023,
+            "service": 13,
+            "action": 1,
+            "do_blacklist": 0,
+            "do_log": 1,
+            "tags": "{}",
+            "user_region": "anything",
+            "evaluation_order": "0.0",
+            "is_valid": "yes",
+            "groups": [
+                {
+                    "not_flag": 0,
+                    "group_id": 3,
+                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy03",
+                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_type": "ip",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.2",
+                                "ip2": "192.168.0.2"
+                            }
+                        }
+                    ]
+                },
+				{
+                    "not_flag": 0,
+                    "group_id": 4,
+                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy04",
+                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_type": "ip",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.3",
+                                "ip2": "192.168.0.3"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+   ]
+}
