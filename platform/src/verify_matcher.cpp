@@ -695,7 +695,7 @@ int get_statistics_option_type_str2idx(const char *statistics_option_type)
 int get_category_type_str2idx(const char *category)
 {
 	size_t i = 0;
-	const char *category_name[] = {"unknown", "geoip", "country_code", "asn", "website_category", "internet_service", "ioc", "compliance_risk"};
+	const char *category_name[] = {"unknown", "geoip", "country_code", "asn", "website_category", "internet_service", "security_threat", "compliance_risk"};
 	for (i = 0; i < sizeof(category_name) / sizeof(const char *); i++)
 	{
 		if (0 == strcasecmp(category, category_name[i]))
@@ -1539,7 +1539,6 @@ int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_c
 	size_t n_read=0, n_hit_result=0;
 	int hit_path_cnt=0;
 	int ret=0, hit_cnt_fqdn=0;
-	enum category_type category=CATEGORY_TYPE_UNKNOWN;
 	struct library_entry_ctx *fqdn_entry_ctx[MAX_EX_DATA_LEN]={0};
 
 	if(!g_policy_rt->load_fqdn_cat)
@@ -1560,11 +1559,6 @@ int get_fqdn_category_id(struct request_query_obj *request, struct policy_scan_c
 
 		for(int tag_id=0; tag_id<fqdn_entry_ctx[i]->n_tag_ids; tag_id++)
 		{
-			category = get_library_tag_category(fqdn_entry_ctx[i]->tag_id_array[tag_id], vsys_id);
-			if(category != CATEGORY_TYPE_WEBSITE_CATEGORY)
-			{
-				continue;
-			}
 			fqdn_entry.table_id = request->table_id;
 			fqdn_entry.tag[fqdn_entry.entry_num].entry_id = fqdn_entry_ctx[i]->entry_id;
 			fqdn_entry.tag[fqdn_entry.entry_num].tag_id=fqdn_entry_ctx[i]->tag_id_array[tag_id];
