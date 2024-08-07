@@ -183,6 +183,57 @@ TEST(LibrarySearch, HitIpEntry)
 	FREE(&hit_policy_list);
 }
 
+TEST(VerifyPolicy, CheckRegexExpression)
+{
+	const char *hit_policy_request = "{\"verify_list\":[{\"vsys_id\":null,\"verify_regex\":[]}],\"verify_type\":\"regex\"}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"verify_regex\":[]},\"success\":true}";
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+
+	hit_policy_request = "{\"verify_list\":[{\"vsys_id\":null,\"verify_regex\":[{\"regex_str\":\"asdfasf\",\"is_valid\":null}]}],\"verify_type\":\"regex\"}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"verify_regex\":[{\"regex_str\":\"asdfasf\",\"is_valid\":1}]},\"success\":true}";
+
+	result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+
+	hit_policy_request = "{\"verify_list\":[{\"vsys_id\":null,\"verify_regex\":[{\"regex_str\":\"RegexExpress\",\"is_valid\":null},\
+{\"regex_str\":\"*RegexExpress\",\"is_valid\":null},{\"regex_str\":\"^\\\\w+([-+.]\\\\w+)*@\\\\w+([-.]\\\\w+)*\\\\.\\\\w+([-.]\\\\w+)*$\",\"is_valid\":null}]}],\"verify_type\":\"regex\"}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"verify_regex\":[{\"regex_str\":\"RegexExpress\",\"is_valid\":1},{\"regex_str\":\"*RegexExpress\",\"is_valid\":0},\
+{\"regex_str\":\"^\\\\w+([-+.]\\\\w+)*@\\\\w+([-.]\\\\w+)*\\\\.\\\\w+([-.]\\\\w+)*$\",\"is_valid\":1}]},\"success\":true}";
+
+	result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+
+}
+
 TEST(VerifyPolicy, HitIpPolicy)
 {
 	char *hit_policy_request = select_hit_policy_request_item(0);
@@ -365,7 +416,7 @@ int main(int argc, char ** argv)
 	g_verify_proxy->logger = log_handle_create(log_path, log_level);
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
-	g_verify_proxy->nr_work_threads=1;
+	g_verify_proxy->nr_work_threads=4;
 	ret = verify_policy_table_init(g_verify_proxy, main_profile);
 	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
 

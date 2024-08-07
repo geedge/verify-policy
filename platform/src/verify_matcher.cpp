@@ -27,6 +27,7 @@
 #define MAX_EX_DATA_LEN 			16
 #define HIT_PATH_SIZE           	4096
 #define	MAX_SCAN_RESULT				16
+#define MAX_REGEX_EXPRESS_NUM       32
 
 #define	MODULE_VERIFY_MATCHER "verify-policy.matcher"
 
@@ -2617,8 +2618,8 @@ enum verify_type get_verify_type(cJSON* http_respone)
 
 static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body)
 {
-	int cur_id=0, i=0, is_valid[32]={0};
-	cJSON *regexstr_obj[32],*attributes=NULL;
+	int cur_id=0, i=0, is_valid[MAX_REGEX_EXPRESS_NUM]={0};
+	cJSON *regexstr_obj[MAX_REGEX_EXPRESS_NUM],*attributes=NULL;
 	cJSON *item = NULL, *subchild = NULL;
 
 	attributes = cJSON_GetObjectItem(verifylist_array_item, "verify_regex");
@@ -2629,6 +2630,11 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 
 	for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
 	{
+		if(cur_id > MAX_REGEX_EXPRESS_NUM)
+		{
+			log_error(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Supports up to %d regular expression validations", MAX_REGEX_EXPRESS_NUM);
+			break;
+		}
 		item = cJSON_GetObjectItem(subchild, "regex_str");
 		if(item && item->type==cJSON_String)
 		{
@@ -2649,6 +2655,12 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 		cJSON_AddNumberToObject(verify_regex_obj, "is_valid", is_valid[i]);
 		cJSON_AddItemToArray(verifyRegex, verify_regex_obj);
 	}
+
+	if(cur_id == 0)
+	{
+		log_error(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "validated regular expression is empty");
+	}
+
 	return 1;
 }
 
@@ -2700,6 +2712,7 @@ int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int 
 	item = cJSON_GetObjectItem(verifylist_array_item,"verify_session");
 	if(item == NULL || item->type!=cJSON_Object)
 	{
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "get verify_session attribute failed:%s", item->valuestring);
 		goto free;
 	}
 
@@ -3118,8 +3131,7 @@ void verify_policy_table_free(const char* profile_path)
 	{
 		if(g_policy_rt->feather[vsys_id])
 		{
-			/*Deleting maat handles can be problematic*/
-			//maat_free(g_policy_rt->feather[vsys_id]);
+			maat_free(g_policy_rt->feather[vsys_id]);
 		}
 	}
 	FREE(&g_policy_rt);
