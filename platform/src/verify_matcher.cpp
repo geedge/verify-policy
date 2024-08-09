@@ -1746,6 +1746,13 @@ int tunnel_scan(struct request_query_obj *request, struct policy_scan_ctx *ctx, 
 		{
 			hit_cnt_tunnel+=n_hit_result;
 		}
+		if(scan_ret >= MAAT_SCAN_OK)
+		{
+			n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+			request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
+			ctx->n_read=n_read;
+			hit_path_cnt++;
+		}
 	}
 	ctx->tunnel_attr_count--;
 	request->merge_nth_scan_num = hit_path_cnt;
