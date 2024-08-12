@@ -90,7 +90,7 @@ static char *select_hit_policy_request_item(int gtest_id)
 TEST(LibrarySearch, HitFqdnEntry)
 {
 	const char *hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.126.com\",\"vsys_id\":1}";
-	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":1,\"tag_ids\":\"1\"}]},\"success\":true}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"1\"}]},\"success\":true}";
 
 	cJSON *result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -105,7 +105,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.baidu.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":2,\"tag_ids\":\"2,3\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"2,3\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -120,7 +120,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.qq.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":4,\"tag_ids\":\"4,5,6\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"4,5,6\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -138,7 +138,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 TEST(LibrarySearch, HitIpEntry)
 {
 	const char *hit_policy_request = "{\"ip\":\"192.168.1.1\",\"fqdn\":null,\"vsys_id\":1}";
-	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":1,\"tag_ids\":\"11\"}]},\"success\":true}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"11\"}]},\"success\":true}";
 	
 	cJSON *result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -153,7 +153,7 @@ TEST(LibrarySearch, HitIpEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request ="{\"ip\":\"192.168.1.2\",\"fqdn\":null,\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":2,\"tag_ids\":\"12,13\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"12,13\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -168,7 +168,7 @@ TEST(LibrarySearch, HitIpEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":\"192.168.1.3\",\"fqdn\":null,\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":4,\"tag_ids\":\"14,15,16\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"14,15,16\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);

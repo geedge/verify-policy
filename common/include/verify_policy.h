@@ -110,31 +110,6 @@ struct verify_policy
 	struct verify_policy_thread *work_threads[VERIFY_ARRAY_MAX];
 };
 
-#define MERGE_SCAN_NTH 128
-#define REQUEST_QUERY_OBJ_MAX 32
-
-struct request_query_obj
-{  
-    int table_id;  
-    int numeric;  
-    int merge_nth_scan_num;  
-    int merge_nth_scan[MERGE_SCAN_NTH];  
-    int exclude_nth_scan[MERGE_SCAN_NTH];  
-    char *string;  
-    char *district;  
-    char *attri_name;  
-    char *tunnel_type;  
-    struct ipaddr *ip_addr;  
-    cJSON *attributes;
-};
-
-struct verify_policy_query
-{
-    int vsys_id;
-	int compile_table_id;
-	struct request_query_obj request_object[REQUEST_QUERY_OBJ_MAX];
-};
-
 extern struct verify_policy * g_verify_proxy;
 
 int verify_policy_table_init(struct verify_policy * verify, const char* profile_path);
