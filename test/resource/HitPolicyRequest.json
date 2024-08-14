@@ -152,6 +152,56 @@
                 }
             ],
             "verify_type": "policy"
+        },
+        {
+            "__item_id": 5,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "attribute_name": "source",
+                                "attribute_value": {
+                                    "ip": "192.168.0.2",
+                                    "port":"8080",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_DESTINATION_IP",
+                                "attribute_name": "destination",
+                                "attribute_value": {
+                                    "ip": "192.168.0.3",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "string",
+                                "table_name": "ATTR_SERVER_FQDN",
+                                "attribute_name": "server_fqdn",
+                                "attribute_value": {
+                                    "string": "www.baidu.com"
+                                }
+                            },
+                            {
+                                "attribute_type": "string",
+                                "table_name": "ATTR_SSL_SAN",
+                                "attribute_name": "ssl_san",
+                                "attribute_value": {
+                                    "string": "www.baidu.com"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
         }
     ]
 }

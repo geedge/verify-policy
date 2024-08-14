@@ -5,7 +5,7 @@
 #define EVAL_TM_STYLE   "%Y-%m-%d"
 
 #define VERIFY_SYMBOL_MAX			64
-#define VERIFY_PATH_MAX             258
+#define VERIFY_PATH_MAX             256
 #define VERIFY_STRING_MAX			2048
 #define VERIFY_ARRAY_MAX			512
 #define MAX_TAG_ID_NUM              128

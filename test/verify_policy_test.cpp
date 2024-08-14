@@ -90,7 +90,7 @@ static char *select_hit_policy_request_item(int gtest_id)
 TEST(LibrarySearch, HitFqdnEntry)
 {
 	const char *hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.126.com\",\"vsys_id\":1}";
-	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"1\"}]},\"success\":true}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":1,\"tag_ids\":\"1\"}]},\"success\":true}";
 
 	cJSON *result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -105,7 +105,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.baidu.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"2,3\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":2,\"tag_ids\":\"2,3\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -120,7 +120,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.qq.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"4,5,6\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":4,\"tag_ids\":\"4,5,6\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -231,7 +231,6 @@ TEST(VerifyPolicy, CheckRegexExpression)
 
 	cJSON_Delete(result_json);
 	FREE(&hit_policy_query);
-
 }
 
 TEST(VerifyPolicy, HitIpPolicy)
@@ -261,6 +260,28 @@ TEST(VerifyPolicy, HitLibraryPolicy)
 	char *hit_policy_request = select_hit_policy_request_item(1);
 	ASSERT_TRUE(hit_policy_request != NULL);
 	char *hit_policy_result = select_hit_policy_result_item(1);
+	ASSERT_TRUE(hit_policy_result != NULL);
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
+}
+
+TEST(VerifyPolicy, HitMultiplePolicy)
+{
+	char *hit_policy_request = select_hit_policy_request_item(5);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(5);
 	ASSERT_TRUE(hit_policy_result != NULL);
 
 	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
@@ -343,7 +364,6 @@ TEST(VerifyPolicy, HitTunnelEndpointPolicy)
 
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
-	printf("hit_policy_query =%s\n", hit_policy_query);
 
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);

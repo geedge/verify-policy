@@ -32,6 +32,56 @@
 
 #define	MODULE_VERIFY_MATCHER "verify-policy.matcher"
 
+const char * table_name[__TSG_OBJ_MAX] =
+{
+	[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP",
+	[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_IP",
+	[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID",
+	[TSG_OBJ_APP_ID] = "ATTR_APP_ID",
+	[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL",
+	[TSG_OBJ_HTTP_REQ_HDR] = "ATTR_HTTP_REQ_HDR",
+	[TSG_OBJ_HTTP_REQ_BODY] = "ATTR_HTTP_REQ_BODY",
+	[TSG_OBJ_HTTP_RES_HDR] = "ATTR_HTTP_RES_HDR",
+	[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY",
+	[TSG_OBJ_SSL_CN] = "ATTR_SSL_CN",
+	[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN",
+	[TSG_OBJ_DOH_QNAME]="ATTR_DOH_QNAME",
+	[TSG_OBJ_DNS_QNAME] = "ATTR_DNS_QNAME",
+	[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT",
+	[TSG_OBJ_MAIL_FROM] = "ATTR_MAIL_FROM",
+	[TSG_OBJ_MAIL_TO] = "ATTR_MAIL_TO",
+	[TSG_OBJ_MAIL_SUBJECT] = "ATTR_MAIL_SUBJECT",
+	[TSG_OBJ_MAIL_CONTENT] = "ATTR_MAIL_CONTENT",
+	[TSG_OBJ_MAIL_ATT_NAME] = "ATTR_MAIL_ATT_NAME",
+	[TSG_OBJ_MAIL_ATT_CONTENT] = "ATTR_MAIL_ATT_CONTENT",
+	[TSG_OBJ_FTP_URI] = "ATTR_FTP_URI",
+	[TSG_OBJ_FTP_CONTENT] = "ATTR_FTP_CONTENT",
+	[TSG_OBJ_FTP_ACCOUNT] = "ATTR_FTP_ACCOUNT",
+	[TSG_OBJ_SIP_FROM]="ATTR_SIP_ORIGINATOR_DESCRIPTION",
+	[TSG_OBJ_SIP_TO]="ATTR_SIP_RESPONDER_DESCRIPTION",
+	[TSG_OBJ_IMSI]="ATTR_GTP_IMSI",
+	[TSG_OBJ_PHONE_NUMBER]="ATTR_GTP_PHONE_NUMBER",
+	[TSG_OBJ_APN]="ATTR_GTP_APN",
+	[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
+	[TSG_OBJ_FLAG]="ATTR_FLAG",
+	[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI",
+	[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN",
+	[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP",
+	[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP",
+	[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT",
+	[TSG_OBJ_DESTINATION_PORT]="ATTR_DESTINATION_PORT",
+	[TSG_OBJ_INTERNAL_PORT]="ATTR_INTERNAL_PORT",
+	[TSG_OBJ_EXTERNAL_PORT]="ATTR_EXTERNAL_PORT",
+	[TSG_OBJ_IP_PROTOCOL]="ATTR_IP_PROTOCOL",
+	[TSG_OBJ_SSL_ECH]="ATTR_SSL_ECH",
+	[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI",
+	[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI",
+	[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL",
+	[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT",
+	[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT",
+	[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT"
+};
+
 enum policy_action
 {
 	PG_ACTION_NONE = 0,
@@ -200,7 +250,6 @@ struct request_object_list
     int numeric;
     int merge_nth_scan_num;
     int merge_nth_scan[MERGE_SCAN_NTH];
-    int exclude_nth_scan[MERGE_SCAN_NTH];
     char *string;
 	char *tunnel_type;
     char *district_value;
@@ -414,13 +463,16 @@ void tunnel_label_table_new_cb(const char *table_name, int table_id, const char*
 	*ad = tunnel;
 }
 
-const char *table_name_map[] = {"TSG_TUNNEL_CATALOG",
-								"TSG_TUNNEL_ENDPOINT",
-								"TSG_TUNNEL_LABEL",
-								"APP_ID_DICT",
-								"FQDN_ENTRY",
-								"IP_ADDR_ENTRY",
-								"LIBRARY_TAG"};
+const char *table_name_map[PROFILE_TABLE_MAX] =
+{
+	[PROFILE_TUNNEL_CATALOG]="TSG_TUNNEL_CATALOG",
+	[PROFILE_TUNNEL_ENDPOINT]="TSG_TUNNEL_ENDPOINT",
+	[PROFILE_TUNNEL_LABEL]="TSG_TUNNEL_LABEL",
+	[PROFILE_APP_DI_DICT]="APP_ID_DICT",
+	[PROFILE_FQDN_ENTRY]="FQDN_ENTRY",
+	[PROFILE_IP_ADDR_ENTRY]="IP_ADDR_ENTRY",
+	[PROFILE_LIBRARY_TAG]="LIBRARY_TAG"
+};
 
 int maat_tunnel_table_init(int profile_idx,int vsys_id,
 					   	   maat_ex_free_func_t* free_func,
@@ -1091,6 +1143,7 @@ int hit_object_exists_by_ids(cJSON* hitPaths, int item_id, int superior_object_i
 {
 	cJSON *hitsObj=NULL;
 
+	/*In cases of multiple hits, although the compile_id is inconsistent, the item_id and superior_object_id remain consistent.**/
 	for(hitsObj = hitPaths->child; hitsObj != NULL; hitsObj = hitsObj->next)
 	{
 		cJSON *itemId = cJSON_GetObjectItem(hitsObj, "item_id");  
@@ -1144,7 +1197,7 @@ void http_get_scan_status(struct request_object_list *request_object, int compil
 	{
 		for(j=0; j<=request_object->merge_nth_scan_num; j++)
 		{
-			if (request_object->merge_nth_scan[j] == ctx->hit_path[i].Nth_scan && request_object->exclude_nth_scan[j] != 1)
+			if (request_object->merge_nth_scan[j] == ctx->hit_path[i].Nth_scan)
 			{
 				if (ctx->hit_path[i].top_group_id < 0)
 				{
@@ -1409,6 +1462,7 @@ int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn)
 	for(int i=0; i < ret && i < MAX_EX_DATA_LEN; i++)
 	{
 		fqdn_entry_item=cJSON_CreateObject();
+		cJSON_AddNumberToObject(fqdn_entry_item, "entry_id", entry_ctx[i]->entry_id);
 		cJSON_AddStringToObject(fqdn_entry_item, "tag_ids", entry_ctx[i]->tag_ids);
 		cJSON_AddItemToArray(hit_library, fqdn_entry_item);
 		hit_fqdn_entry++;
@@ -1570,7 +1624,6 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 int get_fqdn_category_id(struct request_object_list *request, struct policy_scan_ctx * ctx, int vsys_id, const char *fqdn, int table_id, int hit_cnt)
 {
 	size_t n_read=0, n_hit_result=0;
-	int hit_path_cnt=0;
 	int ret=0, hit_cnt_fqdn=0;
 	struct library_entry_ctx *fqdn_entry_ctx[MAX_EX_DATA_LEN]={0};
 
@@ -1621,11 +1674,8 @@ int get_fqdn_category_id(struct request_object_list *request, struct policy_scan
 		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
 		if(ret >= MAAT_SCAN_OK)
 		{
-			request->merge_nth_scan[hit_path_cnt] = maat_state_get_scan_count(ctx->scan_mid);
-			fqdn_entry.Nth_scan[fqdn_entry.Nth_scan_num++] = request->merge_nth_scan[hit_path_cnt];
-			request->exclude_nth_scan[hit_path_cnt] = 1;
+			fqdn_entry.Nth_scan[fqdn_entry.Nth_scan_num++]=maat_state_get_scan_count(ctx->scan_mid);
 			ctx->n_read=n_read;
-			hit_path_cnt++;
 		}
 	}
 
@@ -1633,7 +1683,6 @@ int get_fqdn_category_id(struct request_object_list *request, struct policy_scan
 	{
 		utarray_push_back(ctx->scan_path.ut_array_by_context, &fqdn_entry);
 	}
-	request->merge_nth_scan_num = hit_path_cnt;
 	return hit_cnt_fqdn;
 }
 
@@ -2366,55 +2415,6 @@ int tsg_policy_type_str2idx(const char *action_str)
 
 int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 {
-	const char * table_name[__TSG_OBJ_MAX] ={0};
-
-	table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP";
-	table_name[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_IP";
-	table_name[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID";
-	table_name[TSG_OBJ_APP_ID] = "ATTR_APP_ID";
-	table_name[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL";
-	table_name[TSG_OBJ_HTTP_REQ_HDR] = "ATTR_HTTP_REQ_HDR";
-	table_name[TSG_OBJ_HTTP_REQ_BODY] = "ATTR_HTTP_REQ_BODY";
-	table_name[TSG_OBJ_HTTP_RES_HDR] = "ATTR_HTTP_RES_HDR";
-	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
-	table_name[TSG_OBJ_SSL_CN] = "ATTR_SSL_CN";
-	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
-	table_name[TSG_OBJ_DOH_QNAME]="ATTR_DOH_QNAME";
-	table_name[TSG_OBJ_DNS_QNAME] = "ATTR_DNS_QNAME";
-	table_name[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT";
-	table_name[TSG_OBJ_MAIL_FROM] = "ATTR_MAIL_FROM";
-	table_name[TSG_OBJ_MAIL_TO] = "ATTR_MAIL_TO";
-	table_name[TSG_OBJ_MAIL_SUBJECT] = "ATTR_MAIL_SUBJECT";
-	table_name[TSG_OBJ_MAIL_CONTENT] = "ATTR_MAIL_CONTENT";
-	table_name[TSG_OBJ_MAIL_ATT_NAME] = "ATTR_MAIL_ATT_NAME";
-	table_name[TSG_OBJ_MAIL_ATT_CONTENT] = "ATTR_MAIL_ATT_CONTENT";
-	table_name[TSG_OBJ_FTP_URI] = "ATTR_FTP_URI";
-	table_name[TSG_OBJ_FTP_CONTENT] = "ATTR_FTP_CONTENT";
-	table_name[TSG_OBJ_FTP_ACCOUNT] = "ATTR_FTP_ACCOUNT";
-	table_name[TSG_OBJ_SIP_FROM]="ATTR_SIP_ORIGINATOR_DESCRIPTION";
-	table_name[TSG_OBJ_SIP_TO]="ATTR_SIP_RESPONDER_DESCRIPTION";
-	table_name[TSG_OBJ_IMSI]="ATTR_GTP_IMSI";
-	table_name[TSG_OBJ_PHONE_NUMBER]="ATTR_GTP_PHONE_NUMBER";
-	table_name[TSG_OBJ_APN]="ATTR_GTP_APN";
-	table_name[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
-	table_name[TSG_OBJ_FLAG]="ATTR_FLAG";
-	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
-	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
-	table_name[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT";
-	table_name[TSG_OBJ_DESTINATION_PORT]="ATTR_DESTINATION_PORT";
-	table_name[TSG_OBJ_INTERNAL_PORT]="ATTR_INTERNAL_PORT";
-	table_name[TSG_OBJ_EXTERNAL_PORT]="ATTR_EXTERNAL_PORT";
-	table_name[TSG_OBJ_IP_PROTOCOL]="ATTR_IP_PROTOCOL";
-	table_name[TSG_OBJ_SSL_ECH]="ATTR_SSL_ECH";
-	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
-	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
-	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
-	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
-	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
-	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
-
 	size_t i = 0;
 	for (i = 0; i < __TSG_OBJ_MAX; i++)
 	{
@@ -2865,7 +2865,7 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 	char table_info[VERIFY_STRING_MAX] = {0}, inc_cfg_dir[VERIFY_STRING_MAX] = {0}, ful_cfg_dir[VERIFY_STRING_MAX] = {0};
 	char json_cfg_file[VERIFY_STRING_MAX] = {0}, maat_stat_file[VERIFY_PATH_MAX] = {0};
 	char redis_ip[VERIFY_STRING_MAX] = {0}, redis_port_range[VERIFY_STRING_MAX] = {0};
-	char accept_tags[VERIFY_STRING_MAX] = {0}, maat_stat_db_file[VERIFY_PATH_MAX] = {0};
+	char accept_tags[VERIFY_STRING_MAX] = {0}, maat_stat_db_file[VERIFY_PATH_MAX + 12] = {0};
 	int redis_port_begin=0, redis_port_end=0;
 	int redis_port_select=0;
 
@@ -2932,7 +2932,7 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 	if (strlen(maat_stat_file) > 0 && maat_stat_on)
 	{
 		maat_options_set_stat_on(opts);
-		snprintf(maat_stat_db_file, VERIFY_PATH_MAX, "%s.%d", maat_stat_file, db_index);
+		snprintf(maat_stat_db_file, VERIFY_PATH_MAX+12, "%s.%d", maat_stat_file, db_index);
         maat_options_set_stat_file(opts, maat_stat_db_file);
 	}
 
@@ -2953,68 +2953,6 @@ static struct maat *create_maat_feather(const char * instance_name, const char *
 error_out:
     maat_options_free(opts);
 	return NULL;
-}
-
-static void http_table_name_init(const char *table_name[__TSG_OBJ_MAX])
-{
-	table_name[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL";
-	table_name[TSG_OBJ_HTTP_REQ_HDR] =  "ATTR_HTTP_REQ_HDR";
-	table_name[TSG_OBJ_HTTP_REQ_BODY] =  "ATTR_HTTP_REQ_BODY";
-	table_name[TSG_OBJ_HTTP_RES_HDR] =  "ATTR_HTTP_RES_HDR";
-	table_name[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY";
-	table_name[TSG_OBJ_SSL_CN] =  "ATTR_SSL_CN";
-	table_name[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN";
-	return;
-}
-
-static void doq_table_name_init(const char *table_name[__TSG_OBJ_MAX])
-{
-	table_name[TSG_OBJ_DNS_QNAME]="ATTR_DNS_QNAME";
-	table_name[TSG_OBJ_DOH_QNAME] = "ATTR_DOH_QNAME";
-	return;
-}
-
-static void mail_table_name_int(const char *table_name[__TSG_OBJ_MAX])
-{
-	table_name[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT";
-	table_name[TSG_OBJ_MAIL_FROM] = "ATTR_MAIL_FROM";
-	table_name[TSG_OBJ_MAIL_TO] = "ATTR_MAIL_TO";
-	table_name[TSG_OBJ_MAIL_SUBJECT] = "ATTR_MAIL_SUBJECT";
-	table_name[TSG_OBJ_MAIL_CONTENT] = "ATTR_MAIL_CONTENT";
-	table_name[TSG_OBJ_MAIL_ATT_NAME] = "ATTR_MAIL_ATT_NAME";
-	table_name[TSG_OBJ_MAIL_ATT_CONTENT] = "ATTR_MAIL_ATT_CONTENT";
-	table_name[TSG_OBJ_FTP_URI] = "ATTR_FTP_URI";
-	table_name[TSG_OBJ_FTP_CONTENT] = "ATTR_FTP_CONTENT";
-	table_name[TSG_OBJ_FTP_ACCOUNT] = "ATTR_FTP_ACCOUNT";
-	return;
-}
-
-static void common_table_name_int(const char *table_name[__TSG_OBJ_MAX])
-{
-	table_name[TSG_OBJ_SIP_FROM]="ATTR_SIP_ORIGINATOR_DESCRIPTION";
-	table_name[TSG_OBJ_SIP_TO]="ATTR_SIP_RESPONDER_DESCRIPTION";
-	table_name[TSG_OBJ_IMSI]="ATTR_GTP_IMSI";
-	table_name[TSG_OBJ_PHONE_NUMBER]="ATTR_GTP_PHONE_NUMBER";
-	table_name[TSG_OBJ_APN]="ATTR_GTP_APN";
-	table_name[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
-	table_name[TSG_OBJ_FLAG]="ATTR_FLAG";
-	table_name[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI";
-	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
-	table_name[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT";
-	table_name[TSG_OBJ_DESTINATION_PORT]="ATTR_DESTINATION_PORT";
-	table_name[TSG_OBJ_INTERNAL_PORT]="ATTR_INTERNAL_PORT";
-	table_name[TSG_OBJ_EXTERNAL_PORT]="ATTR_EXTERNAL_PORT";
-	table_name[TSG_OBJ_IP_PROTOCOL]="ATTR_IP_PROTOCOL";
-	table_name[TSG_OBJ_SSL_ECH]="ATTR_SSL_ECH";
-	table_name[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI";
-	table_name[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI";
-	table_name[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL";
-	table_name[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT";
-	table_name[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT";
-	table_name[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
-	return;
 }
 
 int maat_complie_plugin_table_init(int vsys_id, int compile_type_id)
@@ -3092,15 +3030,6 @@ int verify_policy_table_init(struct verify_policy * verify, const char* profile_
 		{
 			goto error_out;
 		}
-		const char * table_name[__TSG_OBJ_MAX];
-		table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP";
-		table_name[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_IP";
-		table_name[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID";
-		table_name[TSG_OBJ_APP_ID] = "ATTR_APP_ID";
-		http_table_name_init(table_name);
-		doq_table_name_init(table_name);
-		mail_table_name_int(table_name);
-		common_table_name_int(table_name);
 
 		for (int i = 0; i < __TSG_OBJ_MAX; i++)
 		{

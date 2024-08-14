@@ -34,6 +34,7 @@ enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL};
 void log_print(struct log_handle *, int level, const char *module, const char *fmt, ...);
 void log_options_set_enable(struct log_handle *, int enable);
 void log_options_set_level(struct log_handle *, int level);
+void log_handle_set_file_max_size(struct log_handle *handle, size_t max_file_size_mb);
 
 struct log_handle * log_handle_create(const char *file_path, int level);
 void log_handle_destroy(struct log_handle *);

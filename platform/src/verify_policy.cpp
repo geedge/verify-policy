@@ -530,9 +530,15 @@ int main(int argc, char * argv[])
 	assert(g_verify_proxy);
 	strcpy(g_verify_proxy->name, "verify_policy");
 
+	int max_file_size_mb=0;
 	const char *log_path="./logs/verify_policy.log";
 	MESA_load_profile_int_def(main_profile, "SYSTEM", "log_level", &log_level, LOG_FATAL);
+	MESA_load_profile_int_def(main_profile, "SYSTEM", "log_file_size_mb", &max_file_size_mb, 0);
 	g_verify_proxy->logger = log_handle_create(log_path, log_level);
+	if(max_file_size_mb > 0)
+	{
+		log_handle_set_file_max_size(g_verify_proxy->logger, max_file_size_mb);
+	}
 	CHECK_OR_EXIT(g_verify_proxy->logger != NULL, "Failed at init log module. Exit.");
 
 	ret = load_system_conf(g_verify_proxy, main_profile);

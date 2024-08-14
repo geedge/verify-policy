@@ -61,6 +61,120 @@
                     "virtual_table": "ATTR_SERVER_FQDN"
                 }
             ]
+        },
+        {
+            "compile_id": 1023,
+            "service": 1,
+            "action": 48,
+            "do_blacklist": 1,
+			"do_log": 1,
+            "effective_range": 0,
+            "tags":"anything",
+            "user_region": "anything",
+            "is_valid": "yes",
+            "groups": [
+				{
+                    "not_flag": 0,
+                    "group_id": 10231,
+                    "group_name":"IPv4TCPSoureVeiryPolicy02",
+                    "virtual_table": "ATTR_SOURCE_IP",
+                    "regions": [
+                        {
+                            "table_type": "ip",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.2",
+                                "ip2": "192.168.0.2"
+                            }
+                        }
+                    ] 
+                },
+                {
+                    "not_flag": 0,
+                    "group_id": 10232,
+                    "group_name":"IPv4TCPDestinationVeiryPolicy01",
+                    "virtual_table": "ATTR_DESTINATION_IP",
+                    "regions": [
+                        {
+                            "table_type": "ip",
+                            "table_name": "TSG_OBJ_IP_ADDR",
+                            "table_content": {
+                                "addr_type": "ipv4",
+                                "addr_format": "range",
+                                "ip1": "192.168.0.3",
+                                "ip2": "192.168.0.3"
+                            }
+                        }
+                    ] 
+                },
+                {
+	                "virtual_table":"ATTR_SERVER_FQDN",
+                    "group_name":"ServerFqdnVeiryPolicy01",
+                    "group_id":10234,
+                    "not_flag":0,
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_FQDN",
+                            "table_type": "expr",
+                            "table_content": {
+                                "keywords": "baidu.com",
+                                "expr_type": "regex",
+                                "match_method": "sub",
+                                "format": "uncase plain"
+                            }
+                        }
+                    ]
+                },
+				{
+	                "virtual_table":"ATTR_SSL_SAN",
+                    "group_name":"SslSanVeiryPolicy01",
+                    "group_id":10235,
+                    "not_flag":0,
+                    "regions": [
+                        {
+                            "table_name": "TSG_OBJ_FQDN",
+                            "table_type": "expr",
+                            "table_content": {
+                                "keywords": "baidu.com",
+                                "expr_type": "regex",
+                                "match_method": "sub",
+                                "format": "uncase plain"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "compile_id": 1024,
+            "service": 1,
+            "action": 48,
+            "do_blacklist": 1,
+			"do_log": 1,
+            "effective_range": 0,
+            "tags":"anything",
+            "user_region": "anything",
+            "is_valid": "yes",
+            "groups": [
+				{
+					"group_name":"IPv4TCPSoureVeiryPolicy02",
+					"virtual_table":"ATTR_SOURCE_IP"
+                },
+                {
+                    "group_name":"IPv4TCPDestinationVeiryPolicy01",
+					"virtual_table":"ATTR_DESTINATION_IP"
+                },
+                {
+					"group_name":"ServerFqdnVeiryPolicy01",
+					"virtual_table":"ATTR_SERVER_FQDN"
+                },
+                {
+					"group_name":"SslSanVeiryPolicy01",
+					"virtual_table":"ATTR_SSL_SAN"
+                }
+            ]
         }
    ],
     "plugin_table": [

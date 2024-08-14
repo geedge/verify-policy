@@ -41,6 +41,9 @@ struct log_handle
 {
     int level;
     int enable;
+    int split_file_by_size;
+    size_t max_file_size_mb;
+    int file_index;
     FILE *fp;
     va_list ap;
 	char defined_log_fn[1024];
@@ -52,29 +55,6 @@ struct log_handle
 static unsigned char weekday_str[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 static unsigned char month_str[12][4] = {"Jan", "Feb", "Mar", "Apr","May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
-static int log_create_dir(const char *dir_path, int path_len)
-{
-    if(dir_path == NULL)
-        return -1;
-
-    char *buf = (char *)calloc(path_len+1, 1);
-    int ret = -1;
-
-    memcpy(buf, dir_path, path_len);
-    if(access(buf, R_OK) != 0)
-    {
-        if(mkdir(buf, 0755)!= 0)
-            ret = -1;
-        else
-            ret =  0;
-    }
-    else
-        ret =  1;
-    free(buf);
-    buf = NULL;
-    return ret;
-}
 
 static void log_close_file(struct log_handle *handle)
 {
@@ -101,38 +81,65 @@ int log_open_file(char *file_name, struct log_handle *handle)
 	return 0;
 }
 
+static int log_create_dir(const char *dir_path, int path_len) 
+{
+    if (dir_path == NULL) 
+    {
+        return -1;
+    }
+
+    char buf[path_len + 1];
+    strncpy(buf, dir_path, path_len);
+    buf[path_len] = '\0';
+
+    if (access(buf, R_OK) != 0)
+    {
+        if (mkdir(buf, 0755) != 0) 
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int log_create_path(const char *file_path)
 {
-    FILE *fp  = NULL;
-
 	if(file_path == NULL)
-		return 0;
+    {
+        return 0;
+    }
 
     char *p_path = rindex(file_path, '/');
-    if(p_path==0)
+    if(p_path == 0)
     {
         return 0;
     }
 
     const char *p_cur = file_path;
     int path_len = p_path - file_path;
-    int i = 0;
 
-    if(log_create_dir(file_path, path_len) >= 0)
+    if(log_create_dir(file_path, path_len) == 0)
+    {
         return 0;
+    }
 
-    for(;i<=path_len;i++,p_cur++)
+    for(int i = 0; i <= path_len; i++, p_cur++)
     {
         if(*p_cur == '/')
         {
             if(log_create_dir(file_path, i+1) < 0)
+            {
                 return -1;
+            }
         }
     }
-    if(NULL == (fp = fopen(file_path, "w")))
-    {
-		return 0;
+
+    FILE *fp = fopen(file_path, "w");
+    if (NULL == fp) {
+        return -1;
     }
+
     fclose(fp);
     return 1;
 }
@@ -141,25 +148,53 @@ int log_create_log_file(struct log_handle *handle)
 {
     time_t t;
     struct tm local_time;
-    char tmp_log_file_name[1024+128];
+    char tmp_log_file_name[1024 + 128];
 
     time(&t);
-    if(NULL == (localtime_r(&t, &local_time)))
+    if (NULL == (localtime_r(&t, &local_time)))
     {
         return 0;
     }
-    snprintf(tmp_log_file_name, sizeof(tmp_log_file_name), "%s.%04d-%02d-%02d", handle->defined_log_fn, local_time.tm_year + 1900, local_time.tm_mon + 1, local_time.tm_mday);
 
-    if(handle->fp == NULL)
+    if(handle->split_file_by_size == 0)
     {
-	    if(0 != log_open_file(tmp_log_file_name, handle)) return 0;
+        snprintf(tmp_log_file_name, sizeof(tmp_log_file_name), "%s.%04d-%02d-%02d", handle->defined_log_fn, local_time.tm_year + 1900, local_time.tm_mon + 1, local_time.tm_mday);
     }
     else
     {
-	    if (0 != memcmp(tmp_log_file_name, handle->runtime_log_fn, strlen(tmp_log_file_name)))
-	    {
-		    if(0 != log_open_file(tmp_log_file_name, handle))return 0;
-	    }
+        struct stat file_stat;
+        snprintf(tmp_log_file_name, sizeof(tmp_log_file_name), "%s.%04d-%02d-%02d-%03d", handle->defined_log_fn, local_time.tm_year + 1900, local_time.tm_mon + 1, local_time.tm_mday, handle->file_index);
+        if (0 != memcmp(tmp_log_file_name, handle->runtime_log_fn, strlen(tmp_log_file_name))) 
+        {
+            handle->file_index = 0;
+            snprintf(tmp_log_file_name, sizeof(tmp_log_file_name), "%s.%04d-%02d-%02d-%03d", handle->defined_log_fn, local_time.tm_year + 1900, local_time.tm_mon + 1, local_time.tm_mday, handle->file_index);
+        }
+        if (stat(tmp_log_file_name, &file_stat) == 0)
+        {
+            if (file_stat.st_size >= (handle->max_file_size_mb * 1024 * 1024)) 
+            {
+                handle->file_index++;
+                snprintf(tmp_log_file_name, sizeof(tmp_log_file_name), "%s.%04d-%02d-%02d-%03d", handle->defined_log_fn, local_time.tm_year + 1900, local_time.tm_mon + 1, local_time.tm_mday, handle->file_index);
+            }
+        }
+    }
+
+    if (handle->fp == NULL) 
+    {
+        if (0 != log_open_file(tmp_log_file_name, handle))
+        {
+            return 0;
+        }
+    }
+    else 
+    {
+        if (0 != memcmp(tmp_log_file_name, handle->runtime_log_fn, strlen(tmp_log_file_name))) 
+        {
+            if (0 != log_open_file(tmp_log_file_name, handle))
+            {
+                return 0;
+            }
+        }
     }
 
     return 1;
@@ -219,24 +254,43 @@ void log_options_set_enable(struct log_handle * handle, int enable)
     }
 }
 
+void log_handle_set_file_max_size(struct log_handle *handle, size_t max_file_size_mb)
+{
+    if (handle != NULL) 
+    {
+        handle->split_file_by_size = 1;
+        handle->max_file_size_mb = max_file_size_mb;
+    }
+}
+
 struct log_handle *log_handle_create(const char *file_path, int level)
 {
     struct log_handle *handle = ALLOC(struct log_handle, 1);
-    if(!handle)
+    if(!handle || strlen(file_path) == 0)
     {
-        return NULL;
+         goto finish;
     }
+
 	handle->enable=1;
     handle->level = level;
     strncpy(handle->defined_log_fn, file_path, 1023);
-    pthread_mutex_init(&handle->mutex,NULL);
 
-    if(handle->enable)
+    int ret = log_create_path(handle->defined_log_fn);
+    if (ret < 0) 
     {
-        log_create_path(handle->defined_log_fn);
+        free(handle);
+        return NULL;
     }
-
+    pthread_mutex_init(&handle->mutex, NULL);
     return handle;
+
+finish:
+    if(handle)
+    {
+        free(handle);
+        handle=NULL;
+    }
+    return NULL;
 }
 
 void log_handle_destroy(struct log_handle * handle)

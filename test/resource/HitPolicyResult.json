@@ -191,6 +191,164 @@
                 }
             },
             "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hitPolicyList": [
+                    {
+                        "id": 1024,
+                        "policyName": "",
+                        "is_execute_policy": true,
+                        "top_object_list": [
+                            {
+                                "object_id": 10231,
+                                "table_name": "ATTR_SOURCE_IP",
+                                "not_flag": 0,
+                                "nth_clause": 0
+                            },
+                            {
+                                "object_id": 10232,
+                                "table_name": "ATTR_DESTINATION_IP",
+                                "not_flag": 0,
+                                "nth_clause": 1
+                            },
+                            {
+                                "object_id": 10234,
+                                "table_name": "ATTR_SERVER_FQDN",
+                                "not_flag": 0,
+                                "nth_clause": 2
+                            },
+                            {
+                                "object_id": 10235,
+                                "table_name": "ATTR_SSL_SAN",
+                                "not_flag": 0,
+                                "nth_clause": 3
+                            }
+                        ]
+                    },
+                    {
+                        "id": 1023,
+                        "policyName": "",
+                        "is_execute_policy": false,
+                        "top_object_list": [
+                            {
+                                "object_id": 10231,
+                                "table_name": "ATTR_SOURCE_IP",
+                                "not_flag": 0,
+                                "nth_clause": 0
+                            },
+                            {
+                                "object_id": 10232,
+                                "table_name": "ATTR_DESTINATION_IP",
+                                "not_flag": 0,
+                                "nth_clause": 1
+                            },
+                            {
+                                "object_id": 10234,
+                                "table_name": "ATTR_SERVER_FQDN",
+                                "not_flag": 0,
+                                "nth_clause": 2
+                            },
+                            {
+                                "object_id": 10235,
+                                "table_name": "ATTR_SSL_SAN",
+                                "not_flag": 0,
+                                "nth_clause": 3
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_SOURCE_IP",
+                            "attribute_name": "source",
+                            "attribute_value": {
+                                "ip": "192.168.0.2",
+                                "port": "8080",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_id": 2,
+                                    "superior_object_id": 10231
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_DESTINATION_IP",
+                            "attribute_name": "destination",
+                            "attribute_value": {
+                                "ip": "192.168.0.3",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_id": 3,
+                                    "superior_object_id": 10232
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "string",
+                            "table_name": "ATTR_SERVER_FQDN",
+                            "attribute_name": "server_fqdn",
+                            "attribute_value": {
+                                "string": "www.baidu.com"
+                            },
+                            "hit_paths": [
+                                {
+                                    "entry_id": 2,
+                                    "tag_id": 2
+                                },
+                                {
+                                    "entry_id": 2,
+                                    "tag_id": 3
+                                },
+                                {
+                                    "item_id": 5,
+                                    "superior_object_id": 10235
+                                },
+                                {
+                                    "item_id": 4,
+                                    "superior_object_id": 10234
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "string",
+                            "table_name": "ATTR_SSL_SAN",
+                            "attribute_name": "ssl_san",
+                            "attribute_value": {
+                                "string": "www.baidu.com"
+                            },
+                            "hit_paths": [
+                                {
+                                    "entry_id": 2,
+                                    "tag_id": 2
+                                },
+                                {
+                                    "entry_id": 2,
+                                    "tag_id": 3
+                                },
+                                {
+                                    "item_id": 5,
+                                    "superior_object_id": 10235
+                                },
+                                {
+                                    "item_id": 4,
+                                    "superior_object_id": 10234
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
         }
     ]
 }
