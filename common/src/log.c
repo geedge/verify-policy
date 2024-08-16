@@ -135,12 +135,6 @@ static int log_create_path(const char *file_path)
         }
     }
 
-    FILE *fp = fopen(file_path, "w");
-    if (NULL == fp) {
-        return -1;
-    }
-
-    fclose(fp);
     return 1;
 }
 

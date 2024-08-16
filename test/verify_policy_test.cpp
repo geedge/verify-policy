@@ -299,17 +299,55 @@ TEST(VerifyPolicy, HitMultiplePolicy)
 	FREE(&hit_policy_result);
 }
 
-static void reload_maat_config(const char * main_profile)
+TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1025)
 {
-	verify_policy_table_free(main_profile);
-	int ret = verify_policy_table_init(g_verify_proxy, main_profile);
-	CHECK_OR_EXIT(ret == 0, "Failed at init maat module, Exit.");
+	char *hit_policy_request = select_hit_policy_request_item(6);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(6);
+	ASSERT_TRUE(hit_policy_result != NULL);
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
+}
+
+TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1027)
+{
+	char *hit_policy_request = select_hit_policy_request_item(7);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(7);
+	ASSERT_TRUE(hit_policy_result != NULL);
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	printf("hit_policy_query = %s\n", hit_policy_query);
+
+	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
 }
 
 /*Tunnel Endpoint Policy Test**/
 TEST(VerifyPolicy, HitTunnelEndpointaPolicy)
 {
-	reload_maat_config("./conf/verify_policy2.conf");
 	char *hit_policy_request = select_hit_policy_request_item(2);
 	ASSERT_TRUE(hit_policy_request != NULL);
 	char *hit_policy_result = select_hit_policy_result_item(2);

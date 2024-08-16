@@ -82,7 +82,7 @@
                                 "table_name": "ATTR_TUNNEL",
                                 "attribute_name": "tunnel_endpointa",
                                 "attribute_value": {
-                                    "ip": "192.168.0.1",
+                                    "ip": "192.168.0.4",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
@@ -107,7 +107,7 @@
                                 "table_name": "ATTR_TUNNEL",
                                 "attribute_name": "tunnel_endpointb",
                                 "attribute_value": {
-                                    "ip": "192.168.0.2",
+                                    "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
@@ -132,7 +132,7 @@
                                 "table_name": "ATTR_TUNNEL",
                                 "attribute_name": "tunnel_endpointa",
                                 "attribute_value": {
-                                    "ip": "192.168.0.2",
+                                    "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
@@ -142,7 +142,7 @@
                                 "table_name": "ATTR_TUNNEL",
                                 "attribute_name": "tunnel_endpointb",
                                 "attribute_value": {
-                                    "ip": "192.168.0.3",
+                                    "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
@@ -195,6 +195,104 @@
                                 "attribute_name": "ssl_san",
                                 "attribute_value": {
                                     "string": "www.baidu.com"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 6,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_IP_PROTOCOL",
+                                "attribute_name": "ip_protocol",
+                                "attribute_value": {
+                                    "addr_type": 4,
+                                    "protocol": 6
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value": {
+                                    "ip": "192.168.0.5",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value": {
+                                    "ip": "192.168.0.6",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "attribute_name": "source",
+                                "attribute_value": {
+                                    "ip": "192.168.1.1",
+                                    "port":"8080",
+                                    "addr_type": 4
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 7,
+            "vsys_id": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys_id": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_IP_PROTOCOL",
+                                "attribute_name": "ip_protocol",
+                                "attribute_value": {
+                                    "addr_type": 4,
+                                    "protocol": 6
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value": {
+                                    "ip": "192.168.0.4",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
+                                }
+                            },
+                            {
+                                "attribute_type": "ip",
+                                "table_name": "ATTR_TUNNEL",
+                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value": {
+                                    "ip": "192.168.0.6",
+                                    "tunnel_type":"gtp",
+                                    "addr_type": 4
                                 }
                             }
                         ]

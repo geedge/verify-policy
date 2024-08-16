@@ -349,6 +349,143 @@
                 }
             },
             "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hitPolicyList": [
+                    {
+                        "id": 1026,
+                        "policyName": "",
+                        "is_execute_policy": true,
+                        "top_object_list": [
+                            {
+                                "object_id": 3022,
+                                "table_name": "ATTR_TUNNEL",
+                                "not_flag": 0,
+                                "nth_clause": 0
+                            }
+                        ]
+                    },
+                    {
+                        "id": 1025,
+                        "policyName": "",
+                        "is_execute_policy": false,
+                        "top_object_list": [
+                            {
+                                "object_id": 3023,
+                                "table_name": "ATTR_TUNNEL",
+                                "not_flag": 0,
+                                "nth_clause": 0
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_IP_PROTOCOL",
+                            "attribute_name": "ip_protocol",
+                            "attribute_value": {
+                                "addr_type": 4,
+                                "protocol": 6
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 6
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_TUNNEL",
+                            "attribute_name": "tunnel_endpoint_object",
+                            "hit_paths": [
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 3022
+                                },
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 3023
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_SOURCE_IP",
+                            "attribute_name": "source",
+                            "attribute_value": {
+                                "ip": "192.168.1.1",
+                                "port": "8080",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "entry_id": 1,
+                                    "tag_id": 11
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hitPolicyList": [
+                    {
+                        "id": 1027,
+                        "policyName": "",
+                        "is_execute_policy": true,
+                        "top_object_list": [
+                            {
+                                "object_id": 3022,
+                                "table_name": "ATTR_TUNNEL",
+                                "not_flag": 1,
+                                "nth_clause": 0
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_IP_PROTOCOL",
+                            "attribute_name": "ip_protocol",
+                            "attribute_value": {
+                                "addr_type": 4,
+                                "protocol": 6
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 6
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_TUNNEL",
+                            "attribute_name": "tunnel_endpoint_object",
+                            "hit_paths": [
+                                {
+                                    "item_id": 0,
+                                    "superior_object_id": 3021
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
         }
     ]
 }
