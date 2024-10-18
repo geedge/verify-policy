@@ -90,7 +90,7 @@ static char *select_hit_policy_request_item(int gtest_id)
 TEST(LibrarySearch, HitFqdnEntry)
 {
 	const char *hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.126.com\",\"vsys_id\":1}";
-	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":1,\"tag_ids\":\"1\"}]},\"success\":true}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000001-0000-0000-0000-000000000000\"}]},\"success\":true}";
 
 	cJSON *result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -105,7 +105,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.baidu.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":2,\"tag_ids\":\"2,3\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000002-0000-0000-0000-000000000000,00000003-0000-0000-0000-000000000000\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -120,7 +120,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":null,\"fqdn\":\"www.qq.com\",\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"entry_id\":4,\"tag_ids\":\"4,5,6\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000004-0000-0000-0000-000000000000,00000005-0000-0000-0000-000000000000,00000006-0000-0000-0000-000000000000\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -138,7 +138,7 @@ TEST(LibrarySearch, HitFqdnEntry)
 TEST(LibrarySearch, HitIpEntry)
 {
 	const char *hit_policy_request = "{\"ip\":\"192.168.1.1\",\"fqdn\":null,\"vsys_id\":1}";
-	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"11\"}]},\"success\":true}";
+	const char *hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000011-0000-0000-0000-000000000000\"}]},\"success\":true}";
 	
 	cJSON *result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -146,6 +146,7 @@ TEST(LibrarySearch, HitIpEntry)
 	char *hit_policy_list = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_list != NULL);
 
+	printf("hit_policy_list = %s\n", hit_policy_list);
 	int equal = strncasecmp(hit_policy_list, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -153,7 +154,7 @@ TEST(LibrarySearch, HitIpEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request ="{\"ip\":\"192.168.1.2\",\"fqdn\":null,\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"12,13\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000012-0000-0000-0000-000000000000,00000013-0000-0000-0000-000000000000\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -161,6 +162,7 @@ TEST(LibrarySearch, HitIpEntry)
 	hit_policy_list = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_list != NULL);
 
+	printf("hit_policy_list = %s\n", hit_policy_list);
 	equal = strncasecmp(hit_policy_list, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -168,7 +170,7 @@ TEST(LibrarySearch, HitIpEntry)
 	FREE(&hit_policy_list);
 
 	hit_policy_request = "{\"ip\":\"192.168.1.3\",\"fqdn\":null,\"vsys_id\":1}";
-	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_ids\":\"14,15,16\"}]},\"success\":true}";
+	hit_policy_result="{\"code\":200,\"msg\":\"Success\",\"data\":{\"hit_library\":[{\"tag_uuids\":\"00000014-0000-0000-0000-000000000000,00000015-0000-0000-0000-000000000000,00000016-0000-0000-0000-000000000000\"}]},\"success\":true}";
 
 	result_json = get_library_search_query(hit_policy_request, strlen(hit_policy_request));
 	ASSERT_TRUE(result_json != NULL);
@@ -176,6 +178,7 @@ TEST(LibrarySearch, HitIpEntry)
 	hit_policy_list = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_list != NULL);
 
+	printf("hit_policy_list = %s\n", hit_policy_list);
 	equal = strncasecmp(hit_policy_list, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -246,6 +249,9 @@ TEST(VerifyPolicy, HitIpPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
+	printf("hit_policy_query = %s\n", hit_policy_query);
+	printf("hit_policy_result = %s\n", hit_policy_result);
+
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -268,6 +274,9 @@ TEST(VerifyPolicy, HitLibraryPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
+	printf("hit_policy_query = %s\n", hit_policy_query);
+	printf("hit_policy_result = %s\n", hit_policy_result);
+
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -289,6 +298,9 @@ TEST(VerifyPolicy, HitMultiplePolicy)
 
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
+
+	printf("hit_policy_query = %s\n", hit_policy_query);
+	printf("hit_policy_result = %s\n", hit_policy_result);
 
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -333,8 +345,6 @@ TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1027)
 
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
-
-	printf("hit_policy_query = %s\n", hit_policy_query);
 
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -402,6 +412,32 @@ TEST(VerifyPolicy, HitTunnelEndpointPolicy)
 
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
+
+	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
+}
+
+TEST(VerifyPolicy, HitAllObjectPolicy)
+{
+	char *hit_policy_request = select_hit_policy_request_item(8);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(8);
+	ASSERT_TRUE(hit_policy_result != NULL);
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	printf("hit_policy_request = %s\n", hit_policy_request);
+	printf("hit_policy_query = %s\n", hit_policy_query);
+	printf("hit_policy_result = %s\n", hit_policy_result);
 
 	int equal = strncasecmp(hit_policy_query, hit_policy_result, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);

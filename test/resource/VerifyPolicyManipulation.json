@@ -1,353 +1,476 @@
 {
-    "compile_table": "PXY_CTRL_COMPILE",
-    "group2compile_table": "GROUP_PXY_CTRL_COMPILE_RELATION",
-    "group2group_table": "GROUP_GROUP_RELATION",
+    "rule_table": "PXY_CTRL_RULE",
+    "object2object_table": "OBJECT_GROUP",
     "rules": [
-       {
-            "compile_id": 1021,
+        {
+            "uuid": "00001021-0000-0000-0000-000000000000",
             "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-	        "do_log": 1,
-            "effective_range": 0,
-	        "tags":"anything",
-            "user_region": "anything",
-	        "is_valid": "yes",
-            "groups": [
-                {
-                    "not_flag": 0,
-                    "group_id": 101,
-                    "group_name":"IPv4TCPSoureVeiryPolicy01",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.1",
-                                "ip2": "192.168.0.1"
-                            }
-                        }
-                    ] 
-                }
-            ]
-        },
-        {
-            "compile_id": 1022,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
             "is_valid": "yes",
-            "groups": [
-				{
-                    "group_id": 11,
-                    "group_name": "IPv4TCPSoureEntry.11",
-                    "virtual_table": "ATTR_SOURCE_IP"
-                },
+            "and_conditions": [
                 {
-                    "group_id": 12,
-                    "group_name": "IPv4TCPSoureEntry.12",
-                    "virtual_table": "ATTR_INTERNAL_IP"
-                },
-                {
-                    "group_id": 1,
-                    "group_name": "FQDNEntry.1",
-                    "virtual_table": "ATTR_SERVER_FQDN"
-                }
-            ]
-        },
-        {
-            "compile_id": 1023,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
-            "is_valid": "yes",
-            "groups": [
-				{
-                    "not_flag": 0,
-                    "group_id": 10231,
-                    "group_name":"IPv4TCPSoureVeiryPolicy02",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "objects": [
                         {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.2",
-                                "ip2": "192.168.0.2"
-                            }
-                        }
-                    ] 
-                },
-                {
-                    "not_flag": 0,
-                    "group_id": 10232,
-                    "group_name":"IPv4TCPDestinationVeiryPolicy01",
-                    "virtual_table": "ATTR_DESTINATION_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.3",
-                                "ip2": "192.168.0.3"
-                            }
-                        }
-                    ] 
-                },
-                {
-	                "virtual_table":"ATTR_SERVER_FQDN",
-                    "group_name":"ServerFqdnVeiryPolicy01",
-                    "group_id":10234,
-                    "not_flag":0,
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_FQDN",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "baidu.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                },
-				{
-	                "virtual_table":"ATTR_SSL_SAN",
-                    "group_name":"SslSanVeiryPolicy01",
-                    "group_id":10235,
-                    "not_flag":0,
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_FQDN",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "baidu.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "compile_id": 1024,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
-            "is_valid": "yes",
-            "groups": [
-				{
-					"group_name":"IPv4TCPSoureVeiryPolicy02",
-					"virtual_table":"ATTR_SOURCE_IP"
-                },
-                {
-                    "group_name":"IPv4TCPDestinationVeiryPolicy01",
-					"virtual_table":"ATTR_DESTINATION_IP"
-                },
-                {
-					"group_name":"ServerFqdnVeiryPolicy01",
-					"virtual_table":"ATTR_SERVER_FQDN"
-                },
-                {
-					"group_name":"SslSanVeiryPolicy01",
-					"virtual_table":"ATTR_SSL_SAN"
-                }
-            ]
-        },
-        {
-            "compile_id": 3021,
-            "service": 13,
-            "action": 1,
-            "do_blacklist": 0,
-            "do_log": 1,
-            "tags": "{}",
-            "user_region": "anything",
-            "evaluation_order": "0.0",
-			"compile_table_name": "TUNNEL_COMPILE",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "not_flag": 0,
-                    "group_id": 248,
-                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy01",
-                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
-					"g2c_table_name": "GROUP_TUNNEL_COMPILE_RELATION",
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_type": "ip",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.4",
-                                "ip2": "192.168.0.4"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "compile_id": 3022,
-            "service": 13,
-            "action": 1,
-            "do_blacklist": 0,
-            "do_log": 1,
-            "tags": "{}",
-            "user_region": "anything",
-            "evaluation_order": "0.0",
-            "compile_table_name": "TUNNEL_COMPILE",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "not_flag": 0,
-                    "group_id": 2,
-                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy02",
-                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
-                    "g2c_table_name": "GROUP_TUNNEL_COMPILE_RELATION",
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_type": "ip",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.5",
-                                "ip2": "192.168.0.5"
-                            }
+                            "object_name": "IPv4TCPSoureVeiryPolicy01",
+                            "uuid": "00005000-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.1/32",
+                                        "port": "8080"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         },
 		{
-            "compile_id": 3023,
-            "service": 13,
-            "action": 1,
-            "do_blacklist": 0,
-            "do_log": 1,
-            "tags": "{}",
-            "user_region": "anything",
-            "evaluation_order": "0.0",
-            "compile_table_name": "TUNNEL_COMPILE",
-            "is_valid": "yes",
-            "groups": [
-                {
-                    "not_flag": 0,
-                    "group_id": 3,
-                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy03",
-                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
-                    "g2c_table_name": "GROUP_TUNNEL_COMPILE_RELATION",
-                    "regions": [
+			"uuid": "00001022-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "manipulate",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+                    "object_name": "IPv4TCPSoureEntry.11",
+					"attribute_name": "ATTR_SOURCE_IP",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00000011-0000-0000-0000-000000000000"
+                    ]
+				},
+				{
+                    "object_name": "IPv4TCPSoureEntry.12",
+					"attribute_name": "ATTR_INTERNAL_IP",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00000012-0000-0000-0000-000000000000"
+                    ]
+				},
+				{
+                    "object_name": "FQDNEntry.1",
+					"attribute_name": "ATTR_SERVER_FQDN",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00000001-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+		{
+            "uuid": "00001023-0000-0000-0000-000000000000",
+            "service": 1,
+			"action": "manipulate",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+            "and_conditions": [
+				{
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "objects": [
                         {
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_type": "ip",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.5",
-                                "ip2": "192.168.0.5"
-                            }
+                            "object_name": "IPv4TCPSoureVeiryPolicy02",
+                            "uuid": "00005001-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.2/32",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 },
 				{
-                    "not_flag": 0,
-                    "group_id": 4,
-                    "group_name": "TunnelIpv4TCPSoureVeiryPolicy04",
-                    "virtual_table": "ATTR_TUNNEL_GTP_ENDPOINT",
-                    "g2c_table_name": "GROUP_TUNNEL_COMPILE_RELATION",
-                    "regions": [
+                    "attribute_name": "ATTR_DESTINATION_IP",
+                    "objects": [
                         {
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_type": "ip",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.0.6",
-                                "ip2": "192.168.0.6"
-                            }
+                            "object_name": "IPv4TCPDestinationVeiryPolicy01",
+                            "uuid": "00005002-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.3/32",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+				{
+                    "attribute_name": "ATTR_SERVER_FQDN",
+                    "objects": [
+                        {
+							"object_name":"ServerFqdnVeiryPolicy01",
+							"uuid": "00005003-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_FQDN",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "baidu.com",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+				{
+                    "attribute_name": "ATTR_SSL_SAN",
+                    "objects": [
+                        {
+							"object_name":"SslSanVeiryPolicy01",
+							"uuid": "00005004-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_FQDN",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "baidu.com",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         },
-        {
-            "compile_id": 1025,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
-            "is_valid": "yes",
-            "groups": [
+		{
+			"uuid": "00001024-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "manipulate",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+			"and_conditions": [
 				{
-                    "not_flag":0,
-                    "group_id": 3023,
-					"group_name":"TunnelEndpointVeiryPolicy01",
-					"virtual_table":"ATTR_TUNNEL"
-                }
-            ]
-        },
-        {
-            "compile_id": 1026,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
-            "is_valid": "yes",
-            "groups": [
+					"object_name": "IPv4TCPSoureVeiryPolicy02",
+					"attribute_name": "ATTR_SOURCE_IP",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00005001-0000-0000-0000-000000000000"
+                    ]
+				},
 				{
-                    "not_flag":0,
-                    "group_id": 3022,
-					"group_name":"TunnelEndpointVeiryPolicy03",
-					"virtual_table":"ATTR_TUNNEL"
-                }
-            ]
-        },
-        {
-            "compile_id": 1027,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"anything",
-            "user_region": "anything",
-            "is_valid": "yes",
-            "groups": [
+                    "object_name": "IPv4TCPDestinationVeiryPolicy01",
+					"attribute_name": "ATTR_DESTINATION_IP",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00005002-0000-0000-0000-000000000000"
+                    ]
+				},
 				{
-                    "not_flag":1,
-                    "group_id": 3022,
-					"group_name":"TunnelEndpointVeiryPolicy03",
-					"virtual_table":"ATTR_TUNNEL"
+                    "object_name": "ServerFqdnVeiryPolicy01",
+					"attribute_name": "ATTR_SERVER_FQDN",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00005003-0000-0000-0000-000000000000"
+                    ]
+				},
+				{
+                    "object_name": "SslSanVeiryPolicy01",
+					"attribute_name": "ATTR_SSL_SAN",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00005004-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+		{
+			"uuid": "00003021-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"rule_table_name": "TUNNEL_RULE",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"attribute_name": "ATTR_TUNNEL_GTP_ENDPOINT",
+					"objects": [
+						{
+							"object_name": "TunnelIpv4TCPSoureVeiryPolicy01",
+							"uuid": "00005005-0000-0000-0000-000000000000",
+							"items": [
+								{
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.4"
+                                    }
+                                }
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"uuid": "00003022-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"rule_table_name": "TUNNEL_RULE",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"attribute_name": "ATTR_TUNNEL_GTP_ENDPOINT",
+					"objects": [
+						{
+							"object_name": "TunnelIpv4TCPSoureVeiryPolicy02",
+							"uuid": "00005006-0000-0000-0000-000000000000",
+							"items": [
+								{
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.5/32"
+                                    }
+                                }
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"uuid": "00003023-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"rule_table_name": "TUNNEL_RULE",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"attribute_name": "ATTR_TUNNEL_GTP_ENDPOINT",
+					"objects": [
+						{
+							"object_name": "TunnelIpv4TCPSoureVeiryPolicy03",
+							"uuid": "00005007-0000-0000-0000-000000000000",
+							"items": [
+								{
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.5/32"
+                                    }
+                                }
+							]
+						}
+					]
+				},
+				{
+					"attribute_name": "ATTR_TUNNEL_GTP_ENDPOINT",
+					"objects": [
+						{
+							"object_name": "TunnelIpv4TCPSoureVeiryPolicy04",
+							"uuid": "00005008-0000-0000-0000-000000000000",
+							"items": [
+								{
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.6/32"
+                                    }
+                                }
+							]
+						}
+					]
+				}
+			]
+		},
+        {
+			"uuid": "00001025-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"object_name": "TunnelEndpointVeiryPolicy01",
+					"attribute_name": "ATTR_TUNNEL",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00003023-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+        {
+			"uuid": "00001026-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"object_name": "TunnelEndpointVeiryPolicy03",
+					"attribute_name": "ATTR_TUNNEL",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00003022-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+		{
+			"uuid": "00001027-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "monitor",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+			"and_conditions": [
+				{
+					"object_name": "TunnelEndpointVeiryPolicy03",
+					"attribute_name": "ATTR_TUNNEL",
+                    "negate_option": true,
+					"object_uuids": [
+                        "00003022-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+		{
+            "uuid": "00600010-0000-0000-0000-000000000000",
+            "service": 1,
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
+            "is_valid": "yes",
+            "and_conditions": [
+                {
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "objects": [
+                        {
+                            "object_name": "IPv4TCPSoureVeiryPolicy01",
+                            "uuid": "00500100-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.55.4",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "attribute_name": "ATTR_APP_ID",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000201-0000-0000-0000-000000000000"
+                    ]
+                },
+                {
+                    "attribute_name": "ATTR_HTTP_REQ_HDR",
+                    "objects": [
+                        {
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_KEYWORD",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "test",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "attribute_name": "ATTR_IP_PROTOCOL",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000006"
+                    ]
+                },
+                {
+					"attribute_name": "ATTR_SOURCE_PORT",
+					"objects": [
+						{
+							"object_name": "IPv4TCPPortVeiryPolicy01",
+							"uuid": "00500200-0000-0000-0000-000000000000",
+							"items": [
+								{
+									"table_name": "TSG_OBJ_PORT",
+									"table_type": "interval",
+									"table_content": {
+										"interval": "1-100"
+									}
+								}
+							]
+						}
+					]
+				},
+                {
+                    "attribute_name": "ATTR_TUNNEL_LEVEL",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000050"
+                    ]
+                },        
+                {
+					"attribute_name": "ATTR_FLAG",
+					"objects": [
+						{
+							"object_name": "FlagVeiryPolicy01",
+							"uuid": "00500300-0000-0000-0000-000000000000",
+							"items": [
+								{
+									"table_type": "flag",
+									"table_name": "TSG_OBJ_FLAG",
+									"table_content": {
+										"flag": 15,
+										"mask": 15
+									}
+								}
+							]
+						}
+					]
+				},
+                {
+                    "attribute_name": "ATTR_SSL_ECH",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000002"
+                    ]
                 }
             ]
         }
@@ -356,35 +479,42 @@
 		{
             "table_name": "FQDN_ENTRY",
             "table_content": [
-                "1\t1\twww.126.com\t1\t1",
-                "2\t2,3\twww.baidu.com\t1\t1",
-                "4\t4,5,6\twww.qq.com\t1\t1"
+                {"uuid":"00000001-0000-0000-0000-000000000000","tag_uuids":["00000001-0000-0000-0000-000000000000"],"fqdn":"www.126.com","is_valid":1},
+                {"uuid":"00000002-0000-0000-0000-000000000000","tag_uuids":["00000002-0000-0000-0000-000000000000","00000003-0000-0000-0000-000000000000"],"fqdn":"www.baidu.com","is_valid":1},
+				{"uuid":"00000004-0000-0000-0000-000000000000","tag_uuids":["00000004-0000-0000-0000-000000000000","00000005-0000-0000-0000-000000000000","00000006-0000-0000-0000-000000000000"],"fqdn":"www.qq.com","is_valid":1}
             ]
         },
 		{
             "table_name": "IP_ADDR_ENTRY",
             "table_content": [
-                "1\t11\t4\tsingle\t192.168.1.1\t192.168.1.1\t1",
-                "2\t12,13\t4\tsingle\t192.168.1.2\t192.168.1.2\t1",
-				"4\t14,15,16\t4\trange\t192.168.1.3\t192.168.1.3\t1"
+                {"uuid":"00000001-0000-0000-0000-000000000000","tag_uuids":["00000011-0000-0000-0000-000000000000"],"ip":"192.168.1.1/32","is_valid":1},
+                {"uuid":"00000002-0000-0000-0000-000000000000","tag_uuids":["00000012-0000-0000-0000-000000000000","00000013-0000-0000-0000-000000000000"],"ip":"192.168.1.2/32","is_valid":1},
+				{"uuid":"00000004-0000-0000-0000-000000000000","tag_uuids":["00000014-0000-0000-0000-000000000000","00000015-0000-0000-0000-000000000000","00000016-0000-0000-0000-000000000000"],"ip":"192.168.1.3/32","is_valid":1}
             ]
         },
 		{
             "table_name": "LIBRARY_TAG",
             "table_content": [
-                "1\tnone\twebsite_category\tfqdn1\tsearch\\bengines\t1",
-                "2\tnone\twebsite_category\tfqdn2\tRecreation\band\bHobbies\t1",
-                "3\tnone\twebsite_category\tfqdn3\tbusiness\t1",
-                "4\tnone\twebsite_category\tfqdn4\tsearch bengines\t1",
-                "5\tnone\twebsite_category\tfqdn5\tsearch\\bengines\t1",
-                "6\tnone\twebsite_category\tfqdn6\tsearch\\bengines\t1",
-                "11\tnone\tgeoip\tadministrative_area\tColombia.Departamento\bdel\bVaupes\t1",
-                "12\tnone\tgeoip\tadministrative_area\tColombia.Departamento\bdel\bVaupes.Mitú\t1",
-                "13\tnone\tgeoip\tadministrative_area\tColombia.Antioquia.Marinilla\t1",
-				"14\tnone\tgeoip\tsuper_administrative_area\tColombia.Departamento\bdel\bVaupes\t1",
-				"15\tnone\tgeoip\tadministrative_area\tGermany.Bavaria.Mauern\t1",
-                "16\tnone\tgeoip\tadministrative_area\tGermany.Bavaria.Mellrichstadt\t1"
+                {"uuid":"00000001-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn1","tag_value":"search\\bengines","is_valid":1},
+                {"uuid":"00000002-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn2","tag_value":"Recreation\band\bHobbies","is_valid":1},
+                {"uuid":"00000003-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn3","tag_value":"business","is_valid":1},
+                {"uuid":"00000004-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn4","tag_value":"search bengines","is_valid":1},
+                {"uuid":"00000005-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn5","tag_value":"search\\bengines","is_valid":1},
+				{"uuid":"00000006-0000-0000-0000-000000000000","statistics_option":"none","category":"website_category","tag_key":"fqdn6","tag_value":"search\\bengines","is_valid":1},
+				{"uuid":"00000011-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"administrative_area","tag_value":"Colombia.Departamento","is_valid":1},
+				{"uuid":"00000012-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"administrative_area","tag_value":"Colombia.Departamento\bdel\bVaupes.Mitú","is_valid":1},
+				{"uuid":"00000013-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"administrative_area","tag_value":"Colombia.Antioquia.Marinilla","is_valid":1},
+				{"uuid":"00000014-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"tsuper_administrative_area","tag_value":"Colombia.Departamento\bdel\bVaupes","is_valid":1},
+				{"uuid":"00000015-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"administrative_area","tag_value":"Germany.Bavaria.Mauern","is_valid":1},
+				{"uuid":"00000016-0000-0000-0000-000000000000","statistics_option":"none","category":"geoip","tag_key":"administrative_area","tag_value":"Germany.Bavaria.Mellrichstadt","is_valid":1}
 			]
-		}
+		},
+		{
+            "table_name": "APP_ID_DICT",
+            "table_content": [
+	            {"app_id":67,"object_uuid":"00000201-0000-0000-0000-000000000000","app_name":"http","is_valid":1},
+                {"app_id":68,"object_uuid":"00068000-0000-0000-0000-000000000000","app_name":"https","is_valid":1}
+            ]
+        }
     ]
 }

@@ -4,17 +4,17 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hitPolicyList": [
+                "hit_policy_list": [
                     {
-                        "id": 1021,
+                        "uuid": "00001021-0000-0000-0000-000000000000",
                         "policyName": "",
                         "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "object_id": 101,
+                                "object_uuid": "00005000-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SOURCE_IP",
-                                "not_flag": 0,
-                                "nth_clause": 0
+                                "negate_option": 0,
+                                "condition_index": 0
                             }
                         ]
                     }
@@ -32,8 +32,8 @@
                             },
                             "hit_paths": [
                                 {
-                                    "item_id": 1,
-                                    "superior_object_id": 101
+                                    "item_uuid": "00000000-0000-0000-0000-000000001000",
+                                    "superior_object_uuid": "00005000-0000-0000-0000-000000000000"
                                 }
                             ]
                         }
@@ -43,107 +43,89 @@
             "success": true
         },
         {
-            "code": 200, 
-            "msg": "Success", 
+            "code": 200,
+            "msg": "Success",
             "data": {
-                "hitPolicyList": [
+                "hit_policy_list": [
                     {
-                        "id": 1022, 
-                        "policyName": "", 
-                        "is_execute_policy": true, 
+                        "uuid": "00001022-0000-0000-0000-000000000000",
+                        "policyName": "",
+                        "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "tag_id": 11, 
-                                "table_name": "ATTR_SOURCE_IP", 
-                                "not_flag": 0, 
-                                "nth_clause": 0
-                            }, 
+                                "tag_uuid": "00000011-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "negate_option": 0,
+                                "condition_index": 0
+                            },
                             {
-                                "tag_id": 12, 
-                                "table_name": "ATTR_INTERNAL_IP", 
-                                "not_flag": 0, 
-                                "nth_clause": 1
-                            }, 
+                                "tag_uuid": "00000012-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_INTERNAL_IP",
+                                "negate_option": 0,
+                                "condition_index": 1
+                            },
                             {
-                                "tag_id": 1, 
-                                "table_name": "ATTR_SERVER_FQDN", 
-                                "not_flag": 0, 
-                                "nth_clause": 2
+                                "tag_uuid": "00000001-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_SERVER_FQDN",
+                                "negate_option": 0,
+                                "condition_index": 2
                             }
                         ]
                     }
-                ], 
+                ],
                 "verify_session": {
                     "attributes": [
                         {
-                            "attribute_type": "ip", 
-                            "table_name": "ATTR_SOURCE_IP", 
-                            "attribute_name": "source", 
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_SOURCE_IP",
+                            "attribute_name": "source",
                             "attribute_value": {
-                                "ip": "192.168.1.1", 
-                                "port": "8080", 
+                                "ip": "192.168.1.1",
+                                "port": "8080",
                                 "addr_type": 4
-                            }, 
+                            },
                             "hit_paths": [
                                 {
-                                    "entry_id": 1, 
-                                    "tag_id": 11
+                                    "entry_uuid": "00000001-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000011-0000-0000-0000-000000000000"
                                 }
                             ]
-                        }, 
+                        },
                         {
-                            "attribute_type": "ip", 
-                            "table_name": "ATTR_INTERNAL_IP", 
-                            "attribute_name": "internal", 
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_INTERNAL_IP",
+                            "attribute_name": "internal",
                             "attribute_value": {
-                                "ip": "192.168.1.2", 
-                                "port": "80", 
+                                "ip": "192.168.1.2",
+                                "port": "80",
                                 "addr_type": 4
-                            }, 
+                            },
                             "hit_paths": [
                                 {
-                                    "entry_id": 2, 
-                                    "tag_id": 12
-                                }, 
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000012-0000-0000-0000-000000000000"
+                                },
                                 {
-                                    "entry_id": 2, 
-                                    "tag_id": 13
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000013-0000-0000-0000-000000000000"
                                 }
                             ]
-                        }, 
+                        },
                         {
-                            "attribute_type": "string", 
-                            "table_name": "ATTR_SERVER_FQDN", 
-                            "attribute_name": "server_fqdn", 
+                            "attribute_type": "string",
+                            "table_name": "ATTR_SERVER_FQDN",
+                            "attribute_name": "server_fqdn",
                             "attribute_value": {
                                 "string": "www.126.com"
-                            }, 
+                            },
                             "hit_paths": [
                                 {
-                                    "entry_id": 1, 
-                                    "tag_id": 1
+                                    "entry_uuid": "00000001-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000001-0000-0000-0000-000000000000"
                                 }
                             ]
                         }
                     ]
-                }
-            }, 
-            "success": true
-        },
-        {
-            "code": 200,
-            "msg": "Success",
-            "data": {
-                "verify_session": {
-                    "attributes": [{
-                        "attribute_type": "ip",
-                        "table_name": "ATTR_TUNNEL",
-                        "attribute_name": "tunnel_endpoint_object",
-                        "hit_paths": [{
-                            "item_id": 0,
-                            "superior_object_id": 3021
-                        }]
-                    }]
                 }
             },
             "success": true
@@ -158,8 +140,8 @@
                         "table_name": "ATTR_TUNNEL",
                         "attribute_name": "tunnel_endpoint_object",
                         "hit_paths": [{
-                            "item_id": 0,
-                            "superior_object_id": 3022
+                            "item_uuid": "00000000-0000-0000-0000-000000000000",
+                            "superior_object_uuid": "00003021-0000-0000-0000-000000000000"
                         }]
                     }]
                 }
@@ -178,12 +160,8 @@
                             "attribute_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 3022
-                                },
-                                {
-                                    "item_id": 0,
-                                    "superior_object_id": 3023
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003022-0000-0000-0000-000000000000"
                                 }
                             ]
                         }
@@ -196,66 +174,92 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hitPolicyList": [
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_TUNNEL",
+                            "attribute_name": "tunnel_endpoint_object",
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003022-0000-0000-0000-000000000000"
+                                },
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003023-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hit_policy_list": [
                     {
-                        "id": 1024,
+                        "uuid": "00001024-0000-0000-0000-000000000000",
                         "policyName": "",
                         "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "object_id": 10231,
+                                "object_uuid": "00005001-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SOURCE_IP",
-                                "not_flag": 0,
-                                "nth_clause": 0
+                                "negate_option": 0,
+                                "condition_index": 0
                             },
                             {
-                                "object_id": 10232,
+                                "object_uuid": "00005002-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_DESTINATION_IP",
-                                "not_flag": 0,
-                                "nth_clause": 1
+                                "negate_option": 0,
+                                "condition_index": 1
                             },
                             {
-                                "object_id": 10234,
+                                "object_uuid": "00005003-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SERVER_FQDN",
-                                "not_flag": 0,
-                                "nth_clause": 2
+                                "negate_option": 0,
+                                "condition_index": 2
                             },
                             {
-                                "object_id": 10235,
+                                "object_uuid": "00005004-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SSL_SAN",
-                                "not_flag": 0,
-                                "nth_clause": 3
+                                "negate_option": 0,
+                                "condition_index": 3
                             }
                         ]
                     },
                     {
-                        "id": 1023,
+                        "uuid": "00001023-0000-0000-0000-000000000000",
                         "policyName": "",
                         "is_execute_policy": false,
                         "top_object_list": [
                             {
-                                "object_id": 10231,
+                                "object_uuid": "00005001-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SOURCE_IP",
-                                "not_flag": 0,
-                                "nth_clause": 0
+                                "negate_option": 0,
+                                "condition_index": 0
                             },
                             {
-                                "object_id": 10232,
+                                "object_uuid": "00005002-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_DESTINATION_IP",
-                                "not_flag": 0,
-                                "nth_clause": 1
+                                "negate_option": 0,
+                                "condition_index": 1
                             },
                             {
-                                "object_id": 10234,
+                                "object_uuid": "00005003-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SERVER_FQDN",
-                                "not_flag": 0,
-                                "nth_clause": 2
+                                "negate_option": 0,
+                                "condition_index": 2
                             },
                             {
-                                "object_id": 10235,
+                                "object_uuid": "00005004-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_SSL_SAN",
-                                "not_flag": 0,
-                                "nth_clause": 3
+                                "negate_option": 0,
+                                "condition_index": 3
                             }
                         ]
                     }
@@ -268,13 +272,13 @@
                             "attribute_name": "source",
                             "attribute_value": {
                                 "ip": "192.168.0.2",
-                                "port": "8080",
+                                "port": "80",
                                 "addr_type": 4
                             },
                             "hit_paths": [
                                 {
-                                    "item_id": 2,
-                                    "superior_object_id": 10231
+                                    "item_uuid": "00000000-0000-0000-0000-000000001001",
+                                    "superior_object_uuid": "00005001-0000-0000-0000-000000000000"
                                 }
                             ]
                         },
@@ -284,12 +288,13 @@
                             "attribute_name": "destination",
                             "attribute_value": {
                                 "ip": "192.168.0.3",
+                                "port": "80",
                                 "addr_type": 4
                             },
                             "hit_paths": [
                                 {
-                                    "item_id": 3,
-                                    "superior_object_id": 10232
+                                    "item_uuid": "00000000-0000-0000-0000-000000001002",
+                                    "superior_object_uuid": "00005002-0000-0000-0000-000000000000"
                                 }
                             ]
                         },
@@ -302,20 +307,20 @@
                             },
                             "hit_paths": [
                                 {
-                                    "entry_id": 2,
-                                    "tag_id": 2
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000002-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "entry_id": 2,
-                                    "tag_id": 3
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000003-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "item_id": 5,
-                                    "superior_object_id": 10235
+                                    "item_uuid": "00000000-0000-0000-0000-000000001004",
+                                    "superior_object_uuid": "00005004-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "item_id": 4,
-                                    "superior_object_id": 10234
+                                    "item_uuid": "00000000-0000-0000-0000-000000001003",
+                                    "superior_object_uuid": "00005003-0000-0000-0000-000000000000"
                                 }
                             ]
                         },
@@ -328,20 +333,20 @@
                             },
                             "hit_paths": [
                                 {
-                                    "entry_id": 2,
-                                    "tag_id": 2
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000002-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "entry_id": 2,
-                                    "tag_id": 3
+                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000003-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "item_id": 5,
-                                    "superior_object_id": 10235
+                                    "item_uuid": "00000000-0000-0000-0000-000000001004",
+                                    "superior_object_uuid": "00005004-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "item_id": 4,
-                                    "superior_object_id": 10234
+                                    "item_uuid": "00000000-0000-0000-0000-000000001003",
+                                    "superior_object_uuid": "00005003-0000-0000-0000-000000000000"
                                 }
                             ]
                         }
@@ -354,30 +359,30 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hitPolicyList": [
+                "hit_policy_list": [
                     {
-                        "id": 1026,
+                        "uuid": "00001026-0000-0000-0000-000000000000",
                         "policyName": "",
                         "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "object_id": 3022,
+                                "object_uuid": "00003022-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_TUNNEL",
-                                "not_flag": 0,
-                                "nth_clause": 0
+                                "negate_option": 0,
+                                "condition_index": 0
                             }
                         ]
                     },
                     {
-                        "id": 1025,
+                        "uuid": "00001025-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": false,
+                        "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "object_id": 3023,
+                                "object_uuid": "00003023-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_TUNNEL",
-                                "not_flag": 0,
-                                "nth_clause": 0
+                                "negate_option": 0,
+                                "condition_index": 0
                             }
                         ]
                     }
@@ -394,8 +399,8 @@
                             },
                             "hit_paths": [
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 6
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000006"
                                 }
                             ]
                         },
@@ -405,12 +410,12 @@
                             "attribute_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 3022
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003022-0000-0000-0000-000000000000"
                                 },
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 3023
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003023-0000-0000-0000-000000000000"
                                 }
                             ]
                         },
@@ -425,8 +430,8 @@
                             },
                             "hit_paths": [
                                 {
-                                    "entry_id": 1,
-                                    "tag_id": 11
+                                    "entry_uuid": "00000001-0000-0000-0000-000000000000",
+                                    "tag_uuid": "00000011-0000-0000-0000-000000000000"
                                 }
                             ]
                         }
@@ -439,17 +444,17 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hitPolicyList": [
+                "hit_policy_list": [
                     {
-                        "id": 1027,
+                        "uuid": "00001027-0000-0000-0000-000000000000",
                         "policyName": "",
                         "is_execute_policy": true,
                         "top_object_list": [
                             {
-                                "object_id": 3022,
+                                "object_uuid": "00003022-0000-0000-0000-000000000000",
                                 "table_name": "ATTR_TUNNEL",
-                                "not_flag": 1,
-                                "nth_clause": 0
+                                "negate_option": 1,
+                                "condition_index": 0
                             }
                         ]
                     }
@@ -466,8 +471,8 @@
                             },
                             "hit_paths": [
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 6
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000006"
                                 }
                             ]
                         },
@@ -477,8 +482,196 @@
                             "attribute_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
-                                    "item_id": 0,
-                                    "superior_object_id": 3021
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003021-0000-0000-0000-000000000000"
+                                },
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00003022-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
+        },
+        {
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hit_policy_list": [
+                    {
+                        "uuid": "00600010-0000-0000-0000-000000000000",
+                        "policyName": "",
+                        "is_execute_policy": true,
+                        "top_object_list": [
+                            {
+                                "object_uuid": "00500100-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_SOURCE_IP",
+                                "negate_option": 0,
+                                "condition_index": 0
+                            },
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000000006",
+                                "table_name": "ATTR_IP_PROTOCOL",
+                                "negate_option": 0,
+                                "condition_index": 3
+                            },
+                            {
+                                "object_uuid": "00500200-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_SOURCE_PORT",
+                                "negate_option": 0,
+                                "condition_index": 4
+                            },
+                            {
+                                "object_uuid": "00000201-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_APP_ID",
+                                "negate_option": 0,
+                                "condition_index": 1
+                            },
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000001000",
+                                "table_name": "ATTR_HTTP_REQ_HDR",
+                                "negate_option": 0,
+                                "condition_index": 2
+                            },
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000000050",
+                                "table_name": "ATTR_TUNNEL_LEVEL",
+                                "negate_option": 0,
+                                "condition_index": 5
+                            },
+                            {
+                                "object_uuid": "00500300-0000-0000-0000-000000000000",
+                                "table_name": "ATTR_FLAG",
+                                "negate_option": 0,
+                                "condition_index": 6
+                            },
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000000002",
+                                "table_name": "ATTR_SSL_ECH",
+                                "negate_option": 0,
+                                "condition_index": 7
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_SOURCE_IP",
+                            "attribute_name": "source",
+                            "attribute_value": {
+                                "ip": "192.168.55.4",
+                                "port": "80",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001009",
+                                    "superior_object_uuid": "00500100-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "ip",
+                            "table_name": "ATTR_IP_PROTOCOL",
+                            "attribute_name": "ip_protocol",
+                            "attribute_value": {
+                                "addr_type": 4,
+                                "protocol": 6
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000006"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "port",
+                            "table_name": "ATTR_SOURCE_PORT",
+                            "attribute_name": "source",
+                            "attribute_value": {
+                                "port": "80"
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001011",
+                                    "superior_object_uuid": "00500200-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "numeric",
+                            "table_name": "ATTR_APP_ID",
+                            "attribute_name": "app_id",
+                            "attribute_value": {
+                                "numeric": 67
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000201-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "string",
+                            "table_name": "ATTR_HTTP_REQ_HDR",
+                            "attribute_name": "req_hdr",
+                            "attribute_value": {
+                                "district": "User-Agent",
+                                "string": "test"
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001010",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000001000"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "string",
+                            "table_name": "ATTR_TUNNEL_LEVEL",
+                            "attribute_name": "tunnel_level",
+                            "attribute_value": {
+                                "numeric": 60
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000050"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "flag",
+                            "table_name": "ATTR_FLAG",
+                            "attribute_name": "flag",
+                            "attribute_value": {
+                                "numeric": 15
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001012",
+                                    "superior_object_uuid": "00500300-0000-0000-0000-000000000000"
+                                }
+                            ]
+                        },
+                        {
+                            "attribute_type": "boolean",
+                            "table_name": "ATTR_SSL_ECH",
+                            "attribute_name": "esni",
+                            "attribute_value": {
+                                "numeric": 1
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000002"
                                 }
                             ]
                         }

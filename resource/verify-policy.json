@@ -1,480 +1,281 @@
 {
-    "compile_table": "PXY_CTRL_COMPILE",
-    "group2compile_table": "GROUP_PXY_CTRL_COMPILE_RELATION",
-    "group2group_table": "GROUP_GROUP_RELATION",
+    "rule_table": "PXY_CTRL_RULE",
+    "object2object_table": "OBJECT_GROUP",
     "rules": [
-       {
-            "compile_id": 1021,
+        {
+            "uuid": "40c9c6a7-70a9-48ae-9fba-ec7966edd3c6",
             "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-	        "do_log": 1,
-            "effective_range": 0,
-	        "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
-            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
-	        "is_valid": "yes",
-            "groups": [
-                {
-	                "virtual_table":"ATTR_HTTP_URL",
-                    "group_name":"http_url",
-                    "group_id":101,
-                    "not_flag":0,
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_URL",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "baidu.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                },
-				{
-	                "virtual_table":"ATTR_SERVER_FQDN",
-                    "group_name":"http_fqdn",
-                    "group_id":1011,
-                    "not_flag":0,
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_FQDN",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "baidu.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                },
-				{
-	                "virtual_table":"ATTR_SSL_SAN",
-                    "group_name":"ssl_san",
-                    "group_id":11011,
-                    "not_flag":0,
-                    "regions": [
-                        {
-                            "table_name": "TSG_OBJ_FQDN",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "baidu.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-                        }
-                    ]
-                },
-				{
-					"virtual_table":"ATTR_APP_ID",
-                    "group_name":"app_id",
-					"group_id":201,
-					"not_flag":0
-                }
-            ]
-        },
-		{
-            "compile_id": 1022,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
-            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
-            "is_valid": "yes",
-            "groups": [
-                {
-					"group_name":"http_fqdn",
-					"virtual_table":"ATTR_SERVER_FQDN"
-                },
-				{
-					"group_name":"ssl_san",
-					"virtual_table":"ATTR_SSL_SAN"
-                },
-				{
-                    "not_flag": 0,
-                    "group_id": 604,
-                    "group_name":"IPv4TCPSoureServiceChaining604",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.55.4",
-                                "ip2": "192.168.55.4"
-                            }
-                        }
-                    ] 
-                },
-				{
-                    "group_id": 9,
-                    "group_name": "ip.source.ip12",
-                    "virtual_table": "ATTR_SOURCE_IP"
-                },
-				{
-                    "group_id": 10,
-                    "group_name": "ip.source.ip13",
-                    "virtual_table": "ATTR_DESTINATION_IP"
-                },
-				{
-                    "group_id": 6,
-                    "group_name": "host.fqdn6",
-                    "virtual_table": "ATTR_SERVER_FQDN"
-                },
-				{
-                    "group_id": 9,
-                    "group_name": "ip.source.ip14",
-                    "virtual_table": "ATTR_INTERNAL_IP"
-                },
-				{
-                    "group_id": 10,
-                    "group_name": "ip.source.ip15",
-                    "virtual_table": "ATTR_EXTERNAL_IP"
-                }
-            ]
-        },
-		{
-            "compile_id": 11022,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
-            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
-            "is_valid": "no",
-            "groups": [
-				{
-                    "not_flag": 0,
-                    "group_id": 704,
-                    "group_name":"IPv4TCPSoureServiceChaining604",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.55.7",
-                                "ip2": "192.168.55.7"
-                            }
-                        }
-                    ] 
-                }
-            ]
-        },
-		{
-            "compile_id": 11023,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "tags":"{\"tag_sets\":[[{\"tag\":\"device_id\",\"value\":[\"device_3\",\"device_4\"]}]]}",
-            "user_region": "{\"protocol\":\"http\",\"method\":\"redirect\",\"code\":302,\"to\":\"https://www.jd.com\"}",
-            "is_valid": "yes",
-            "groups": [
-				{
-                    "not_flag": 0,
-                    "group_id": 604,
-                    "group_name":"IPv4TCPSoureServiceChaining604",
-                    "virtual_table": "ATTR_SOURCE_IP",
-                    "regions": [
-                        {
-                            "table_type": "ip",
-                            "table_name": "TSG_OBJ_IP_ADDR",
-                            "table_content": {
-                                "addr_type": "ipv4",
-                                "addr_format": "range",
-                                "ip1": "192.168.55.4",
-                                "ip2": "192.168.55.4"
-                            }
-                        }
-                    ] 
-                },
-				{
-                    "group_id": 9,
-                    "group_name": "ip.source.ip12",
-                    "virtual_table": "ATTR_SOURCE_IP"
-                },
-				{
-                    "group_id": 10,
-                    "group_name": "ip.source.ip13",
-                    "virtual_table": "ATTR_DESTINATION_IP"
-                },
-				{
-                    "group_id": 9,
-                    "group_name": "ip.source.ip14",
-                    "virtual_table": "ATTR_INTERNAL_IP"
-                }
-            ]
-        },
-		{
-            "compile_id": 1023,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"邮箱\",\"replace_with\":\"test\"}]}",
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
 			"is_valid": "yes",
-            "groups": [
+            "and_conditions": [
                 {
-					"virtual_table":"ATTR_HTTP_HOST_VIRTUAL",
-					"group_name":"http_fqdn",
-					"group_id":102,
-					"not_flag":0,
-                    "regions": [
+                    "attribute_name": "ATTR_HTTP_URL",
+                    "objects": [
                         {
-                            "table_name": "TSG_OBJ_FQDN",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "www.126.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_URL",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "test123456",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         },
 		{
-            "compile_id": 1024,
+            "uuid": "00600010-0000-0000-0000-000000000000",
             "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region":"{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"账号登录\",\"replace_with\":\"Login\"}]}",
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
             "is_valid": "yes",
-            "groups": [
+            "and_conditions": [
                 {
-					"group_name":"http_fqdn",
-					"virtual_table":"ATTR_HTTP_HOST",
-					"not_flag":0 
-                }
-            ]
-        },
-		{
-            "compile_id": 1025,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"replace\",\"rules\":[{\"search_in\":\"http_resp_body\",\"find\":\"会员\",\"replace_with\":\"用户\"}]}",
-            "is_valid": "yes",
-            "groups": [
-                {
-					"group_name":"http_fqdn",
-					"virtual_table":"ATTR_DOH_QNAME",
-					"not_flag":0 
-                }
-            ]
-        },
-		{
-            "compile_id": 1026,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\"}",
-			"is_valid": "yes",
-            "groups": [
-                {
-				    "virtual_table":"ATTR_HTTP_REQ_HDR",
-				    "group_name":"http_signature_ua",
-				    "group_id":103,
-					"not_flag":0,
-                    "regions": [
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "objects": [
                         {
-                            "table_name": "TSG_OBJ_HTTP_SIGNATURE",
-                            "table_type": "expr_plus",
-                            "table_content": {
-								"district": "User-Agent",
-                                "keywords": "Chrome",
-                                "expr_type": "none",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
+                            "object_name": "IPv4TCPSoureVeiryPolicy01",
+                            "uuid": "00500100-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.55.4",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 },
-				{
-					
-		            "virtual_table":"ATTR_HTTP_REQ_HDR",
-					"group_name":"http_signature_cookie",
-					"group_id":104,
-		            "not_flag":0,
-		            "regions": [
+                {
+                    "attribute_name": "ATTR_APP_ID",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000201-0000-0000-0000-000000000000"
+                    ]
+                },
+                {
+                    "attribute_name": "ATTR_HTTP_REQ_HDR",
+                    "objects": [
+                        {
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_KEYWORD",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "test",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "attribute_name": "ATTR_IP_PROTOCOL",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000006"
+                    ]
+                },
+                {
+					"attribute_name": "ATTR_SOURCE_PORT",
+					"objects": [
 						{
-							"table_name": "TSG_OBJ_HTTP_SIGNATURE",
-							"table_type": "expr_plus",
-		                    "table_content": {
-								"district": "Cookie",
-                                "keywords": "uid=12345678",
-                                "expr_type": "none",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
-		                }	                    
-		            ]
-		        }      
+							"object_name": "IPv4TCPPortVeiryPolicy01",
+							"uuid": "00500200-0000-0000-0000-000000000000",
+							"items": [
+								{
+									"table_name": "TSG_OBJ_PORT",
+									"table_type": "interval",
+									"table_content": {
+										"interval": "1-100"
+									}
+								}
+							]
+						}
+					]
+				},
+                {
+                    "attribute_name": "ATTR_TUNNEL_LEVEL",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000050"
+                    ]
+                },        
+                {
+					"attribute_name": "ATTR_FLAG",
+					"objects": [
+						{
+							"object_name": "FlagVeiryPolicy01",
+							"uuid": "00500300-0000-0000-0000-000000000000",
+							"items": [
+								{
+									"table_type": "flag",
+									"table_name": "TSG_OBJ_FLAG",
+									"table_content": {
+										"flag": 15,
+										"mask": 15
+									}
+								}
+							]
+						}
+					]
+				},
+                {
+                    "attribute_name": "ATTR_SSL_ECH",
+                    "negate_option": false,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000002"
+                    ]
+                }
             ]
         },
 		{
-            "compile_id": 1027,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region": "test",
+			"uuid": "00000011-0000-0000-0000-000000000000",
+			"service": 1,
+			"action": "manipulate",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
 			"is_valid": "yes",
-            "groups": [
-                {
-					"virtual_table":"ATTR_HTTP_URL",
-					"group_name":"http_url_bing",
-					"group_id": 105,
-					"not_flag":0,
-                    "regions": [
+			"and_conditions": [
+				{
+					"attribute_name": "ATTR_SOURCE_IP",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00000070-0000-0000-0000-000000000000"
+                    ]
+				}
+			]
+		},
+		{
+            "uuid": "00000012-0000-0000-0000-000000000000",
+            "service": 1,
+			"action": "manipulate",
+			"blacklist_option": 1,
+			"log_option": "all",
+			"action_parameter": "anything",
+			"is_valid": "yes",
+            "and_conditions": [
+				{
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "objects": [
                         {
-                            "table_name": "TSG_OBJ_URL",
-                            "table_type": "expr",
-                            "table_content": {
-                                "keywords": "bing.com",
-                                "expr_type": "regex",
-                                "match_method": "sub",
-                                "format": "uncase plain"
-                            }
+                            "object_name": "IPv4TCPSoureVeiryPolicy02",
+                            "uuid": "00000101-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.2/32",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
                         }
                     ]
-                }	
-            ]
-        },
-		{
-            "compile_id": 1028,
-            "service": 1,
-            "action": 48,
-            "do_blacklist": 1,
-			"do_log": 1,
-            "effective_range": 0,
-            "user_region": "{\"protocol\":\"http\",\"method\":\"block\",\"code\":403,\"message\":\"error\"}",
-            "is_valid": "yes",
-            "groups": [
+                },
 				{
-					"group_name":"http_url_bing",
-					"virtual_table":"ATTR_HTTP_URL"
+                    "attribute_name": "ATTR_DESTINATION_IP",
+                    "objects": [
+                        {
+                            "object_name": "IPv4TCPDestinationVeiryPolicy01",
+                            "uuid": "00000102-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.0.3/32",
+                                        "port": "80"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+				{
+                    "attribute_name": "ATTR_SERVER_FQDN",
+                    "objects": [
+                        {
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_FQDN",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "baidu.com",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+				{
+                    "attribute_name": "ATTR_SSL_SAN",
+                    "objects": [
+                        {
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_FQDN",
+                                    "table_type": "expr",
+                                    "table_content": {
+                                        "expression": "baidu.com",
+                                        "expr_type": "and"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }
-   ],
+    ],
     "plugin_table": [
         {
-            "table_name": "TSG_PROFILE_TRAFFIC_MIRROR",
-            "table_content": [
-                "1234\ttest-traffic-mirror\t[1,2,3,4,5,6,7,8,9]\t1"
-            ]
-        },
-        {
-            "table_name": "TSG_PROFILE_RESPONSE_PAGES",
-            "table_content": [
-                "101\t404\thtml\t./resource/pangu/policy_file/404.html\t1"
-            ]
-        },
-        {
-            "table_name": "PXY_PROFILE_HIJACK_FILES",
-            "table_content": [
-                "201\tchakanqi\tchakanqi-947KB.exe\tapplication/x-msdos-program\t./resource/pangu/policy_file/chakanqi-947KB.exe\t1"
-            ]
-        },
-				{
-            "table_name": "PXY_PROFILE_INSERT_SCRIPTS",
-            "table_content": [
-                "301\ttime\tjs\t./resource/pangu/policy_file/time.js\tbefore_page_load\t1"
-            ]
-        },
-		{		
-            "table_name": "PXY_PROFILE_DECRYPTION",
-            "table_content": [
-                "0\ttest\t{\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":1,\"cert_pinning\":1,\"protocol_errors\":1,\"trusted_root_cert_is_not_installed_on_client\":1},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"ssl3\",\"mirror_client\":1,\"allow_http2\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":0},\"fail_action\":\"pass-through\"}}\t1",
-                "3\ttest\t{\"dynamic_bypass\":{\"ev_cert\":1,\"cert_transparency\":1,\"mutual_authentication\":1,\"cert_pinning\":1,\"protocol_errors\":1,\"trusted_root_cert_is_not_installed_on_client\":0},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"tls13\",\"mirror_client\":1,\"allow_http2\":1},\"certificate_checks\":{\"approach\":{\"cn\":1,\"issuer\":1,\"self-signed\":1,\"expiration\":1},\"fail_action\":\"fail-close\"}}\t1",
-                "4\ttest\t{\"dynamic_bypass\":{\"ev_cert\":0,\"cert_transparency\":0,\"mutual_authentication\":0,\"cert_pinning\":0,\"protocol_errors\":0,\"trusted_root_cert_is_not_installed_on_client\":0},\"protocol_version\":{\"min\":\"ssl3\",\"max\":\"ssl3\",\"mirror_client\":0,\"allow_http2\":0},\"certificate_checks\":{\"approach\":{\"cn\":0,\"issuer\":0,\"self-signed\":0,\"expiration\":0},\"fail_action\":\"pass-through\"}}\t1"
-            ]
-        },
-		{
-            "table_name": "PXY_INTERCEPT_COMPILE",
-            "table_content": [
-                "0\t0\t2\t1\t1\t{}\t{\"vsys_id\":1,\"protocol\":\"SSL\",\"keyring_for_trusted\":765,\"keyring_for_untrusted\":10,\"decryption\":0,\"tcp_option_profile\":1,\"traffic_mirror\":{\"enable\":0}}\t1\t1\t2",
-                "255119\t0\t2\t1\t1\t{}\t{\"vsys_id\":1,\"protocol\":\"SSL\",\"keyring_for_trusted\":1,\"keyring_for_untrusted\":10,\"decryption\":0,\"tcp_option_profile\":1,\"traffic_mirror\":{\"enable\":1,\"mirror_profile\":1234}}\t1\t1\t2"
-            ]
-        },
-        {
-            "table_name": "SERVICE_CHAINING_COMPILE",
-            "table_content": [
-                "1\t0\t2\t1\t1\t{}\t{\"targeted_traffic\":\"raw\",\"sff_profiles\":[1]}\t1\t2",
-                "2\t0\t2\t1\t1\t{}\t{\"targeted_traffic\":\"decrypted\",\"sff_profiles\":[1]}\t1\t2"
-            ]
-        },
-        {
-            "table_name": "PXY_PROFILE_TCP_OPTION",
-            "table_content": [
-                "1\t0\t0\t{\"tcp_maxseg\":{\"enable\":0,\"maxseg\":1500},\"nodelay\":1,\"keep_alive\":{\"enable\":1,\"tcp_keepcnt\":8,\"tcp_keepidle\":30,\"tcp_keepintvl\":15},\"ttl\":70,\"user_timeout\":600}\t{\"tcp_maxseg\":{\"enable\":0,\"maxseg\":1500},\"nodelay\":1,\"keep_alive\":{\"enable\":1,\"tcp_keepcnt\":8,\"tcp_keepidle\":30,\"tcp_keepintvl\":15},\"ttl\":75,\"user_timeout\":600}\t1"
-            ]
-        },
-        {
-            "table_name": "PXY_SSL_FINGERPRINT",
-            "table_content": [
-                "1\t599f223c2c9ee5702f5762913889dc21\t0\t1",
-                "2\teb149984fc9c44d85ed7f12c90d818be\t1\t0",
-                "3\te6573e91e6eb777c0933c5b8f97f10cd\t1\t1"
-            ]
-        },
-		{
             "table_name": "APP_ID_DICT",
             "table_content": [
-	            "67\thttp\t0\tnull\tnetworking\tinfrastructure\tnetwork-protocol\t3\tused-by-malware,vulnerability,widely-used\tnull\tnull\t{\"method\":\"drop\",\"after_n_packets\":0,\"send_icmp_unreachable\":1,\"send_tcp_reset\":1}\t0\t60\t120\t30\t30\t201\t1",
-                "68\thttps\t0\tnull\tnetworking\tinfrastructure\tnetwork-protocol\t3\tused-by-malware,vulnerability,widely-used\tnull\tnull\t{\"method\":\"rate_limit\",\"bps\":1000}\t0\t0\t0\t0\t0\t68000\t1"
+                {"app_id":67,"object_uuid":"00000201-0000-0000-0000-000000000000","app_name":"http","is_valid":1},
+                {"app_id":68,"object_uuid":"00068000-0000-0000-0000-000000000000","app_name":"https","is_valid":1}
             ]
         },
-		{
-            "table_name": "FQDN_ENTRY",
-            "table_content": [
-                "1\t2,4,5\twww.126.com\t1\t1",
-                "2\t6,7,8\twww.baidu.com\t1\t1"
-            ]
-        },
-		{
+        {
             "table_name": "IP_ADDR_ENTRY",
             "table_content": [
-                "7\t12,14,15\t4\tsingle\t192.168.55.5\t192.168.55.5\t1",
-                "8\t22,24,25\t4\tsingle\t192.168.55.5\t192.168.55.5\t1",
-				"9\t9,15\t4\trange\t192.168.55.4\t192.168.55.4\t1",
-				"10\t10\t4\trange\t192.168.55.6\t192.168.55.6\t1"
+                {"uuid":"00000064-0000-0000-0000-000000000000","tag_uuids":["00000068-0000-0000-0000-000000000000","00000069-0000-0000-0000-000000000000"],"ip":"192.168.55.1/24","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000065-0000-0000-0000-000000000000","tag_uuids":["00000070-0000-0000-0000-000000000000"],"ip":"192.168.54.1/24","is_valid":1,"modified_time":"1716531859000000"}
             ]
         },
-		{
+        {
+            "table_name": "FQDN_ENTRY",
+            "table_content": [
+                {"uuid":"00000066-0000-0000-0000-000000000000","tag_uuids":["00000071-0000-0000-0000-000000000000"],"fqdn":"www.126.com","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000067-0000-0000-0000-000000000000","tag_uuids":["00000072-0000-0000-0000-000000000000"],"fqdn":"www.baidu.com","is_valid":1,"modified_time":"1716531859000000"}
+            ]
+        },
+        {
             "table_name": "LIBRARY_TAG",
             "table_content": [
-                "6\tnone\twebsite_category\twebsite_category\tsearch\\bengines\t1",
-                "7\tnone\twebsite_category\twebsite_category\tbusiness\t1",
-                "8\tnone\twebsite_category\twebsite_category\tsearch\\bengines\t1",
-                "12\tnone\tgeoip\ttest1\ttest1\t1",
-                "14\tnone\tgeoip\ttest2\ttest2\t1",
-                "15\tnone\tgeoip\ttest3\ttest3\t1",
-				"9\tnone\tgeoip\ttest4\ttest4\t1",
-				"10\tnone\tgeoip\ttest5\ttest5\t1"
+                {"uuid":"00000068-0000-0000-0000-000000000000","statistics_option":"brief","category":"geoip_city","tag_key":"Country","tag_value":"China","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000069-0000-0000-0000-000000000000","statistics_option":"brief","category":"geoip_city","tag_key":"Country","tag_value":"China","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000070-0000-0000-0000-000000000000","statistics_option":"brief","category":"geoip_city","tag_key":"Country","tag_value":"China","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000071-0000-0000-0000-000000000000","statistics_option":"brief","category":"geoip_city","tag_key":"Country","tag_value":"China","is_valid":1,"modified_time":"1716531859000000"},
+                {"uuid":"00000072-0000-0000-0000-000000000000","statistics_option":"brief","category":"geoip_city","tag_key":"Country","tag_value":"China","is_valid":1,"modified_time":"1716531859000000"}
 			]
 		}
+
     ]
 }

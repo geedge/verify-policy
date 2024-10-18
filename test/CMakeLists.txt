@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 include_directories(${CMAKE_SOURCE_DIR}/common/include)
 add_executable(verify_policy_test verify_policy_test.cpp ${CMAKE_SOURCE_DIR}/platform/src/verify_matcher.cpp)
-target_link_libraries(verify_policy_test common MESA_prof_load maatframe cjson gtest)
+target_link_libraries(verify_policy_test common MESA_prof_load maatframe cjson uuid gtest)
 
 set(CMAKE_BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 set(TEST_RUN_DIR ${CMAKE_BUILD_DIR}/test)

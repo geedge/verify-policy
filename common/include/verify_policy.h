@@ -22,7 +22,7 @@ enum verify_type
     VERIFY_TYPE_REGEX
 };
 
-enum compile_table_typle
+enum policy_rule_type
 {
     TSG_TABLE_SECURITY,
     PXY_TABLE_MANIPULATION,

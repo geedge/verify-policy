@@ -33,7 +33,7 @@ env | sort
 : "${COMPILER_IS_GNUCXX:=OFF}"
 
 # Install dependency from YUM
-yum install -y libcjson-devel libmaatframe-devel libfieldstat4-devel libMESA_prof_load-devel sapp-devel 
+yum install -y libcjson-devel libmaatframe-devel libfieldstat4-devel libMESA_prof_load-devel sapp-devel libuuid-devel
 
 mkdir build || true
 cd build
