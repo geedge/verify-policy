@@ -373,7 +373,7 @@ unsigned long long int uuid_to_int64(uuid_t uuid)
 
 int cJSON_AddUuidToObject(cJSON * const object, const char * const name, uuid_t uuid)
 {
-	char uuid_str[256]={0};
+	char uuid_str[UUID_STR_LEN]={0};
 	uuid_unparse(uuid, uuid_str);
 	cJSON_AddStringToObject(object, name, uuid_str);
 	return 1;
@@ -848,7 +848,7 @@ unsigned char action_type_str2idx(const char *action_str)
 	action_name[PX_ACTION_SHUNT] = "shunt";
 	action_name[PG_STATISTICS] = "statistics";
 
-	int action = 0;
+	int action = PG_ACTION_MANIPULATE;
 	for ( action = PG_ACTION_NONE; action < __PG_ACTION_MAX; action++)
 	{
 		if (action_name[action] != NULL && 0 == strcasecmp(action_str, action_name[action]))
@@ -954,12 +954,12 @@ static enum policy_action decide_policy_action(int vsys_id, int compile_table_id
 		return prior_action;
 	}
 
-	char result_uuid_str[32]={0};
+	char result_uuid_str[UUID_STR_LEN]={0};
 	hit_rules_ex=ALLOC(struct rule_data_ctx, n_hit);
 	for (i = 0; i < n_hit && i<MAX_SCAN_RESULT; i++)
 	{
 		uuid_unparse(results[i], result_uuid_str);
-		rule_ctx =(struct rule_data_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], get_plugin_table_name((enum policy_rule_type)compile_table_id), result_uuid_str, strlen(result_uuid_str));
+		rule_ctx =(struct rule_data_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], get_plugin_table_name((enum policy_rule_type)compile_table_id), (const char *)result_uuid_str, strlen(result_uuid_str));
 		if(!rule_ctx)
 		{
 			continue;
@@ -1270,7 +1270,7 @@ int add_tags_table_name(struct library_scan_path *ip_ctx, int Nth_scan, uuid_t t
 		{
 			if(ip_entry->Nth_scan[i] == Nth_scan)
 			{
-				char tag_uuid_str[32]={0};
+				char tag_uuid_str[UUID_STR_LEN]={0};
 				uuid_unparse(top_object_uuid, tag_uuid_str);
 				//cJSON_AddNumberToObject(topObject, "tag_uuid", (double)uuid_to_int64(top_object_uuid));
 				cJSON_AddStringToObject(topObject, "tag_uuid", tag_uuid_str);
@@ -1285,7 +1285,7 @@ finish:
 
 int add_object_table_name(UT_array *ut_array_by_object, int Nth_scan, uuid_t top_object_uuid, cJSON *topObject)
 {
-	char object_uuid_str[32]={0};
+	char object_uuid_str[UUID_STR_LEN]={0};
 	cJSON *attributeObj=NULL, *subchild=NULL;
 	struct request_object_list *request_object=NULL;
 
@@ -1351,7 +1351,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, size_t hit_c
 			succeeded = false;
 			policy_obj=cJSON_CreateObject();
 
-			char rule_uuid_str[32]={0};
+			char rule_uuid_str[UUID_STR_LEN]={0};
 			uuid_unparse(ctx->hit_rules[i].rule_uuid, rule_uuid_str);
 			cJSON_AddStringToObject(policy_obj, "uuid", rule_uuid_str);
 			//cJSON_AddNumberToObject(policy_obj, "uuid",(double)uuid_to_int64(ctx->hit_rules[i].rule_uuid));
@@ -1944,7 +1944,7 @@ static int http_hdr_scan(struct request_object_list *request, struct policy_scan
 	size_t n_hit_result=0;
 	const char *scan_table_name=get_scan_table_by_table_id(request->table_id);
 
-	if(!request->district_value || !request->string)
+	if(!request->string)
 	{
 		return hit_cnt_hdr;
 	}
