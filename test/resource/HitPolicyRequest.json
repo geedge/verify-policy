@@ -2,17 +2,15 @@
     "Verify_Policy_Request": [
         {
             "__item_id": 0,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_SOURCE_IP",
-                                "attribute_name": "source",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
                                 "attribute_value": {
                                     "ip": "192.168.0.1",
                                     "port":"8080",
@@ -27,17 +25,15 @@
         },
         {
             "__item_id": 1,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_SOURCE_IP",
-                                "attribute_name": "source",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
                                 "attribute_value": {
                                     "ip": "192.168.1.1",
                                     "port":"8080",
@@ -45,9 +41,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_INTERNAL_IP",
-                                "attribute_name": "internal",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_INTERNAL_IP",
                                 "attribute_value": {
                                     "ip": "192.168.1.2",
                                     "port": "80",
@@ -55,9 +50,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "string",
-                                "table_name": "ATTR_SERVER_FQDN",
-                                "attribute_name": "server_fqdn",
+                                "attribute_value_type": "string",
+                                "attribute_name": "ATTR_SERVER_FQDN",
                                 "attribute_value": {
                                     "string": "www.126.com"
                                 }
@@ -70,7 +64,7 @@
         },
         {
             "__item_id": 2,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "security",
@@ -78,9 +72,8 @@
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.4",
                                     "port":80,
@@ -96,17 +89,15 @@
         },
         {
             "__item_id": 3,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "security",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
@@ -121,17 +112,15 @@
         },
         {
             "__item_id": 4,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "security",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
@@ -139,9 +128,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
@@ -156,17 +144,15 @@
         },
         {
             "__item_id": 5,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_SOURCE_IP",
-                                "attribute_name": "source",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
                                 "attribute_value": {
                                     "ip": "192.168.0.2",
                                     "port": "80",
@@ -174,9 +160,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_DESTINATION_IP",
-                                "attribute_name": "destination",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_DESTINATION_IP",
                                 "attribute_value": {
                                     "ip": "192.168.0.3",
                                     "port": "80",
@@ -184,17 +169,15 @@
                                 }
                             },
                             {
-                                "attribute_type": "string",
-                                "table_name": "ATTR_SERVER_FQDN",
-                                "attribute_name": "server_fqdn",
+                                "attribute_value_type": "string",
+                                "attribute_name": "ATTR_SERVER_FQDN",
                                 "attribute_value": {
                                     "string": "www.baidu.com"
                                 }
                             },
                             {
-                                "attribute_type": "string",
-                                "table_name": "ATTR_SSL_SAN",
-                                "attribute_name": "ssl_san",
+                                "attribute_value_type": "string",
+                                "attribute_name": "ATTR_SSL_SAN",
                                 "attribute_value": {
                                     "string": "www.baidu.com"
                                 }
@@ -207,26 +190,23 @@
         },
         {
             "__item_id": 6,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_IP_PROTOCOL",
-                                "attribute_name": "ip_protocol",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_IP_PROTOCOL",
                                 "attribute_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
@@ -234,9 +214,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
@@ -244,9 +223,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_SOURCE_IP",
-                                "attribute_name": "source",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
                                 "attribute_value": {
                                     "ip": "192.168.1.1",
                                     "port":"8080",
@@ -261,26 +239,23 @@
         },
         {
             "__item_id": 7,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_IP_PROTOCOL",
-                                "attribute_name": "ip_protocol",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_IP_PROTOCOL",
                                 "attribute_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointa",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.4",
                                     "tunnel_type":"gtp",
@@ -288,9 +263,8 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_TUNNEL",
-                                "attribute_name": "tunnel_endpointb",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_TUNNEL",
                                 "attribute_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
@@ -305,17 +279,15 @@
         },
         {
             "__item_id": 8,
-            "vsys_id": 1,
+            "vsys": 1,
             "verify_list": [
                 {
                     "type": "pxy_manipulation",
-                    "vsys_id": 1,
                     "verify_session": {
                         "attributes": [
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_SOURCE_IP",
-                                "attribute_name": "source",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
                                 "attribute_value": {
                                     "ip": "192.168.55.4",
                                     "port": "80",
@@ -323,61 +295,78 @@
                                 }
                             },
                             {
-                                "attribute_type": "ip",
-                                "table_name": "ATTR_IP_PROTOCOL",
-                                "attribute_name": "ip_protocol",
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_IP_PROTOCOL",
                                 "attribute_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_type": "port",
-                                "table_name": "ATTR_SOURCE_PORT",
-                                "attribute_name": "source",
+                                "attribute_value_type": "port",
+                                "attribute_name": "ATTR_SOURCE_PORT",
                                 "attribute_value": {
                                     "port": "80"
                                 }
                             },
                             {
-                                "attribute_type": "numeric",
-                                "table_name": "ATTR_APP_ID",
-                                "attribute_name": "app_id",
+                                "attribute_value_type": "numeric",
+                                "attribute_name": "ATTR_APP_ID",
                                 "attribute_value": {
                                     "numeric": 67
                                 }
                             },
                             {
-                                "attribute_type": "string",
-                                "table_name": "ATTR_HTTP_REQ_HDR",
-                                "attribute_name": "req_hdr",
+                                "attribute_value_type": "string",
+                                "attribute_name": "ATTR_HTTP_REQ_HDR",
                                 "attribute_value": {
                                     "district":"User-Agent",
                                     "string":"test"
                                 }
                             },
                             {
-                                "attribute_type": "string",
-                                "table_name": "ATTR_TUNNEL_LEVEL",
-                                "attribute_name": "tunnel_level",
+                                "attribute_value_type": "string",
+                                "attribute_name": "ATTR_TUNNEL_LEVEL",
                                 "attribute_value": {
                                     "numeric": 60
                                 }
                             },
                             {
-                                "attribute_type": "flag",
-                                "table_name": "ATTR_FLAG",
-                                "attribute_name": "flag",
+                                "attribute_value_type": "flag",
+                                "attribute_name": "ATTR_FLAG",
                                 "attribute_value": {
                                     "numeric": 15
                                 }
                             },
                             {
-                                "attribute_type": "boolean",
-                                "table_name": "ATTR_SSL_ECH",
-                                "attribute_name": "esni",
+                                "attribute_value_type": "boolean",
+                                "attribute_name": "ATTR_SSL_ECH",
                                 "attribute_value": {
                                     "numeric": 1
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 9,
+            "vsys": 1,
+            "verify_list": [
+                {
+                    "type": "pxy_manipulation",
+                    "vsys": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
+                                "attribute_value": {
+                                    "ip": "192.168.2.1",
+                                    "port":"8080",
+                                    "addr_type": 4
                                 }
                             }
                         ]

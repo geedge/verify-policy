@@ -1,6 +1,6 @@
 {
     "rule_table": "PXY_CTRL_RULE",
-    "object2object_table": "OBJECT_GROUP",
+    "object_group_table": "OBJECT_GROUP",
     "rules": [
         {
             "uuid": "00001021-0000-0000-0000-000000000000",
@@ -473,6 +473,37 @@
                     ]
                 }
             ]
+        },
+        {
+            "uuid": "00002020-0000-0000-0000-000000000000",
+            "service": 1,
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
+            "is_valid": "yes",
+            "and_conditions": [
+                {
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "negate_option": false,
+                    "objects": [
+                        {
+                            "object_name": "IPv4TCPSoureVeiryPolicy03",
+                            "uuid": "00008000-0000-0000-0000-000000000000",
+                            "items": [
+                                {
+                                    "table_type": "ip",
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_content": {
+                                        "ip": "192.168.2.1/32",
+                                        "port": "8080"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
    ],
     "plugin_table": [
@@ -514,6 +545,14 @@
             "table_content": [
 	            {"app_id":67,"object_uuid":"00000201-0000-0000-0000-000000000000","app_name":"http","is_valid":1},
                 {"app_id":68,"object_uuid":"00068000-0000-0000-0000-000000000000","app_name":"https","is_valid":1}
+            ]
+        },
+        {
+            "table_name": "ATTRIBUTE_DICT",
+            "table_content": [
+                {"uuid":"4fff0ed4-f02b-17ee-3f74-b66310c5d1e2","is_valid":1,"attribute_name":"ATTR_SERVER_FQDN","available_object_type":"fqdn","object_table_name":"TSG_OBJ_FQDN"},
+	            {"uuid":"4fff0ed4-f02b-17ee-3f74-b66310c5d1e2","is_valid":1,"attribute_name":"ATTR_SSL_SAN","available_object_type":"fqdn","object_table_name":"TSG_OBJ_FQDN"},
+                {"uuid":"ca317931-96f8-1979-ea7c-2bb791858df6","is_valid":1,"attribute_name":"ATTR_HTTP_REQ_HDR","available_object_type":"keyword","object_table_name":"tsg_obj_keyword"}	
             ]
         }
     ]

@@ -1,6 +1,6 @@
 {
     "rule_table": "PXY_CTRL_RULE",
-    "object2object_table": "OBJECT_GROUP",
+    "object_group_table": "OBJECT_GROUP",
     "rules": [
         {
             "uuid": "40c9c6a7-70a9-48ae-9fba-ec7966edd3c6",

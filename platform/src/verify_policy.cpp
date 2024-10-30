@@ -186,8 +186,8 @@ void * verify_policy_thread_func(void * arg)
 		goto error;
 	}
 
-	evhttp_set_cb(thread->http, "/v1/policy/trouble_shooting/policy_verification", verify_policy_request_cb, thread);
-	evhttp_set_cb(thread->http, "/v1/policy/trouble_shooting/library_search", library_search_request_cb, thread);
+	evhttp_set_cb(thread->http, "/v1/policies/trouble-shooting/policy-verification", verify_policy_request_cb, thread);
+	evhttp_set_cb(thread->http, "/v1/policies/trouble-shooting/library-search", library_search_request_cb, thread);
 
 	bound = evhttp_accept_socket_with_handle(thread->http, thread->accept_fd);
 	if (bound == NULL)

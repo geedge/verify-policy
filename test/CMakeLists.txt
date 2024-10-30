@@ -15,8 +15,8 @@ file(COPY ${CMAKE_SOURCE_DIR}/test/resource/HitPolicyRequest.json DESTINATION ${
 
 add_test(NAME UPDATE_MAAT_MODE  COMMAND bash -c "sed -i 's/maat_input_mode=1/maat_input_mode=0/' ${TEST_RUN_DIR}/conf/verify_policy.conf")
 add_test(NAME UPDATE_LOG_LEVEL   COMMAND bash -c "sed -i 's/log_level=5/log_level=1/' ${TEST_RUN_DIR}/conf/verify_policy.conf")
-add_test(NAME UPDATE_VSYS_NUM   COMMAND bash -c "sed -i '32i load_vsys_num=2' ${TEST_RUN_DIR}/conf/verify_policy.conf")
-add_test(NAME UPDATE_START_VSYS   COMMAND bash -c "sed -i '33i load_start_vsys=1' ${TEST_RUN_DIR}/conf/verify_policy.conf")
+add_test(NAME UPDATE_VSYS_NUM   COMMAND bash -c "sed -i '30i load_vsys_num=2' ${TEST_RUN_DIR}/conf/verify_policy.conf")
+add_test(NAME UPDATE_START_VSYS   COMMAND bash -c "sed -i '31i load_start_vsys=1' ${TEST_RUN_DIR}/conf/verify_policy.conf")
 add_test(NAME UPDATE_JSON_FILE COMMAND bash -c "sed -i 's/json_cfg_file=\\.\\/resource\\/verify-policy\\.json/json_cfg_file=\\.\\/resource\\/VerifyPolicyManipulation\\.json/' ${TEST_RUN_DIR}/conf/verify_policy.conf")
 
 add_test(NAME VERIFY_POLICY_TEST COMMAND verify_policy_test)
