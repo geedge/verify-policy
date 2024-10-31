@@ -5,11 +5,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00001021-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00005000-0000-0000-0000-000000000000",
@@ -47,11 +47,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00001022-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "tag_uuid": "00000011-0000-0000-0000-000000000000",
@@ -199,11 +199,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00001024-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00005001-0000-0000-0000-000000000000",
@@ -234,7 +234,7 @@
                     {
                         "uuid": "00001023-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": false,
+                        "is_execute": false,
                         "top_object_list": [
                             {
                                 "object_uuid": "00005001-0000-0000-0000-000000000000",
@@ -355,11 +355,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00001026-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00003022-0000-0000-0000-000000000000",
@@ -372,7 +372,7 @@
                     {
                         "uuid": "00001025-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00003023-0000-0000-0000-000000000000",
@@ -438,11 +438,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00001027-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00003022-0000-0000-0000-000000000000",
@@ -493,11 +493,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00600010-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00500100-0000-0000-0000-000000000000",
@@ -670,11 +670,11 @@
             "code": 200,
             "msg": "Success",
             "data": {
-                "hit_policy_list": [
+                "hit_rules": [
                     {
                         "uuid": "00002020-0000-0000-0000-000000000000",
                         "policyName": "",
-                        "is_execute_policy": true,
+                        "is_execute": true,
                         "top_object_list": [
                             {
                                 "object_uuid": "00008000-0000-0000-0000-000000000000",

@@ -1398,7 +1398,7 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, size_t hit_c
 	cJSON *hit_obj=NULL, *policy_obj=NULL;
 	cJSON *topObjectList=NULL, *topObject=NULL;
 	hit_obj=cJSON_CreateArray();
-	cJSON_AddItemToObject(data_obj, "hit_policy_list", hit_obj);
+	cJSON_AddItemToObject(data_obj, "hit_rules", hit_obj);
 	if (ctx->hit_cnt >= 1)
 	{
 		for (i = 0; i < ctx->hit_cnt; i++)
@@ -1419,13 +1419,13 @@ int http_hit_policy_list(struct verify_policy_query *verify_policy, size_t hit_c
 			{
 				if(uuid_compare(ctx->enforce_rules[rules].rule_uuid, ctx->hit_rules[i].rule_uuid) == 0)
 				{
-					cJSON_AddBoolToObject(policy_obj, "is_execute_policy", true);
+					cJSON_AddBoolToObject(policy_obj, "is_execute", true);
 					succeeded = true;
 				}
 			}
 			if (succeeded == false)
 			{
-				cJSON_AddBoolToObject(policy_obj, "is_execute_policy", false);
+				cJSON_AddBoolToObject(policy_obj, "is_execute", false);
 			}
 			cJSON_AddItemToArray(hit_obj, policy_obj);
 			uuid_copy(result_rule_uuid[i], ctx->hit_rules[i].rule_uuid);
