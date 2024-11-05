@@ -296,7 +296,7 @@ void attribute_dict_free(struct attribute_dict_ctx *dict_ctx);
 const char *get_conjunction_table_name(enum policy_rule_type rule_type)
 {
 	const char *conjunction_table_name_map[] = {"SECURITY_RULE_CONJUNCTION", "PXY_CTRL_RULE_CONJUNCTION", "TRAFFIC_SHAPING_RULE_CONJUNCTION",
-												"SERVICE_CHAINING_RULE_CONJUNCTION", "PXY_INTERCEPT_RULE_CONJUNCTION","STATISTICS_COMPILE_CONJUNCTION",
+												"SERVICE_CHAINING_RULE_CONJUNCTION", "PXY_INTERCEPT_RULE_CONJUNCTION","STATISTICS_RULE_CONJUNCTION",
 												"MONITOR_RULE_CONJUNCTION", "DOS_PROTECTION_RULE_CONJUNCTION", "TUNNEL_RULE_CONJUNCTION"};
 	size_t table_name_map_len = sizeof(conjunction_table_name_map)/sizeof(conjunction_table_name_map[0]);
 
@@ -311,7 +311,7 @@ const char *get_conjunction_table_name(enum policy_rule_type rule_type)
 const char *get_plugin_table_name(enum policy_rule_type rule_type)
 {
 	const char *plugin_table_name_map[] = {"SECURITY_RULE_PLUGIN", "PXY_CTRL_RULE_PLUGIN", "TRAFFIC_SHAPING_RULE_PLUGIN",
-											"SERVICE_CHAINING_RULE_PLUGIN", "PXY_INTERCEPT_RULE_PLUGIN", "STATISTICS_COMPILE_PLUGIN",
+											"SERVICE_CHAINING_RULE_PLUGIN", "PXY_INTERCEPT_RULE_PLUGIN", "STATISTICS_RULE_PLUGIN",
 											"MONITOR_RULE_PLUGIN", "DOS_PROTECTION_RULE_PLUGIN", "TUNNEL_RULE_PLUGIN"};
 
 	size_t table_name_map_len = sizeof(plugin_table_name_map)/sizeof(plugin_table_name_map[0]);
@@ -1160,7 +1160,7 @@ int hit_rule_match_is_duplicate(struct maat_hit_path *src, struct maat_hit_path 
 {
 	for(int i = 0; i < result_cnt; i++)
 	{
-		if(src[i].top_object_uuid == dest.top_object_uuid)
+		if(uuid_compare(src[i].top_object_uuid, dest.top_object_uuid) == 0)
 		{
 			return 1;
 		}
@@ -1262,11 +1262,11 @@ void http_get_scan_status(struct request_object_list *request_object, int compil
 					break;
 				}
 
-				if(ctx->hit_path[i].item_uuid < 0)
+				if( ctx->hit_path[i].negate_option == 1)
 				{
 					continue;
 				}
-
+				
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
 				cJSON_AddUuidToObject(histObj, "item_uuid", ctx->hit_path[i].item_uuid);
@@ -2490,10 +2490,10 @@ int tsg_policy_type_str2idx(const char *action_str)
 {
 	const char * policy_name[__SCAN_POLICY_MAX];
 	policy_name[TSG_TABLE_SECURITY] = "security";
-	policy_name[PXY_TABLE_MANIPULATION] = "pxy_manipulation";
+	policy_name[PXY_TABLE_MANIPULATION] = "proxy_manipulation";
 	policy_name[TSG_TRAFFIC_SHAPING] = "traffic_shaping";
 	policy_name[TSG_SERVICE_CHAINGNG] = "service_chaining";
-	policy_name[PXY_TABLE_INTERCEPT] = "pxy_intercept";
+	policy_name[PXY_TABLE_INTERCEPT] = "proxy_intercept";
 	policy_name[TSG_STATISTICS] = "statistics";
 	policy_name[TSG_MONITOR] = "monitor";
 	policy_name[DOS_PROTECTION] = "dos_protection";
@@ -3048,7 +3048,7 @@ int maat_complie_plugin_table_init(int vsys_id)
 {
 	int ret=0;
 	const char *plugin_table_name_map[] = {"SECURITY_RULE_PLUGIN", "PXY_CTRL_RULE_PLUGIN", "TRAFFIC_SHAPING_RULE_PLUGIN",
-											"SERVICE_CHAINING_RULE_PLUGIN", "PXY_INTERCEPT_RULE_PLUGIN", "STATISTICS_COMPILE_PLUGIN",
+											"SERVICE_CHAINING_RULE_PLUGIN", "PXY_INTERCEPT_RULE_PLUGIN", "STATISTICS_RULE_PLUGIN",
 											"MONITOR_RULE_PLUGIN", "DOS_PROTECTION_RULE_PLUGIN", "TUNNEL_RULE_PLUGIN"};
 	for(int i = 0; i < PXY_TABLE_DEFENCE; i++)
 	{

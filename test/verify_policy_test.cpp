@@ -397,6 +397,9 @@ TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1027)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
+	printf("hit_policy_query = %s\n", hit_policy_query);
+	printf("hit_policy_result = %s\n", hit_policy_result);
+
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 

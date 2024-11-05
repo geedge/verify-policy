@@ -5,7 +5,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -28,7 +28,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -147,7 +147,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -193,7 +193,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -242,7 +242,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -282,7 +282,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "verify_session": {
                         "attributes": [
                             {
@@ -356,7 +356,7 @@
             "vsys": 1,
             "verify_list": [
                 {
-                    "type": "pxy_manipulation",
+                    "type": "proxy_manipulation",
                     "vsys": 1,
                     "verify_session": {
                         "attributes": [
