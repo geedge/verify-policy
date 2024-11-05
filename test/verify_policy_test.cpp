@@ -236,6 +236,17 @@ TEST(VerifyPolicy, CheckRegexExpression)
 	FREE(&hit_policy_query);
 }
 
+
+int g_global_enable = 0;
+void verify_policy_print_result(char *hit_policy_query, char *hit_policy_result, int enable) 
+{  
+    int should_print = g_global_enable || enable;  
+    if (should_print) {  
+        printf("hit_policy_query = %s\n", hit_policy_query);  
+        printf("hit_policy_result = %s\n", hit_policy_result);  
+    }  
+}
+
 TEST(VerifyPolicy, HitIpAddrPolicy)
 {
 	char *hit_policy_request = select_hit_policy_request_item(9);
@@ -249,6 +260,8 @@ TEST(VerifyPolicy, HitIpAddrPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
+
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -258,28 +271,54 @@ TEST(VerifyPolicy, HitIpAddrPolicy)
 	FREE(&hit_policy_result);
 }
 
-TEST(VerifyPolicy, HitNegateIpAddrPolicy)
+TEST(VerifyPolicy, HitNegateProtocolPolicy)
 {
-	
+	char *hit_policy_request = select_hit_policy_request_item(10);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(10);
+	ASSERT_TRUE(hit_policy_result != NULL);
+
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
+
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
+
+	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+17, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
 }
 
-TEST(VerifyPolicy, HitIntegerPolicy)
+TEST(VerifyPolicy, HitMultipleObjectPolicy)
 {
+	char *hit_policy_request = select_hit_policy_request_item(11);
+	ASSERT_TRUE(hit_policy_request != NULL);
+	char *hit_policy_result = select_hit_policy_result_item(11);
+	ASSERT_TRUE(hit_policy_result != NULL);
 
+	cJSON *result_json = get_verify_policy_query(hit_policy_request, strlen(hit_policy_request), 1);
+	ASSERT_TRUE(result_json != NULL);
 
+	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
+	ASSERT_TRUE(hit_policy_query != NULL);
+
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
+
+	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+17, strlen(hit_policy_result));
+	EXPECT_EQ(equal, 0);
+
+	cJSON_Delete(result_json);
+	FREE(&hit_policy_query);
+	FREE(&hit_policy_request);
+	FREE(&hit_policy_result);
 }
 
-TEST(VerifyPolicy, HitStringPolicy)
-{
-
-
-}
-
-TEST(VerifyPolicy, HitObjectPolicy)
-{
-
-
-}
 
 TEST(VerifyPolicy, HitGroupPolicy)
 {
@@ -300,8 +339,7 @@ TEST(VerifyPolicy, HitIpPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
-	printf("hit_policy_query = %s\n", hit_policy_query+2);
-	printf("hit_policy_result = %s\n", hit_policy_result+16);
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -325,8 +363,7 @@ TEST(VerifyPolicy, HitLibraryPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
-	//printf("hit_policy_query = %s\n", hit_policy_query);
-	//printf("hit_policy_result = %s\n", hit_policy_result);
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -350,8 +387,7 @@ TEST(VerifyPolicy, HitMultiplePolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
-	//printf("hit_policy_query = %s\n", hit_policy_query);
-	//printf("hit_policy_result = %s\n", hit_policy_result);
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -375,6 +411,8 @@ TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1025)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
+
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
 
@@ -397,8 +435,7 @@ TEST(VerifyPolicy, HitTunnelEndpointaPolicy_1027)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
-	printf("hit_policy_query = %s\n", hit_policy_query);
-	printf("hit_policy_result = %s\n", hit_policy_result);
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -422,6 +459,8 @@ TEST(VerifyPolicy, HitTunnelEndpointaPolicy)
 
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
+
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);
@@ -489,9 +528,7 @@ TEST(VerifyPolicy, HitAllObjectPolicy)
 	char *hit_policy_query = cJSON_PrintUnformatted(result_json);
 	ASSERT_TRUE(hit_policy_query != NULL);
 
-	//printf("hit_policy_request = %s\n", hit_policy_request);
-	//printf("hit_policy_query = %s\n", hit_policy_query);
-	//printf("hit_policy_result = %s\n", hit_policy_result);
+	verify_policy_print_result(hit_policy_query, hit_policy_result, 0);
 
 	int equal = strncasecmp(hit_policy_query+2, hit_policy_result+16, strlen(hit_policy_result));
 	EXPECT_EQ(equal, 0);

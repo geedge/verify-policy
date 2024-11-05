@@ -504,8 +504,70 @@
                     ]
                 }
             ]
+        },
+        {
+            "uuid": "00101028-0000-0000-0000-000000000000",
+            "service": 1,
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
+            "is_valid": "yes",
+            "and_conditions": [
+                {
+                    "attribute_name": "ATTR_IP_PROTOCOL",
+                    "negate_option": true,
+                    "object_uuids": [
+                        "00000000-0000-0000-0000-000000000006"
+                    ]
+                }   
+            ]
+        },
+        {
+            "uuid": "00101029-0000-0000-0000-000000000000",
+            "service": 1,
+            "action": "manipulate",
+            "blacklist_option": 1,
+            "log_option": "all",
+            "action_parameter": "anything",
+            "is_valid": "yes",
+            "and_conditions": [
+                {
+                    "attribute_name": "ATTR_SOURCE_IP",
+                    "negate_option": false,
+                    "objects": [
+                        {
+                            "object_name": "IPv4TCPSoureMultipleObject",
+                            "uuid": "00000000-0000-0000-0000-000000090100",
+                            "items": [
+                                {
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_type": "ip",
+                                    "table_content": {
+                                        "ip": "10.1.1.1/8"
+                                    }
+                                },
+                                {
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_type": "ip",
+                                    "table_content": {
+                                        "ip": "10.1.1.1/24"
+                                    }
+                                },
+                                {
+                                    "table_name": "TSG_OBJ_IP_ADDR",
+                                    "table_type": "ip",
+                                    "table_content": {
+                                        "ip": "10.1.1.1/32"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
-   ],
+    ],
     "plugin_table": [
 		{
             "table_name": "FQDN_ENTRY",

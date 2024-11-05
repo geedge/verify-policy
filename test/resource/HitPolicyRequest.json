@@ -374,6 +374,53 @@
                 }
             ],
             "verify_type": "policy"
+        },
+        {
+            "__item_id": 10,
+            "vsys": 1,
+            "verify_list": [
+                {
+                    "type": "proxy_manipulation",
+                    "vsys": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_value_type": "numeric",
+                                "attribute_name": "ATTR_IP_PROTOCOL",
+                                "attribute_value": {
+                                    "addr_type": 4,
+                                    "numeric": 1
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
+        },
+        {
+            "__item_id": 11,
+            "vsys": 1,
+            "verify_list": [
+                {
+                    "type": "proxy_manipulation",
+                    "vsys": 1,
+                    "verify_session": {
+                        "attributes": [
+                            {
+                                "attribute_value_type": "ip",
+                                "attribute_name": "ATTR_SOURCE_IP",
+                                "attribute_value": {
+                                    "ip": "10.1.1.1",
+                                    "port":"8080",
+                                    "addr_type": 4
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "verify_type": "policy"
         }
     ]
 }

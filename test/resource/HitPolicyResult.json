@@ -702,6 +702,97 @@
                 }
             },
             "success": true
+        },
+        {
+            "__item_id": 10,
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hit_rules": [
+                    {
+                        "uuid": "00101028-0000-0000-0000-000000000000",
+                        "policyName": "",
+                        "is_execute": true,
+                        "top_object_list": [
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000000006",
+                                "attribute_name": "ATTR_IP_PROTOCOL",
+                                "negate_option": 1,
+                                "condition_index": 0
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_value_type": "numeric",
+                            "attribute_name": "ATTR_IP_PROTOCOL",
+                            "attribute_value": {
+                                "addr_type": 4,
+                                "numeric": 1
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000005"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
+        },
+        {
+            "__item_id": 11,
+            "code": 200,
+            "msg": "Success",
+            "data": {
+                "hit_rules": [
+                    {
+                        "uuid": "00101029-0000-0000-0000-000000000000",
+                        "policyName": "",
+                        "is_execute": true,
+                        "top_object_list": [
+                            {
+                                "object_uuid": "00000000-0000-0000-0000-000000090100",
+                                "attribute_name": "ATTR_SOURCE_IP",
+                                "negate_option": 0,
+                                "condition_index": 0
+                            }
+                        ]
+                    }
+                ],
+                "verify_session": {
+                    "attributes": [
+                        {
+                            "attribute_value_type": "ip",
+                            "attribute_name": "ATTR_SOURCE_IP",
+                            "attribute_value": {
+                                "ip": "10.1.1.1",
+                                "port": "8080",
+                                "addr_type": 4
+                            },
+                            "hit_paths": [
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001016",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000090100"
+                                },
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001015",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000090100"
+                                },
+                                {
+                                    "item_uuid": "00000000-0000-0000-0000-000000001014",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000090100"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "success": true
         }
     ]
 }
