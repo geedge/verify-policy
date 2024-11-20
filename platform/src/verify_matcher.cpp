@@ -1481,7 +1481,7 @@ int ip_addr_to_address(struct ipaddr *ip_addr, struct ip_addr *dest_ip, struct i
 	return 0;
 }
 
-static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, char *object_uuid_str, const char *table_name, const char *attribute_name)
+static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, char *object_uuid_str, const char *table_name, const char *attribute_name, int not_logic)
 {
 	size_t n_hit_result=0;
 	uuid_t objects_uuid;
@@ -1499,79 +1499,18 @@ static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, ch
 		hit_cnt_group+=n_hit_result;
 	}
 
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], table_name, attribute_name, ctx->result+hit_cnt+hit_cnt_group,
-								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
-	if (scan_ret == MAAT_SCAN_HIT)
+	if(not_logic)
 	{
-		hit_cnt_group+=n_hit_result;
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], table_name, attribute_name, ctx->result+hit_cnt+hit_cnt_group,
+								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
+		if (scan_ret == MAAT_SCAN_HIT)
+		{
+			hit_cnt_group+=n_hit_result;
+		}
 	}
+
 	return hit_cnt_group;
 }
-
-#if 0
-int is_tag_id_in_array(long long *tag_id_array, int n_tag_ids, long long tag_id)
-{
-	for(int i=0; i < n_tag_ids; i++)
-	{
-		if(tag_id_array[i] == tag_id)
-		{
-			return 1;
-		}
-	}
-	return 0;
-}
-
-int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn)
-{
-	int ret=0, hit_fqdn_entry=0;
-	cJSON *fqdn_entry_item=NULL;
-	int n_tag_ids=0;
-	long long tag_id_array[MAX_TAG_ID_NUM]={0};
-
-	if(fqdn == NULL)
-	{
-		return 0;
-	}
-
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] fqdn=%s", fqdn);
-
-	struct library_entry_ctx *entry_ctx[MAX_EX_DATA_LEN]={0};
-	ret=maat_fqdn_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], g_policy_rt->profile_table_id[PROFILE_FQDN_ENTRY], fqdn, (void **)entry_ctx, MAX_EX_DATA_LEN);
-	for(int i=0; i < ret && i < MAX_EX_DATA_LEN; i++)
-	{
-		for(int j=0; j < entry_ctx[i]->n_tag_ids; j++)
-		{
-			if(is_tag_id_in_array(tag_id_array, n_tag_ids, entry_ctx[i]->tag_id_array[j]))
-			{
-				continue;
-			}
-			tag_id_array[n_tag_ids++] =  entry_ctx[i]->tag_id_array[j];
-		}
-		library_entry_free(entry_ctx[i]);
-	}
-
-	char *tag_ids; int length = 0;
-	if(n_tag_ids > 0)
-	{
-		fqdn_entry_item=cJSON_CreateObject();
-		for (int i = 0; i < n_tag_ids; i++)
-		{
-			if (i == 0)
-			{
-				length = asprintf(&tag_ids, "%lld", tag_id_array[i]);
-			}
-			else
-			{
-				length = asprintf(&tag_ids, "%s,%lld", tag_ids, tag_id_array[i]);
-			}
-   		 }
-		 cJSON_AddStringToObject(fqdn_entry_item, "tag_ids", tag_ids);
-		 cJSON_AddItemToArray(hit_library, fqdn_entry_item);
-	}
-
-	return hit_fqdn_entry;
-}
-#endif
 
 int get_fqdn_entry_tag_ids(cJSON *hit_library, int vsys_id, const char *fqdn)
 {
@@ -1676,7 +1615,7 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 
 			for(int tag_id=0; tag_id<source_ip_entry[i]->n_tag_uuids; tag_id++)
 			{
-				scan_ret = scan_object(ctx, vsys_id, hit_cnt, source_ip_entry[i]->tag_uuid_array[tag_id], "TSG_OBJ_IP_ADDR", request->attribute_name);
+				scan_ret = scan_object(ctx, vsys_id, hit_cnt, source_ip_entry[i]->tag_uuid_array[tag_id], "TSG_OBJ_IP_ADDR", request->attribute_name, 0);
 				if(scan_ret > 0)
 				{
 					hit_cnt_ip+=scan_ret;
@@ -1710,7 +1649,7 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 
 			for(int tag_id=0; tag_id<destination_ip_entry[i]->n_tag_uuids; tag_id++)
 			{
-				scan_ret = scan_object(ctx, vsys_id, hit_cnt, destination_ip_entry[i]->tag_uuid_array[tag_id],  "TSG_OBJ_IP_ADDR", request->attribute_name);
+				scan_ret = scan_object(ctx, vsys_id, hit_cnt, destination_ip_entry[i]->tag_uuid_array[tag_id],  "TSG_OBJ_IP_ADDR", request->attribute_name, 0);
 				if(scan_ret > 0)
 				{
 					hit_cnt_ip+=scan_ret;
@@ -1767,7 +1706,7 @@ int get_fqdn_category_id(struct request_object_list *request, struct policy_scan
 	for(int i=0; i<fqdn_entry.entry_num; i++)
 	{
 		char *uuid = fqdn_entry.tag[i].tag_uuid;
-		ret=scan_object(ctx, vsys_id, hit_cnt, uuid, "TSG_OBJ_FQDN", request->attribute_name);
+		ret=scan_object(ctx, vsys_id, hit_cnt, uuid, "TSG_OBJ_FQDN", request->attribute_name, 1);
 		if(ret > 0)
 		{
 			hit_cnt_fqdn+=ret;
@@ -1796,7 +1735,7 @@ int tunnel_level_scan(struct request_object_list *request, struct policy_scan_ct
 										   "00000000-0000-0000-0000-000000000056", "00000000-0000-0000-0000-000000000057"};
 
 	const char *object_uuid=object_uuid_level_array[request->numeric];
-	scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_TUNNEL_LEVEL", request->attribute_name);
+	scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_TUNNEL_LEVEL", request->attribute_name, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_tunnel += scan_ret;
@@ -2067,7 +2006,7 @@ static int protocol_scan(struct request_object_list *request, struct policy_scan
 	const char *object_uuid=get_object_uuid_by_protocol(request->numeric);
 	if(object_uuid != NULL)
 	{
-		scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_IP_PROTOCOL", request->attribute_name);
+		scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_IP_PROTOCOL", request->attribute_name, 1);
 		if(scan_ret > 0)
 		{
 			hit_cnt_protocol+=scan_ret;
@@ -2172,7 +2111,7 @@ static int ssl_extension_scan(struct request_object_list *request, struct policy
 	int scan_ret=0, hit_cnt_ssl=0;
 
 	const char *object_uuid=(request->numeric == 1 ? BOOLEAN_TRUE_OBJECT_UUID : BOOLEAN_FLASE_OBJECT_UUID);
-	scan_ret =scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_BOOLEAN", request->attribute_name);
+	scan_ret =scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_BOOLEAN", request->attribute_name, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_ssl += scan_ret;
