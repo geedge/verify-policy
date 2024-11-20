@@ -7,5 +7,5 @@ add_executable(verify-policy src/verify_policy.cpp src/verify_matcher.cpp)
 #target_include_directories(verify-policy PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 
 target_link_libraries(verify-policy common cjson maatframe uuid)
-target_link_libraries(verify-policy pthread dl libevent-static MESA_prof_load breakpad-client-static cjson ${SYSTEMD_LIBRARIES})
+target_link_libraries(verify-policy pthread dl libevent-static MESA_prof_load breakpad_mini cjson ${SYSTEMD_LIBRARIES})
 

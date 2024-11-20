@@ -4,11 +4,6 @@
 	> Mail:
 	> Created Time: 2019年08月23日 星期五 14时41分17秒
  ************************************************************************/
-
-/* Breakpad */
-#include <client/linux/handler/exception_handler.h>
-#include <common/linux/http_upload.h>
-
 #include<iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +24,9 @@
 #include <MESA/stream.h>
 #include <sys/stat.h>
 #include <libgen.h>
+
+/* Breakpad */
+#include <MESA/breakpad_mini.h>
 
 #include <MESA/MESA_prof_load.h>
 #include "verify_policy.h"
@@ -272,225 +270,6 @@ finish:
     return xret;
 }
 
-struct breakpad_instance
-{
-	unsigned int en_breakpad;
-	char minidump_dir_prefix[VERIFY_STRING_MAX];
-	google_breakpad::ExceptionHandler * exceptionHandler;
-
-	/* Upload to crash server */
-	unsigned int en_breakpad_upload;
-	char minidump_sentry_upload_url[VERIFY_STRING_MAX];
-
-	/* Upload tools name */
-	char upload_tools_filename[VERIFY_STRING_MAX];
-
-	/* Upload tools exec command */
-	char * upload_tools_exec_argv[64];
-	char * minidump_filename;
-};
-
-static void _mkdir(const char *dir)
-{
-	char tmp[PATH_MAX];
-	char * p = NULL;
-	size_t len;
-
-	snprintf(tmp, sizeof(tmp), "%s", dir);
-	len = strlen(tmp);
-	if (tmp[len - 1] == '/')
-		tmp[len - 1] = 0;
-	for (p = tmp + 1; *p; p++)
-	{
-		if (*p == '/')
-		{
-			*p = 0;
-			mkdir(tmp, S_IRWXU);
-			*p = '/';
-		}
-	}
-	mkdir(tmp, S_IRWXU);
-}
-
-int breakpad_init_minidump_upload(struct breakpad_instance * instance, const char * profile)
-{
-	int ret = 0;
-	char execpath[PATH_MAX] = {};
-	char * execdirname = NULL;
-
-	ret = MESA_load_profile_string_nodef(profile, "system", "breakpad_upload_url",
-		instance->minidump_sentry_upload_url, sizeof(instance->minidump_sentry_upload_url));
-
-	if (unlikely(ret < 0))
-	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "breakpad_upload_url is necessary, failed. ");
-		goto errout;
-	}
-
-	ret = readlink("/proc/self/exe", execpath, sizeof(execpath));
-	if(unlikely(ret < 0))
-	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Failed at readlink /proc/self/exec: %s", strerror(errno));
-		/* after log, reset errno */
-		errno = 0;
-		goto errout;
-	}
-
-	execdirname = dirname(execpath);
-	snprintf(instance->upload_tools_filename, sizeof(instance->upload_tools_filename) - 1,
-		"%s/%s", execdirname, "minidump_upload");
-
-
-	/* Execfile */
-	instance->upload_tools_exec_argv[0] = strdup(instance->upload_tools_filename);
-
-	/* Firstly, Product Name and Product Version */
-	instance->upload_tools_exec_argv[1] = strdup("-p");
-	instance->upload_tools_exec_argv[2] = strdup("tfe");
-	instance->upload_tools_exec_argv[3] = strdup("-v");
-	instance->upload_tools_exec_argv[4] = strdup(version());
-
-	/* Minidump file location, now we don't know it */
-	instance->minidump_filename = (char *)ALLOC(char, PATH_MAX);
-	instance->upload_tools_exec_argv[5] = instance->minidump_filename;
-
-	/* Minidup upload url */
-	instance->upload_tools_exec_argv[6] = strdup(instance->minidump_sentry_upload_url);
-	instance->upload_tools_exec_argv[7] = NULL;
-	return 0;
-
-errout:
-	return -1;
-}
-
-static bool tfe_breakpad_dump_to_file(const google_breakpad::MinidumpDescriptor& descriptor,
-	void* context, bool succeeded)
-{
-	fprintf(stderr, "Crash happened, minidump path:  %s\n", descriptor.path());
-	return succeeded;
-}
-
-static bool tfe_breakpad_dump_and_report(const google_breakpad::MinidumpDescriptor& descriptor,
-	void* context, bool succeeded)
-{
-	struct breakpad_instance * instance = g_verify_proxy->breakpad;
-	int ret = 0;
-
-	strncpy(instance->minidump_filename, descriptor.path(),  PATH_MAX - 1);
-	fprintf(stderr, "Crash happened, prepare upload the minidump file:  %s\n", descriptor.path());
-
-	ret = access(instance->minidump_filename, F_OK | R_OK);
-	if (ret < 0)
-	{
-		fprintf(stderr, "minidump file is not existed, cannot upload minidump file");
-		return succeeded;
-	}
-
-	/* Firstly, fork an child process */
-	pid_t exec_child_pid = fork();
-	if (exec_child_pid == 0)
-	{
-		/* As a child, exec minidump upload tools */
-		ret = execv(instance->upload_tools_filename, instance->upload_tools_exec_argv);
-		if (ret < 0)
-		{
-			fprintf(stderr, "Failed at exec the upload program %s: %s\n",
-				instance->upload_tools_filename, strerror(errno));
-			/* after log, reset errno */
-			errno = 0;
-		}
-
-		exit(EXIT_FAILURE);
-	}
-	else if (exec_child_pid > 0)
-	{
-		fprintf(stderr, "Starting upload minidump, PID = %d. \n", exec_child_pid);
-		return succeeded;
-	}
-	else
-	{
-		/* failed at fork, cannot upload the minidump */
-		fprintf(stderr, "Failed at fork(), cannot upload minidump file. :  %s\n", strerror(errno));
-		/* after log, reset errno */
-		errno = 0;
-		return succeeded;
-	}
-}
-
-struct breakpad_instance * breakpad_init(const char * profile)
-{
-	struct breakpad_instance * instance = ALLOC(struct breakpad_instance, 1);
-	assert(instance != nullptr);
-
-	int ret = 0;
-	unsigned int disable_coredump;
-	MESA_load_profile_uint_def(profile, "system", "disable_coredump", &disable_coredump, 0);
-	if (disable_coredump > 0)
-	{
-		const struct rlimit __rlimit_vars = {.rlim_cur = 0, .rlim_max = 0};
-		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
-		if (ret < 0)
-		{
-			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
-			/* after log, reset errno */
-			errno = 0;
-		}
-	}
-
-	MESA_load_profile_uint_def(profile, "system", "enable_breakpad", &instance->en_breakpad, 1);
-	if (instance->en_breakpad <= 0)
-	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad Crash Reporting System is disabled. ");
-		return instance;
-	}
-
-	MESA_load_profile_string_def(profile, "system", "breakpad_minidump_dir",
-		instance->minidump_dir_prefix, sizeof(instance->minidump_dir_prefix), "/tmp/crashreport");
-
-	MESA_load_profile_uint_def(profile, "system", "enable_breakpad_upload",
-		&instance->en_breakpad_upload, 0);
-
-	/* Create the minidump dir if it is not existed */
-	_mkdir(instance->minidump_dir_prefix);
-
-	if (instance->en_breakpad_upload)
-	{
-		/* Try to init the breakpad upload */
-		ret = breakpad_init_minidump_upload(instance, profile);
-		if (ret < 0)
-		{
-			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad upload init failed, using local breakpad dumpfile");
-			instance->en_breakpad_upload = 0;
-		}
-
-		/* When we use breakpad, do not generate any coredump file */
-		const struct rlimit __rlimit_vars = {.rlim_cur = 0, .rlim_max = 0};
-		ret = setrlimit(RLIMIT_CORE, &__rlimit_vars);
-		if (ret < 0)
-		{
-			log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "setrlimit(RLIMIT_CORE, 0) failed: %s", strerror(errno));
-			/* after log, reset errno */
-			errno = 0;
-		}
-	}
-
-	if (instance->en_breakpad_upload)
-	{
-		instance->exceptionHandler = new google_breakpad::ExceptionHandler(
-			google_breakpad::MinidumpDescriptor(instance->minidump_dir_prefix), NULL,
-			tfe_breakpad_dump_and_report, NULL, true, -1);
-	}
-	else
-	{
-		instance->exceptionHandler = new google_breakpad::ExceptionHandler(
-			google_breakpad::MinidumpDescriptor(instance->minidump_dir_prefix), NULL,
-			tfe_breakpad_dump_to_file, NULL, true, -1);
-	}
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Breakpad Crash Report is enable. ");
-	log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Minidump Dir: %s", instance->minidump_dir_prefix);
-	return instance;
-}
-
 void __signal_handler_cb(int sig)
 {
 	switch (sig)
@@ -552,7 +331,7 @@ int main(int argc, char * argv[])
 	log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "Read table_info.conf, take time %lu(s)", end_time.tv_sec - start_time.tv_sec);
 	printf("Read table_info.conf, take time %lu(s)\n", end_time.tv_sec - start_time.tv_sec);
 
-	g_verify_proxy->breakpad = breakpad_init(main_profile);
+	g_verify_proxy->breakpad = breakpad_init(main_profile, "system", g_verify_proxy->logger, version());
 	CHECK_OR_EXIT(g_verify_proxy->breakpad, "Failed at starting breakpad. Exit.");
 
 	for (size_t i = 0; i < (sizeof(signals) / sizeof(int)); i++)

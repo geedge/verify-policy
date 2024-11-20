@@ -3,14 +3,15 @@ variables:
   BUILD_PADDING_PREFIX: /tmp/padding_for_CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX_PREFIX/
   INSTALL_PREFIX: "/opt/tsg/verify-policy"
   TESTING_VERSION_BUILD: 0
-  BUILD_IMAGE_CENTOS8: "git.mesalab.cn:7443/mesa_platform/build-env:rockylinux"
+  BUILD_IMAGE_X86_64_EL8: "git.mesalab.cn:7443/mesa_platform/build-env:rockylinux"
+  BUILD_IMAGE_AARCH64_EL9: "git.mesalab.cn:7443/mesa_platform/build-env:rocky9-aarch64"
 
 stages:
 - build
 - test
 
 ###############################################################################
-# The script is set to el7 or el8
+# The script is set to el9 or el8
 ###############################################################################
 .build_before_script:
   before_script:
@@ -20,21 +21,39 @@ stages:
     - chmod +x ./ci/travis.sh
     - yum makecache
 
-.build_by_travis_for_centos8:
+.build_by_travis_for_x86_64_el8:
   stage: build
-  image: $BUILD_IMAGE_CENTOS8
+  image: $BUILD_IMAGE_X86_64_EL8
   extends: .build_before_script
   script:
     - ./ci/travis.sh
   tags:
     - share
 
+.build_by_travis_for_aarch64_el9:
+  stage: build
+  image: $BUILD_IMAGE_AARCH64_EL9
+  extends: .build_before_script
+  script:
+    - ./ci/travis.sh
+  tags:
+    - tsg-os-builder-aarch64
+
 ###############################################################################
-# make test: centos8
+# make test: el8 or el9
 ###############################################################################
-run_test_for_centos8:
+run_test_for_x86_64_el8:
   stage: test
-  extends: .build_by_travis_for_centos8
+  extends: .build_by_travis_for_x86_64_el8
+  script:
+    - yum makecache
+    - ./ci/travis.sh
+    - cd build
+    - make test
+
+run_test_for_aarch64_el9:
+  stage: test
+  extends: .build_by_travis_for_aarch64_el9
   script:
     - yum makecache
     - ./ci/travis.sh
@@ -42,10 +61,10 @@ run_test_for_centos8:
     - make test
 
 ###############################################################################
-# compile use image: centos8
+# compile use image: el8
 ###############################################################################
-branch_build_debug_for_centos8:
-  extends: .build_by_travis_for_centos8
+branch_build_debug_for_x86_64_el8:
+  extends: .build_by_travis_for_x86_64_el8
   variables:
     BUILD_TYPE: Debug
   except:
@@ -53,17 +72,17 @@ branch_build_debug_for_centos8:
     - /^master.*$/i
     - tags
 
-branch_build_release_for_centos8:
+branch_build_release_for_x86_64_el8:
   variables:
     BUILD_TYPE: RelWithDebInfo
-  extends: .build_by_travis_for_centos8
+  extends: .build_by_travis_for_x86_64_el8
   except:
     - /^develop-.*$/i
     - /^master.*$/i
     - tags
 
-develop_build_debug_for_centos8:
-  extends: .build_by_travis_for_centos8
+develop_build_debug_for_x86_64_el8:
+  extends: .build_by_travis_for_x86_64_el8
   variables:
     TESTING_VERSION_BUILD: 1
     UPLOAD: 1
@@ -80,8 +99,8 @@ develop_build_debug_for_centos8:
     - /^develop-.*$/i
     - /^master.*$/i
 
-develop_build_release_for_centos8:
-  extends: .build_by_travis_for_centos8
+develop_build_release_for_x86_64_el8:
+  extends: .build_by_travis_for_x86_64_el8
   variables:
     TESTING_VERSION_BUILD: 1
     UPLOAD: 1
@@ -98,7 +117,7 @@ develop_build_release_for_centos8:
     - /^develop-.*$/i
     - /^master.*$/i
 
-release_build_debug_for_centos8:
+release_build_debug_for_x86_64_el8:
   variables:
     UPLOAD: 1
     BUILD_TYPE: Debug
@@ -106,7 +125,7 @@ release_build_debug_for_centos8:
     SYMBOL_TARGET: verify-policy
     PULP3_REPO_NAME: tsg-stable-x86_64.el8
     PULP3_DIST_NAME: tsg-stable-x86_64.el8
-  extends: .build_by_travis_for_centos8
+  extends: .build_by_travis_for_x86_64_el8
   artifacts:
     name: "verify-policy-$CI_COMMIT_REF_NAME-debug"
     paths:
@@ -114,7 +133,7 @@ release_build_debug_for_centos8:
   only:
     - tags
 
-release_build_release_for_centos8:
+release_build_release_for_x86_64_el8:
   variables:
     BUILD_TYPE: RelWithDebInfo
     UPLOAD: 1
@@ -122,7 +141,96 @@ release_build_release_for_centos8:
     SYMBOL_TARGET: verify-policy
     PULP3_REPO_NAME: tsg-stable-x86_64.el8
     PULP3_DIST_NAME: tsg-stable-x86_64.el8
-  extends: .build_by_travis_for_centos8
+  extends: .build_by_travis_for_x86_64_el8
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-release"
+    paths:
+      - build/*.rpm
+  only:
+    - tags
+
+###############################################################################
+# compile use image: el9
+###############################################################################
+branch_build_debug_for_aarch64_el9:
+  extends: .build_by_travis_for_aarch64_el9
+  variables:
+    BUILD_TYPE: Debug
+  except:
+    - /^develop-.*$/i
+    - /^master.*$/i
+    - tags
+
+branch_build_release_for_aarch64_el9:
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+  extends: .build_by_travis_for_aarch64_el9
+  except:
+    - /^develop-.*$/i
+    - /^master.*$/i
+    - tags
+
+develop_build_debug_for_aarch64_el9:
+  extends: .build_by_travis_for_aarch64_el9
+  variables:
+    TESTING_VERSION_BUILD: 1
+    UPLOAD: 1
+    BUILD_TYPE: Debug
+    PACKAGE: 1
+    SYMBOL_TARGET: verify-policy
+    PULP3_REPO_NAME: tsg-testing-aarch64.el9
+    PULP3_DIST_NAME: tsg-testing-aarch64.el9
+  artifacts:
+    name: "verify-policy-develop-$CI_COMMIT_REF_NAME-debug"
+    paths:
+      - build/*.rpm
+  only:
+    - /^develop-.*$/i
+    - /^master.*$/i
+
+develop_build_release_for_aarch64_el9:
+  extends: .build_by_travis_for_aarch64_el9
+  variables:
+    TESTING_VERSION_BUILD: 1
+    UPLOAD: 1
+    BUILD_TYPE: RelWithDebInfo
+    PACKAGE: 1
+    SYMBOL_TARGET: verify-policy
+    PULP3_REPO_NAME: tsg-testing-aarch64.el9
+    PULP3_DIST_NAME: tsg-testing-aarch64.el9
+  artifacts:
+    name: "verify-policy-develop-$CI_COMMIT_REF_NAME-release"
+    paths:
+      - build/*.rpm
+  only:
+    - /^develop-.*$/i
+    - /^master.*$/i
+
+release_build_debug_for_aarch64_el9:
+  variables:
+    UPLOAD: 1
+    BUILD_TYPE: Debug
+    PACKAGE: 1
+    SYMBOL_TARGET: verify-policy
+    PULP3_REPO_NAME: tsg-stable-aarch64.el9
+    PULP3_DIST_NAME: tsg-stable-aarch64.el9
+  extends: .build_by_travis_for_aarch64_el9
+  artifacts:
+    name: "verify-policy-$CI_COMMIT_REF_NAME-debug"
+    paths:
+      - build/*.rpm
+  only:
+    - tags
+
+release_build_release_for_aarch64_el9:
+  variables:
+    BUILD_TYPE: RelWithDebInfo
+    UPLOAD: 1
+    PACKAGE: 1
+    SYMBOL_TARGET: verify-policy
+    PULP3_REPO_NAME: tsg-stable-aarch64.el9
+    PULP3_DIST_NAME: tsg-stable-aarch64.el9
+  extends: .build_by_travis_for_aarch64_el9
   artifacts:
     name: "verify-policy-$CI_COMMIT_REF_NAME-release"
     paths:
