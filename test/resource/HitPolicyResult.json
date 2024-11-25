@@ -13,7 +13,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00005000-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             }
@@ -21,11 +21,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.0.1",
                                 "port": "8080",
                                 "addr_type": 4
@@ -55,19 +55,19 @@
                         "top_object_list": [
                             {
                                 "tag_uuid": "00000011-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             },
                             {
                                 "tag_uuid": "00000012-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_INTERNAL_IP",
+                                "field_name": "INTERNAL_IP",
                                 "negate_option": 0,
                                 "condition_index": 1
                             },
                             {
                                 "tag_uuid": "00000001-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SERVER_FQDN",
+                                "field_name": "SERVER_FQDN",
                                 "negate_option": 0,
                                 "condition_index": 2
                             }
@@ -75,11 +75,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.1.1",
                                 "port": "8080",
                                 "addr_type": 4
@@ -92,9 +92,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_INTERNAL_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "INTERNAL_IP",
+                            "field_value": {
                                 "ip": "192.168.1.2",
                                 "port": "80",
                                 "addr_type": 4
@@ -111,9 +111,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "string",
-                            "attribute_name": "ATTR_SERVER_FQDN",
-                            "attribute_value": {
+                            "field_value_type": "string",
+                            "field_name": "SERVER_FQDN",
+                            "field_value": {
                                 "string": "www.126.com"
                             },
                             "hit_paths": [
@@ -134,9 +134,9 @@
             "msg": "Success",
             "data": {
                 "verify_session": {
-                    "attributes": [{
-                        "attribute_value_type": "ip",
-                        "attribute_name": "tunnel_endpoint_object",
+                    "fields": [{
+                        "field_value_type": "ip",
+                        "field_name": "tunnel_endpoint_object",
                         "hit_paths": [{
                             "item_uuid": "00000000-0000-0000-0000-000000000000",
                             "superior_object_uuid": "00003021-0000-0000-0000-000000000000"
@@ -152,10 +152,10 @@
             "msg": "Success",
             "data": {
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "tunnel_endpoint_object",
+                            "field_value_type": "ip",
+                            "field_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
                                     "item_uuid": "00000000-0000-0000-0000-000000000000",
@@ -174,10 +174,10 @@
             "msg": "Success",
             "data": {
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "tunnel_endpoint_object",
+                            "field_value_type": "ip",
+                            "field_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
                                     "item_uuid": "00000000-0000-0000-0000-000000000000",
@@ -207,25 +207,25 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00005001-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             },
                             {
                                 "object_uuid": "00005002-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_DESTINATION_IP",
+                                "field_name": "DESTINATION_IP",
                                 "negate_option": 0,
                                 "condition_index": 1
                             },
                             {
                                 "object_uuid": "00005003-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SERVER_FQDN",
+                                "field_name": "SERVER_FQDN",
                                 "negate_option": 0,
                                 "condition_index": 2
                             },
                             {
                                 "object_uuid": "00005004-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SSL_SAN",
+                                "field_name": "SSL_SAN",
                                 "negate_option": 0,
                                 "condition_index": 3
                             }
@@ -238,25 +238,25 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00005001-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             },
                             {
                                 "object_uuid": "00005002-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_DESTINATION_IP",
+                                "field_name": "DESTINATION_IP",
                                 "negate_option": 0,
                                 "condition_index": 1
                             },
                             {
                                 "object_uuid": "00005003-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SERVER_FQDN",
+                                "field_name": "SERVER_FQDN",
                                 "negate_option": 0,
                                 "condition_index": 2
                             },
                             {
                                 "object_uuid": "00005004-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SSL_SAN",
+                                "field_name": "SSL_SAN",
                                 "negate_option": 0,
                                 "condition_index": 3
                             }
@@ -264,11 +264,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.0.2",
                                 "port": "80",
                                 "addr_type": 4
@@ -281,9 +281,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_DESTINATION_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "DESTINATION_IP",
+                            "field_value": {
                                 "ip": "192.168.0.3",
                                 "port": "80",
                                 "addr_type": 4
@@ -296,9 +296,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "string",
-                            "attribute_name": "ATTR_SERVER_FQDN",
-                            "attribute_value": {
+                            "field_value_type": "string",
+                            "field_name": "SERVER_FQDN",
+                            "field_value": {
                                 "string": "www.baidu.com"
                             },
                             "hit_paths": [
@@ -321,9 +321,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "string",
-                            "attribute_name": "ATTR_SSL_SAN",
-                            "attribute_value": {
+                            "field_value_type": "string",
+                            "field_name": "SSL_SAN",
+                            "field_value": {
                                 "string": "www.baidu.com"
                             },
                             "hit_paths": [
@@ -363,7 +363,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00003022-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_TUNNEL",
+                                "field_name": "TUNNEL",
                                 "negate_option": 0,
                                 "condition_index": 0
                             }
@@ -376,7 +376,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00003023-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_TUNNEL",
+                                "field_name": "TUNNEL",
                                 "negate_option": 0,
                                 "condition_index": 0
                             }
@@ -384,11 +384,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_IP_PROTOCOL",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "IP_PROTOCOL",
+                            "field_value": {
                                 "addr_type": 4,
                                 "protocol": 6
                             },
@@ -400,8 +400,8 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "tunnel_endpoint_object",
+                            "field_value_type": "ip",
+                            "field_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
                                     "item_uuid": "00000000-0000-0000-0000-000000000000",
@@ -414,9 +414,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.1.1",
                                 "port": "8080",
                                 "addr_type": 4
@@ -446,7 +446,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00003022-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_TUNNEL",
+                                "field_name": "TUNNEL",
                                 "negate_option": 1,
                                 "condition_index": 0
                             }
@@ -454,11 +454,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_IP_PROTOCOL",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "IP_PROTOCOL",
+                            "field_value": {
                                 "addr_type": 4,
                                 "protocol": 6
                             },
@@ -470,8 +470,8 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "tunnel_endpoint_object",
+                            "field_value_type": "ip",
+                            "field_name": "tunnel_endpoint_object",
                             "hit_paths": [
                                 {
                                     "item_uuid": "00000000-0000-0000-0000-000000000000",
@@ -497,49 +497,49 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00500100-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             },
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000000006",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
+                                "field_name": "IP_PROTOCOL",
                                 "negate_option": 0,
                                 "condition_index": 3
                             },
                             {
                                 "object_uuid": "00500200-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_PORT",
+                                "field_name": "SOURCE_PORT",
                                 "negate_option": 0,
                                 "condition_index": 4
                             },
                             {
                                 "object_uuid": "00000201-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_APP_ID",
+                                "field_name": "APP_ID",
                                 "negate_option": 0,
                                 "condition_index": 1
                             },
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000001000",
-                                "attribute_name": "ATTR_HTTP_REQ_HDR",
+                                "field_name": "HTTP_REQ_HDR",
                                 "negate_option": 0,
                                 "condition_index": 2
                             },
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000000050",
-                                "attribute_name": "ATTR_TUNNEL_LEVEL",
+                                "field_name": "TUNNEL_LEVEL",
                                 "negate_option": 0,
                                 "condition_index": 5
                             },
                             {
                                 "object_uuid": "00500300-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_FLAG",
+                                "field_name": "FLAG",
                                 "negate_option": 0,
                                 "condition_index": 6
                             },
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000000002",
-                                "attribute_name": "ATTR_SSL_ECH",
+                                "field_name": "SSL_ECH",
                                 "negate_option": 0,
                                 "condition_index": 7
                             }
@@ -547,11 +547,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.55.4",
                                 "port": "80",
                                 "addr_type": 4
@@ -564,9 +564,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_IP_PROTOCOL",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "IP_PROTOCOL",
+                            "field_value": {
                                 "addr_type": 4,
                                 "protocol": 6
                             },
@@ -578,9 +578,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "port",
-                            "attribute_name": "ATTR_SOURCE_PORT",
-                            "attribute_value": {
+                            "field_value_type": "port",
+                            "field_name": "SOURCE_PORT",
+                            "field_value": {
                                 "port": "80"
                             },
                             "hit_paths": [
@@ -591,9 +591,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "numeric",
-                            "attribute_name": "ATTR_APP_ID",
-                            "attribute_value": {
+                            "field_value_type": "numeric",
+                            "field_name": "APP_ID",
+                            "field_value": {
                                 "numeric": 67
                             },
                             "hit_paths": [
@@ -604,9 +604,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "string",
-                            "attribute_name": "ATTR_HTTP_REQ_HDR",
-                            "attribute_value": {
+                            "field_value_type": "string",
+                            "field_name": "HTTP_REQ_HDR",
+                            "field_value": {
                                 "district": "User-Agent",
                                 "string": "test"
                             },
@@ -618,9 +618,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "string",
-                            "attribute_name": "ATTR_TUNNEL_LEVEL",
-                            "attribute_value": {
+                            "field_value_type": "string",
+                            "field_name": "TUNNEL_LEVEL",
+                            "field_value": {
                                 "numeric": 60
                             },
                             "hit_paths": [
@@ -631,9 +631,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "flag",
-                            "attribute_name": "ATTR_FLAG",
-                            "attribute_value": {
+                            "field_value_type": "flag",
+                            "field_name": "FLAG",
+                            "field_value": {
                                 "numeric": 15
                             },
                             "hit_paths": [
@@ -644,9 +644,9 @@
                             ]
                         },
                         {
-                            "attribute_value_type": "boolean",
-                            "attribute_name": "ATTR_SSL_ECH",
-                            "attribute_value": {
+                            "field_value_type": "boolean",
+                            "field_name": "SSL_ECH",
+                            "field_value": {
                                 "numeric": 1
                             },
                             "hit_paths": [
@@ -674,7 +674,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00008000-0000-0000-0000-000000000000",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             }
@@ -682,11 +682,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "192.168.2.1",
                                 "port": "8080",
                                 "addr_type": 4
@@ -716,7 +716,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000000006",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
+                                "field_name": "IP_PROTOCOL",
                                 "negate_option": 1,
                                 "condition_index": 0
                             }
@@ -724,11 +724,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "numeric",
-                            "attribute_name": "ATTR_IP_PROTOCOL",
-                            "attribute_value": {
+                            "field_value_type": "numeric",
+                            "field_name": "IP_PROTOCOL",
+                            "field_value": {
                                 "addr_type": 4,
                                 "numeric": 1
                             },
@@ -757,7 +757,7 @@
                         "top_object_list": [
                             {
                                 "object_uuid": "00000000-0000-0000-0000-000000090100",
-                                "attribute_name": "ATTR_SOURCE_IP",
+                                "field_name": "SOURCE_IP",
                                 "negate_option": 0,
                                 "condition_index": 0
                             }
@@ -765,11 +765,11 @@
                     }
                 ],
                 "verify_session": {
-                    "attributes": [
+                    "fields": [
                         {
-                            "attribute_value_type": "ip",
-                            "attribute_name": "ATTR_SOURCE_IP",
-                            "attribute_value": {
+                            "field_value_type": "ip",
+                            "field_name": "SOURCE_IP",
+                            "field_value": {
                                 "ip": "10.1.1.1",
                                 "port": "8080",
                                 "addr_type": 4

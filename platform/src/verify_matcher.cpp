@@ -35,52 +35,52 @@
 
 const char * table_name[__TSG_OBJ_MAX] =
 {
-	[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP",
-	[TSG_OBJ_DESTINATION_ADDR]="ATTR_DESTINATION_IP",
-	[TSG_OBJ_SUBSCRIBE_ID] = "ATTR_SUBSCRIBER_ID",
-	[TSG_OBJ_APP_ID] = "ATTR_APP_ID",
-	[TSG_OBJ_HTTP_URL] = "ATTR_HTTP_URL",
-	[TSG_OBJ_HTTP_REQ_HDR] = "ATTR_HTTP_REQ_HDR",
-	[TSG_OBJ_HTTP_REQ_BODY] = "ATTR_HTTP_REQ_BODY",
-	[TSG_OBJ_HTTP_RES_HDR] = "ATTR_HTTP_RES_HDR",
-	[TSG_OBJ_HTTP_RES_BODY] = "ATTR_HTTP_RES_BODY",
-	[TSG_OBJ_SSL_CN] = "ATTR_SSL_CN",
-	[TSG_OBJ_SSL_SAN] = "ATTR_SSL_SAN",
-	[TSG_OBJ_DOH_QNAME]="ATTR_DOH_QNAME",
-	[TSG_OBJ_DNS_QNAME] = "ATTR_DNS_QNAME",
-	[TSG_OBJ_MAIL_ACCOUNT] = "ATTR_MAIL_ACCOUNT",
-	[TSG_OBJ_MAIL_FROM] = "ATTR_MAIL_FROM",
-	[TSG_OBJ_MAIL_TO] = "ATTR_MAIL_TO",
-	[TSG_OBJ_MAIL_SUBJECT] = "ATTR_MAIL_SUBJECT",
-	[TSG_OBJ_MAIL_CONTENT] = "ATTR_MAIL_CONTENT",
-	[TSG_OBJ_MAIL_ATT_NAME] = "ATTR_MAIL_ATT_NAME",
-	[TSG_OBJ_MAIL_ATT_CONTENT] = "ATTR_MAIL_ATT_CONTENT",
-	[TSG_OBJ_FTP_URI] = "ATTR_FTP_URI",
-	[TSG_OBJ_FTP_CONTENT] = "ATTR_FTP_CONTENT",
-	[TSG_OBJ_FTP_ACCOUNT] = "ATTR_FTP_ACCOUNT",
-	[TSG_OBJ_SIP_FROM]="ATTR_SIP_ORIGINATOR_DESCRIPTION",
-	[TSG_OBJ_SIP_TO]="ATTR_SIP_RESPONDER_DESCRIPTION",
-	[TSG_OBJ_IMSI]="ATTR_GTP_IMSI",
-	[TSG_OBJ_PHONE_NUMBER]="ATTR_GTP_PHONE_NUMBER",
-	[TSG_OBJ_APN]="ATTR_GTP_APN",
-	[TSG_OBJ_TUNNEL]="ATTR_TUNNEL",
-	[TSG_OBJ_FLAG]="ATTR_FLAG",
-	[TSG_OBJ_GTP_IMEI]="ATTR_GTP_IMEI",
-	[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN",
-	[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP",
-	[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP",
-	[TSG_OBJ_SOURCE_PORT]="ATTR_SOURCE_PORT",
-	[TSG_OBJ_DESTINATION_PORT]="ATTR_DESTINATION_PORT",
-	[TSG_OBJ_INTERNAL_PORT]="ATTR_INTERNAL_PORT",
-	[TSG_OBJ_EXTERNAL_PORT]="ATTR_EXTERNAL_PORT",
-	[TSG_OBJ_IP_PROTOCOL]="ATTR_IP_PROTOCOL",
-	[TSG_OBJ_SSL_ECH]="ATTR_SSL_ECH",
-	[TSG_OBJ_SSL_ESNI]="ATTR_SSL_ESNI",
-	[TSG_OBJ_SSL_NO_SNI]="ATTR_SSL_NO_SNI",
-	[TSG_OBJ_TUNNEL_LEVEL]="ATTR_TUNNEL_LEVEL",
-	[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="ATTR_TUNNEL_GTP_ENDPOINT",
-	[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="ATTR_TUNNEL_GRE_ENDPOINT",
-	[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="ATTR_TUNNEL_IP_IN_IP_ENDPOINT"
+	[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP",
+	[TSG_OBJ_DESTINATION_ADDR]="DESTINATION_IP",
+	[TSG_OBJ_SUBSCRIBE_ID] = "SUBSCRIBER_ID",
+	[TSG_OBJ_APP_ID] = "APP_ID",
+	[TSG_OBJ_HTTP_URL] = "HTTP_URL",
+	[TSG_OBJ_HTTP_REQ_HDR] = "HTTP_REQ_HDR",
+	[TSG_OBJ_HTTP_REQ_BODY] = "HTTP_REQ_BODY",
+	[TSG_OBJ_HTTP_RES_HDR] = "HTTP_RES_HDR",
+	[TSG_OBJ_HTTP_RES_BODY] = "HTTP_RES_BODY",
+	[TSG_OBJ_SSL_CN] = "SSL_CN",
+	[TSG_OBJ_SSL_SAN] = "SSL_SAN",
+	[TSG_OBJ_DOH_QNAME]="DOH_QNAME",
+	[TSG_OBJ_DNS_QNAME] = "DNS_QNAME",
+	[TSG_OBJ_MAIL_ACCOUNT] = "MAIL_ACCOUNT",
+	[TSG_OBJ_MAIL_FROM] = "MAIL_FROM",
+	[TSG_OBJ_MAIL_TO] = "MAIL_TO",
+	[TSG_OBJ_MAIL_SUBJECT] = "MAIL_SUBJECT",
+	[TSG_OBJ_MAIL_CONTENT] = "MAIL_CONTENT",
+	[TSG_OBJ_MAIL_ATT_NAME] = "MAIL_ATT_NAME",
+	[TSG_OBJ_MAIL_ATT_CONTENT] = "MAIL_ATT_CONTENT",
+	[TSG_OBJ_FTP_URI] = "FTP_URI",
+	[TSG_OBJ_FTP_CONTENT] = "FTP_CONTENT",
+	[TSG_OBJ_FTP_ACCOUNT] = "FTP_ACCOUNT",
+	[TSG_OBJ_SIP_FROM]="SIP_ORIGINATOR_DESCRIPTION",
+	[TSG_OBJ_SIP_TO]="SIP_RESPONDER_DESCRIPTION",
+	[TSG_OBJ_IMSI]="GTP_IMSI",
+	[TSG_OBJ_PHONE_NUMBER]="GTP_PHONE_NUMBER",
+	[TSG_OBJ_APN]="GTP_APN",
+	[TSG_OBJ_TUNNEL]="TUNNEL",
+	[TSG_OBJ_FLAG]="FLAG",
+	[TSG_OBJ_GTP_IMEI]="GTP_IMEI",
+	[TSG_OBJ_DST_SERVER_FQDN]="SERVER_FQDN",
+	[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP",
+	[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP",
+	[TSG_OBJ_SOURCE_PORT]="SOURCE_PORT",
+	[TSG_OBJ_DESTINATION_PORT]="DESTINATION_PORT",
+	[TSG_OBJ_INTERNAL_PORT]="INTERNAL_PORT",
+	[TSG_OBJ_EXTERNAL_PORT]="EXTERNAL_PORT",
+	[TSG_OBJ_IP_PROTOCOL]="IP_PROTOCOL",
+	[TSG_OBJ_SSL_ECH]="SSL_ECH",
+	[TSG_OBJ_SSL_ESNI]="SSL_ESNI",
+	[TSG_OBJ_SSL_NO_SNI]="SSL_NO_SNI",
+	[TSG_OBJ_TUNNEL_LEVEL]="TUNNEL_LEVEL",
+	[TSG_OBJ_TUNNEL_GTP_ENDPOINT]="TUNNEL_GTP_ENDPOINT",
+	[TSG_OBJ_TUNNEL_GRE_ENDPOINT]="TUNNEL_GRE_ENDPOINT",
+	[TSG_OBJ_TUNNEL_IP_IN_IP_ENDPOINT]="TUNNEL_IP_IN_IP_ENDPOINT"
 };
 
 enum policy_action
@@ -116,7 +116,7 @@ enum verify_profile_table
 	PROFILE_FQDN_ENTRY,
 	PROFILE_IP_ADDR_ENTRY,
 	PROFILE_LIBRARY_TAG,
-	PROFILE_ATTRIBUTE_DICT,
+	PROFILE_FIELD_DICT,
 	PROFILE_TABLE_MAX,
 };
 
@@ -213,10 +213,10 @@ struct library_tag_ctx
 	pthread_mutex_t lock;
 };
 
-struct attribute_dict_ctx
+struct field_dict_ctx
 {
 	int ref_cnt;
-	char *attribute_name;
+	char *field_name;
 	char *object_table_name;
 	char *available_object_type;
 
@@ -249,9 +249,9 @@ struct request_object_list
     char *string;
 	char *tunnel_type;
     char *district_value;
-    char *attribute_name;
+    char *field_name;
     struct ipaddr *ip_addr;
-    cJSON *attributes;
+    cJSON *fields;
 };
 
 struct verify_policy_query
@@ -291,7 +291,7 @@ struct verify_policy_rt * g_policy_rt;
 
 UT_icd ut_ulonglong_id_icd = {sizeof(struct library_hit_path), NULL, NULL, NULL};
 
-void attribute_dict_free(struct attribute_dict_ctx *dict_ctx);
+void field_dict_free(struct field_dict_ctx *dict_ctx);
 
 const char *get_conjunction_table_name(enum policy_rule_type rule_type)
 {
@@ -341,14 +341,14 @@ int cJSON_AddUuidToObject(cJSON * const object, const char * const name, uuid_t 
 	return 1;
 }
 
-char *get_table_name(char *attribute_name, int vsys_id)
+char *get_table_name(char *field_name, int vsys_id)
 {
 	char *table_name=NULL;
-	struct attribute_dict_ctx *dict_ctx =(struct attribute_dict_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], "ATTRIBUTE_DICT", (const char *)attribute_name, strlen(attribute_name));
+	struct field_dict_ctx *dict_ctx =(struct field_dict_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], "FIELD_DICT", (const char *)field_name, strlen(field_name));
 	if(dict_ctx != NULL)
 	{
 		table_name = dict_ctx->object_table_name;
-		attribute_dict_free(dict_ctx);
+		field_dict_free(dict_ctx);
 	}
 	return table_name;
 }
@@ -473,7 +473,7 @@ const char *table_name_map[PROFILE_TABLE_MAX] =
 	[PROFILE_FQDN_ENTRY]="FQDN_ENTRY",
 	[PROFILE_IP_ADDR_ENTRY]="IP_ADDR_ENTRY",
 	[PROFILE_LIBRARY_TAG]="LIBRARY_TAG",
-	[PROFILE_ATTRIBUTE_DICT]="ATTRIBUTE_DICT"
+	[PROFILE_FIELD_DICT]="FIELD_DICT"
 };
 
 int maat_plugin_table_ex_init(int profile_idx, int vsys_id,
@@ -805,29 +805,29 @@ void library_tag_free(struct library_tag_ctx *tag_ctx)
 	library_tag_free_cb(0, (void **)&tag_ctx, 0, NULL);
 }
 
-void attribute_dict_new_cb(const char *table_name, const char* key, const char* table_line, void **ad, long argl, void* argp)
+void field_dict_new_cb(const char *table_name, const char* key, const char* table_line, void **ad, long argl, void* argp)
 {
-	cJSON* attribute_dict_json = cJSON_Parse(table_line);
-	if(attribute_dict_json == NULL)
+	cJSON* field_dict_json = cJSON_Parse(table_line);
+	if(field_dict_json == NULL)
 	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "ATTRIBUTE_DICT parse table_line failed. table_line:%s", table_line);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "FIELD_DICT parse table_line failed. table_line:%s", table_line);
 		return;
 	}
 
-	struct attribute_dict_ctx *dict_ctx= ALLOC(struct attribute_dict_ctx, 1);
-	cJSON *attribute_name = cJSON_GetObjectItem(attribute_dict_json, "attribute_name");
-	if(attribute_name && attribute_name->type==cJSON_String)
+	struct field_dict_ctx *dict_ctx= ALLOC(struct field_dict_ctx, 1);
+	cJSON *field_name = cJSON_GetObjectItem(field_dict_json, "field_name");
+	if(field_name && field_name->type==cJSON_String)
 	{
-		dict_ctx->attribute_name=strdup(attribute_name->valuestring);
+		dict_ctx->field_name=strdup(field_name->valuestring);
 	}
 
-	cJSON *object_table_name = cJSON_GetObjectItem(attribute_dict_json, "object_table_name");
+	cJSON *object_table_name = cJSON_GetObjectItem(field_dict_json, "object_table_name");
 	if(object_table_name && object_table_name->type==cJSON_String)
 	{
 		dict_ctx->object_table_name=strdup(object_table_name->valuestring);
 	}
 
-	cJSON *available_object_type = cJSON_GetObjectItem(attribute_dict_json, "available_object_type");
+	cJSON *available_object_type = cJSON_GetObjectItem(field_dict_json, "available_object_type");
 	if(available_object_type && available_object_type->type==cJSON_String)
 	{
 		dict_ctx->available_object_type=strdup(available_object_type->valuestring);
@@ -836,14 +836,14 @@ void attribute_dict_new_cb(const char *table_name, const char* key, const char* 
 	dict_ctx->ref_cnt=1;
 	pthread_mutex_init(&(dict_ctx->lock), NULL);
 
-	cJSON_Delete(attribute_dict_json);
+	cJSON_Delete(field_dict_json);
 	*ad=dict_ctx;
 	return;
 }
 
-void attribute_dict_dup_cb(const char *table_name, void **to, void **from, long argl, void* argp)
+void field_dict_dup_cb(const char *table_name, void **to, void **from, long argl, void* argp)
 {
-	struct attribute_dict_ctx *dict_ctx=(struct attribute_dict_ctx *)(*from);
+	struct field_dict_ctx *dict_ctx=(struct field_dict_ctx *)(*from);
 	pthread_mutex_lock(&(dict_ctx->lock));
 	dict_ctx->ref_cnt++;
 	pthread_mutex_unlock(&(dict_ctx->lock));
@@ -852,14 +852,14 @@ void attribute_dict_dup_cb(const char *table_name, void **to, void **from, long 
 	return;
 }
 
-void attribute_dict_free_cb(const char *table_name, void **ad, long argl, void* argp)
+void field_dict_free_cb(const char *table_name, void **ad, long argl, void* argp)
 {
 	if(*ad==NULL)
 	{
 		return;
 	}
 
-	struct attribute_dict_ctx *dict_ctx=(struct attribute_dict_ctx *)(*ad);
+	struct field_dict_ctx *dict_ctx=(struct field_dict_ctx *)(*ad);
 	pthread_mutex_lock(&(dict_ctx->lock));
 	dict_ctx->ref_cnt--;
 	if(dict_ctx->ref_cnt>0)
@@ -870,11 +870,11 @@ void attribute_dict_free_cb(const char *table_name, void **ad, long argl, void* 
 	pthread_mutex_unlock(&(dict_ctx->lock));
 	pthread_mutex_destroy(&(dict_ctx->lock));
 
-	if(dict_ctx->attribute_name)
+	if(dict_ctx->field_name)
 	{
-		FREE(&dict_ctx->attribute_name);
+		FREE(&dict_ctx->field_name);
 	}
-	if(dict_ctx->attribute_name)
+	if(dict_ctx->field_name)
 	{
 		FREE(&dict_ctx->object_table_name);
 	}
@@ -888,9 +888,9 @@ void attribute_dict_free_cb(const char *table_name, void **ad, long argl, void* 
 	return;
 }
 
-void attribute_dict_free(struct attribute_dict_ctx *dict_ctx)
+void field_dict_free(struct field_dict_ctx *dict_ctx)
 {
-	attribute_dict_free_cb(0, (void **)&dict_ctx, 0, NULL);
+	field_dict_free_cb(0, (void **)&dict_ctx, 0, NULL);
 }
 
 unsigned char action_type_str2idx(const char *action_str)
@@ -1168,13 +1168,13 @@ int hit_rule_match_is_duplicate(struct maat_hit_path *src, struct maat_hit_path 
 	return 0;
 }
 
-cJSON *get_tunnel_endpoint_attribute(cJSON *attributes)
+cJSON *get_tunnel_endpoint_field(cJSON *fields)
 {
 	cJSON *item=NULL, *subchild=NULL;
 
-	for (item = attributes->child; item != NULL; item = item->next)
+	for (item = fields->child; item != NULL; item = item->next)
 	{
-		subchild = cJSON_GetObjectItem(item, "attribute_name");
+		subchild = cJSON_GetObjectItem(item, "field_name");
 		if(subchild && subchild->type==cJSON_String && strncasecmp(subchild->valuestring, "tunnel_endpoint_object", 22) == 0)
 		{
 			return item;
@@ -1211,37 +1211,37 @@ int hit_object_exists_by_ids(cJSON* hitPaths, uuid_t item_id, uuid_t superior_ob
 	return 0;
 }
 
-void http_get_scan_status(struct request_object_list *request_object, int compile_table_id, cJSON *attributes, struct policy_scan_ctx * ctx)
+void http_get_scan_status(struct request_object_list *request_object, int compile_table_id, cJSON *fields, struct policy_scan_ctx * ctx)
 {
 	int i=0, j=0;
-	cJSON *attributeObj=NULL;
+	cJSON *fieldObj=NULL;
 
-	attributeObj=request_object->attributes;
+	fieldObj=request_object->fields;
 	if(request_object->table_id == TSG_OBJ_TUNNEL)
 	{
-		cJSON_Delete(attributeObj);
-		attributeObj=NULL;
+		cJSON_Delete(fieldObj);
+		fieldObj=NULL;
 
-		attributeObj = get_tunnel_endpoint_attribute(attributes);
-		if(attributeObj == NULL)
+		fieldObj = get_tunnel_endpoint_field(fields);
+		if(fieldObj == NULL)
 		{
-			attributeObj = cJSON_CreateObject();
-			cJSON_AddStringToObject(attributeObj, "attribute_value_type", "ip");
-			cJSON_AddStringToObject(attributeObj, "attribute_name", "tunnel_endpoint_object");
+			fieldObj = cJSON_CreateObject();
+			cJSON_AddStringToObject(fieldObj, "field_value_type", "ip");
+			cJSON_AddStringToObject(fieldObj, "field_name", "tunnel_endpoint_object");
 		}
 	}
 
-	cJSON* hitPaths = cJSON_GetObjectItem(attributeObj, "hit_paths");
+	cJSON* hitPaths = cJSON_GetObjectItem(fieldObj, "hit_paths");
 	if(hitPaths != NULL && hitPaths->type != cJSON_Array)
 	{
-		cJSON_DeleteItemFromObject(attributeObj, "hit_paths");
+		cJSON_DeleteItemFromObject(fieldObj, "hit_paths");
 		hitPaths=NULL;
 	}
 	if (hitPaths == NULL)
 	{
-		cJSON_AddItemToArray(attributes, attributeObj);
+		cJSON_AddItemToArray(fields, fieldObj);
 		hitPaths = cJSON_CreateArray();
-		cJSON_AddItemToObject(attributeObj, "hit_paths", hitPaths);
+		cJSON_AddItemToObject(fieldObj, "hit_paths", hitPaths);
 	}
 	add_tag_ids_to_hit_paths(hitPaths, request_object->table_id, &ctx->scan_path);
 
@@ -1285,10 +1285,10 @@ int policy_verify_regex_expression(const char *expression)
 int get_ip_addr_table_name(struct library_scan_path *ip_ctx, int Nth_scan, int top_group_id, cJSON *topObject)
 {
 	const char * table_name[__TSG_OBJ_MAX] = {0};
-	table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP";
-	table_name[TSG_OBJ_DESTINATION_ADDR] = "ATTR_DESTINATION_IP";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
+	table_name[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP";
+	table_name[TSG_OBJ_DESTINATION_ADDR] = "DESTINATION_IP";
+	table_name[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP";
+	table_name[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP";
 
 	struct library_hit_path *ip_entry=NULL;
 	while ((ip_entry=(struct library_hit_path *)utarray_next(ip_ctx->ut_array_by_context, ip_entry)) != NULL)
@@ -1309,15 +1309,15 @@ int get_ip_addr_table_name(struct library_scan_path *ip_ctx, int Nth_scan, int t
 const char *get_library_virtual_table_name(int table_id)
 {
 	const char * table_name[__TSG_OBJ_MAX] = {0};
-	table_name[TSG_OBJ_SOURCE_ADDR] = "ATTR_SOURCE_IP";
-	table_name[TSG_OBJ_DESTINATION_ADDR] = "ATTR_DESTINATION_IP";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="ATTR_INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="ATTR_EXTERNAL_IP";
-	table_name[TSG_OBJ_SSL_CN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_SSL_SAN]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_DNS_QNAME]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_DOH_QNAME]="ATTR_SERVER_FQDN";
-	table_name[TSG_OBJ_DST_SERVER_FQDN]="ATTR_SERVER_FQDN";
+	table_name[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP";
+	table_name[TSG_OBJ_DESTINATION_ADDR] = "DESTINATION_IP";
+	table_name[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP";
+	table_name[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP";
+	table_name[TSG_OBJ_SSL_CN]="SERVER_FQDN";
+	table_name[TSG_OBJ_SSL_SAN]="SERVER_FQDN";
+	table_name[TSG_OBJ_DNS_QNAME]="SERVER_FQDN";
+	table_name[TSG_OBJ_DOH_QNAME]="SERVER_FQDN";
+	table_name[TSG_OBJ_DST_SERVER_FQDN]="SERVER_FQDN";
 	return table_name[table_id];
 }
 
@@ -1334,7 +1334,7 @@ int add_tags_table_name(struct library_scan_path *ip_ctx, int Nth_scan, uuid_t t
 				char tag_uuid_str[UUID_STR_LEN]={0};
 				uuid_unparse(top_object_uuid, tag_uuid_str);
 				cJSON_AddStringToObject(topObject, "tag_uuid", tag_uuid_str);
-				cJSON_AddStringToObject(topObject, "attribute_name", get_library_virtual_table_name(ip_entry->table_id));
+				cJSON_AddStringToObject(topObject, "field_name", get_library_virtual_table_name(ip_entry->table_id));
 				goto finish;
 			}
 		}
@@ -1346,7 +1346,7 @@ finish:
 int add_object_table_name(UT_array *ut_array_by_object, int Nth_scan, uuid_t top_object_uuid, cJSON *topObject)
 {
 	char object_uuid_str[UUID_STR_LEN]={0};
-	cJSON *attributeObj=NULL, *subchild=NULL;
+	cJSON *fieldObj=NULL, *subchild=NULL;
 	struct request_object_list *request_object=NULL;
 
 	/*The priority of the tag is higher than that of the object_id.**/
@@ -1364,11 +1364,11 @@ int add_object_table_name(UT_array *ut_array_by_object, int Nth_scan, uuid_t top
 		{
 			if (request_object->merge_nth_scan[j] == Nth_scan)
 			{
-				attributeObj=request_object->attributes;
-				subchild = cJSON_GetObjectItem(attributeObj, "attribute_name");
+				fieldObj=request_object->fields;
+				subchild = cJSON_GetObjectItem(fieldObj, "field_name");
 				if(subchild && subchild->type==cJSON_String)
 				{
-					cJSON_AddStringToObject(topObject, "attribute_name", subchild->valuestring);
+					cJSON_AddStringToObject(topObject, "field_name", subchild->valuestring);
 				}
 				goto finish;
 			}
@@ -1481,7 +1481,7 @@ int ip_addr_to_address(struct ipaddr *ip_addr, struct ip_addr *dest_ip, struct i
 	return 0;
 }
 
-static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, char *object_uuid_str, const char *table_name, const char *attribute_name, int not_logic)
+static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, char *object_uuid_str, const char *table_name, const char *field_name, int not_logic)
 {
 	size_t n_hit_result=0;
 	uuid_t objects_uuid;
@@ -1492,7 +1492,7 @@ static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, ch
 	uuid_parse(object_uuid_str, objects_uuid);
 	uuid_copy(objects.object_uuid, objects_uuid);
 
-	scan_ret = maat_scan_object(g_policy_rt->feather[vsys_id], table_name, attribute_name, &objects, 1,
+	scan_ret = maat_scan_object(g_policy_rt->feather[vsys_id], table_name, field_name, &objects, 1,
 							   ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
@@ -1501,7 +1501,7 @@ static int scan_object(struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, ch
 
 	if(not_logic)
 	{
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], table_name, attribute_name, ctx->result+hit_cnt+hit_cnt_group,
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], table_name, field_name, ctx->result+hit_cnt+hit_cnt_group,
 								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
 		if (scan_ret == MAAT_SCAN_HIT)
 		{
@@ -1615,7 +1615,7 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 
 			for(int tag_id=0; tag_id<source_ip_entry[i]->n_tag_uuids; tag_id++)
 			{
-				scan_ret = scan_object(ctx, vsys_id, hit_cnt, source_ip_entry[i]->tag_uuid_array[tag_id], "TSG_OBJ_IP_ADDR", request->attribute_name, 0);
+				scan_ret = scan_object(ctx, vsys_id, hit_cnt, source_ip_entry[i]->tag_uuid_array[tag_id], "TSG_OBJ_IP_ADDR", request->field_name, 0);
 				if(scan_ret > 0)
 				{
 					hit_cnt_ip+=scan_ret;
@@ -1649,7 +1649,7 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 
 			for(int tag_id=0; tag_id<destination_ip_entry[i]->n_tag_uuids; tag_id++)
 			{
-				scan_ret = scan_object(ctx, vsys_id, hit_cnt, destination_ip_entry[i]->tag_uuid_array[tag_id],  "TSG_OBJ_IP_ADDR", request->attribute_name, 0);
+				scan_ret = scan_object(ctx, vsys_id, hit_cnt, destination_ip_entry[i]->tag_uuid_array[tag_id], "TSG_OBJ_IP_ADDR", request->field_name, 0);
 				if(scan_ret > 0)
 				{
 					hit_cnt_ip+=scan_ret;
@@ -1706,7 +1706,7 @@ int get_fqdn_category_id(struct request_object_list *request, struct policy_scan
 	for(int i=0; i<fqdn_entry.entry_num; i++)
 	{
 		char *uuid = fqdn_entry.tag[i].tag_uuid;
-		ret=scan_object(ctx, vsys_id, hit_cnt, uuid, "TSG_OBJ_FQDN", request->attribute_name, 1);
+		ret=scan_object(ctx, vsys_id, hit_cnt, uuid, "TSG_OBJ_FQDN", request->field_name, 1);
 		if(ret > 0)
 		{
 			hit_cnt_fqdn+=ret;
@@ -1735,7 +1735,7 @@ int tunnel_level_scan(struct request_object_list *request, struct policy_scan_ct
 										   "00000000-0000-0000-0000-000000000056", "00000000-0000-0000-0000-000000000057"};
 
 	const char *object_uuid=object_uuid_level_array[request->numeric];
-	scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_TUNNEL_LEVEL", request->attribute_name, 1);
+	scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_TUNNEL_LEVEL", request->field_name, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_tunnel += scan_ret;
@@ -1753,12 +1753,12 @@ int tunnel_level_scan(struct request_object_list *request, struct policy_scan_ct
 
 const char* get_tunnel_type_table_id(char *tunnel_type)
 {
-	const char *attribute_name="ATTR_TUNNEL_GTP_ENDPOINT";
+	const char *field_name="TUNNEL_GTP_ENDPOINT";
 	const char *tunnel_type_map[] = {"GTP", "GRE", "IPv4/IPv6"};
 
 	if(tunnel_type == NULL)
 	{
-		return attribute_name;
+		return field_name;
 	}
 
 	for (size_t i = 0; i < sizeof(tunnel_type_map) / sizeof(const char *); i++)
@@ -1767,20 +1767,20 @@ const char* get_tunnel_type_table_id(char *tunnel_type)
 		{
 			if(i == 0)
 			{
-				attribute_name = "ATTR_TUNNEL_GTP_ENDPOINT";
+				field_name = "TUNNEL_GTP_ENDPOINT";
 			}
 			if(i == 1)
 			{
-				attribute_name = "ATTR_TUNNEL_GRE_ENDPOINT";
+				field_name = "TUNNEL_GRE_ENDPOINT";
 			}
 			if(i == 2)
 			{
-				attribute_name = "ATTR_TUNNEL_IP_IN_IP_ENDPOINT";
+				field_name = "TUNNEL_IP_IN_IP_ENDPOINT";
 			}
 			break;
 		}
 	}
-	return attribute_name;
+	return field_name;
 }
 
 int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt, struct ipaddr *ip_addr)
@@ -1801,10 +1801,10 @@ int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx
 		maat_state_set_scan_rule_table(ctx->tunnel_scan_mid, "TUNNEL_RULE_CONJUNCTION");
 	}
 
-	const char *attribute_name = get_tunnel_type_table_id(request->tunnel_type);
+	const char *field_name = get_tunnel_type_table_id(request->tunnel_type);
 	if (ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
-		scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", attribute_name, ip_addr->v4->saddr, ip_addr->v4->source,
+		scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", field_name, ip_addr->v4->saddr, ip_addr->v4->source,
 			 					  	   result, MAX_SCAN_RESULT, &n_hit_result, ctx->tunnel_scan_mid);
 		if(scan_ret == MAAT_SCAN_HIT)
 		{
@@ -1814,7 +1814,7 @@ int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx
 
 	if (ip_addr->addrtype == ADDR_TYPE_IPV6)
 	{
-		scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", attribute_name, ip_addr->v6->saddr, ip_addr->v6->source,
+		scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", field_name, ip_addr->v6->saddr, ip_addr->v6->source,
 									   result, MAX_SCAN_RESULT, &n_hit_result, ctx->tunnel_scan_mid);
 		if(scan_ret == MAAT_SCAN_HIT)
 		{
@@ -1822,7 +1822,7 @@ int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx
 		}
 	}
 
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", attribute_name, result, MAX_SCAN_RESULT,
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", field_name, result, MAX_SCAN_RESULT,
 									&n_hit_result, ctx->tunnel_scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
@@ -1845,7 +1845,7 @@ int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx
 		{
 			memset(&objects, 0, sizeof(objects));
 			uuid_copy(objects.object_uuid, result[i]);
-			scan_ret = maat_scan_object(g_policy_rt->feather[vsys_id], "TUNNEL_RULE", "ATTR_TUNNEL", &objects, 1,
+			scan_ret = maat_scan_object(g_policy_rt->feather[vsys_id], "TUNNEL_RULE", "TUNNEL", &objects, 1,
 							   ctx->result+hit_cnt+hit_cnt_group, MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
@@ -1862,7 +1862,7 @@ int tunnel_scan(struct request_object_list *request, struct policy_scan_ctx *ctx
 	}
 	if(logic && scan_ret >= MAAT_SCAN_OK)
 	{
-		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TUNNEL_RULE", "ATTR_TUNNEL", ctx->result+hit_cnt+hit_cnt_group,
+		scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TUNNEL_RULE", "TUNNEL", ctx->result+hit_cnt+hit_cnt_group,
 								       MAX_SCAN_RESULT-hit_cnt-hit_cnt_group, &n_hit_result, ctx->scan_mid);
 		if (scan_ret == MAAT_SCAN_HIT)
 		{
@@ -1898,13 +1898,13 @@ static int app_id_scan(struct request_object_list *request, struct policy_scan_c
 
 	memset(&objects, 0, sizeof(objects));
     uuid_copy(objects.object_uuid, app_dict->object_uuid);
-	scan_ret=maat_scan_object(g_policy_rt->feather[vsys_id], "APP_ID_DICT", "ATTR_APP_ID", &objects, 1, ctx->result+hit_cnt+hit_cnt_app_id,
+	scan_ret=maat_scan_object(g_policy_rt->feather[vsys_id], "APP_ID_DICT", "APP_ID", &objects, 1, ctx->result+hit_cnt+hit_cnt_app_id,
 							   MAX_SCAN_RESULT-hit_cnt-hit_cnt_app_id, &n_hit_result, ctx->scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_app_id+=n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "APP_ID_DICT", "ATTR_APP_ID", ctx->result+hit_cnt+hit_cnt_app_id,
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "APP_ID_DICT", "APP_ID", ctx->result+hit_cnt+hit_cnt_app_id,
 								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_app_id, &n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
@@ -1925,12 +1925,12 @@ static int flag_scan(struct request_object_list *request, struct policy_scan_ctx
 
 	int flag=request->numeric;
 
-	scan_ret=maat_scan_flag(g_policy_rt->feather[vsys_id], "TSG_OBJ_FLAG", "ATTR_FLAG",	flag, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
+	scan_ret=maat_scan_flag(g_policy_rt->feather[vsys_id], "TSG_OBJ_FLAG", "FLAG",	flag, ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
 	if(scan_ret==MAAT_SCAN_HIT)
 	{
 		hit_cnt_flag+=n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_FLAG", "ATTR_FLAG", ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_FLAG", "FLAG", ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt, &n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_flag+=n_hit_result;
@@ -1953,14 +1953,14 @@ static int http_hdr_scan(struct request_object_list *request, struct policy_scan
 	}
 
 	const char *value = request->string;
-	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], get_table_name(request->attribute_name, vsys_id), request->attribute_name,
+	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], get_table_name(request->field_name, vsys_id), request->field_name,
 								value, strlen(value), ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
 		 					    &n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_hdr += n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], get_table_name(request->attribute_name, vsys_id), request->attribute_name, ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], get_table_name(request->field_name, vsys_id), request->field_name, ctx->result + hit_cnt, MAX_SCAN_RESULT - hit_cnt,
                       				&n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
@@ -2006,7 +2006,7 @@ static int protocol_scan(struct request_object_list *request, struct policy_scan
 	const char *object_uuid=get_object_uuid_by_protocol(request->numeric);
 	if(object_uuid != NULL)
 	{
-		scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_IP_PROTOCOL", request->attribute_name, 1);
+		scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_IP_PROTOCOL", request->field_name, 1);
 		if(scan_ret > 0)
 		{
 			hit_cnt_protocol+=scan_ret;
@@ -2026,30 +2026,30 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
-		if(0 == strcasecmp(request->attribute_name, "ATTR_SOURCE_IP") || 0 == strcasecmp(request->attribute_name, "ATTR_INTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "SOURCE_IP") || 0 == strcasecmp(request->field_name, "INTERNAL_IP"))
 		{
-			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, request->ip_addr->v4->saddr, request->ip_addr->v4->source,
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v4->saddr, request->ip_addr->v4->source,
 			 						      ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
-			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
                           			  	  &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->attribute_name, "ATTR_DESTINATION_IP") || 0 == strcasecmp(request->attribute_name, "ATTR_EXTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "DESTINATION_IP") || 0 == strcasecmp(request->field_name, "EXTERNAL_IP"))
 		{
-			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, request->ip_addr->v4->daddr, request->ip_addr->v4->dest,
+			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v4->daddr, request->ip_addr->v4->dest,
 			 						       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if(scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
-			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
                           			  	  &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
@@ -2065,30 +2065,30 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 	}
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV6)
 	{
-		if(0 == strcasecmp(request->attribute_name, "ATTR_SOURCE_IP") || 0 == strcasecmp(request->attribute_name, "ATTR_INTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "SOURCE_IP") || 0 == strcasecmp(request->field_name, "INTERNAL_IP"))
 		{
-			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, request->ip_addr->v6->saddr,request->ip_addr->v6->source,
+			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v6->saddr,request->ip_addr->v6->source,
 									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
-			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
                           			  	  &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->attribute_name, "ATTR_DESTINATION_IP") || 0 == strcasecmp(request->attribute_name, "ATTR_EXTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "DESTINATION_IP") || 0 == strcasecmp(request->field_name, "EXTERNAL_IP"))
 		{
-			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, request->ip_addr->v6->daddr, request->ip_addr->v6->dest,
+			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v6->daddr, request->ip_addr->v6->dest,
 									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
 				hit_cnt_ip+=n_hit_result;
 			}
-			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->attribute_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
+			scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip,
                           			  	  &n_hit_result, ctx->scan_mid);
 			if (scan_ret == MAAT_SCAN_HIT)
 			{
@@ -2111,7 +2111,7 @@ static int ssl_extension_scan(struct request_object_list *request, struct policy
 	int scan_ret=0, hit_cnt_ssl=0;
 
 	const char *object_uuid=(request->numeric == 1 ? BOOLEAN_TRUE_OBJECT_UUID : BOOLEAN_FLASE_OBJECT_UUID);
-	scan_ret =scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_BOOLEAN", request->attribute_name, 1);
+	scan_ret =scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_BOOLEAN", request->field_name, 1);
 	if(scan_ret > 0)
 	{
 		hit_cnt_ssl += scan_ret;
@@ -2129,13 +2129,13 @@ static int port_scan(struct request_object_list *request, struct policy_scan_ctx
 	size_t n_hit_result=0;
 	int port = atoi(request->string);
 
-	scan_ret=maat_scan_integer(g_policy_rt->feather[vsys_id], "TSG_OBJ_PORT", request->attribute_name, port, ctx->result+hit_cnt+hit_cnt_port,
+	scan_ret=maat_scan_integer(g_policy_rt->feather[vsys_id], "TSG_OBJ_PORT", request->field_name, port, ctx->result+hit_cnt+hit_cnt_port,
 							   MAX_SCAN_RESULT-hit_cnt-hit_cnt_port, &n_hit_result, ctx->scan_mid);
 	if(scan_ret == MAAT_SCAN_HIT)
 	{
 		hit_cnt_port+=n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_PORT", request->attribute_name, ctx->result+hit_cnt+hit_cnt_port,
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], "TSG_OBJ_PORT", request->field_name, ctx->result+hit_cnt+hit_cnt_port,
 								   MAX_SCAN_RESULT-hit_cnt-hit_cnt_port, &n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
@@ -2254,14 +2254,14 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_obje
 		}
 	}
 
-	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], get_table_name(request_object->attribute_name, vsys_id),request_object->attribute_name,
+	scan_ret = maat_scan_string(g_policy_rt->feather[vsys_id], get_table_name(request_object->field_name, vsys_id),request_object->field_name,
 								value, strlen(value), ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,
 						 	    &n_hit_result, ctx->scan_mid);
 	if(scan_ret==MAAT_SCAN_HIT)
 	{
 		hit_cnt+=n_hit_result;
 	}
-	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], get_table_name(request_object->attribute_name, vsys_id),request_object->attribute_name,
+	scan_ret = maat_scan_not_logic(g_policy_rt->feather[vsys_id], get_table_name(request_object->field_name, vsys_id),request_object->field_name,
 								   ctx->result+hit_cnt, MAX_SCAN_RESULT-hit_cnt,&n_hit_result, ctx->scan_mid);
 	if (scan_ret == MAAT_SCAN_HIT)
 	{
@@ -2462,13 +2462,13 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 	return i;
 }
 
-int match_ip_attribute_name(char *attri_name)
+int match_ip_field_name(char *attri_name)
 {
 	size_t i = 0;
-	const char *attribute_name_map[] ={"ATTR_SOURCE_IP", "ATTR_DESTINATION_IP", "ATTR_TUNNEL", "ATTR_INTERNAL_IP", "ATTR_EXTERNAL_IP"};
-	for(i = 0; i < sizeof(attribute_name_map)/sizeof(attribute_name_map[0]); i++)
+	const char *field_name_map[] ={"SOURCE_IP", "DESTINATION_IP", "TUNNEL", "INTERNAL_IP", "EXTERNAL_IP"};
+	for(i = 0; i < sizeof(field_name_map)/sizeof(field_name_map[0]); i++)
 	{
-		if(0 == strcasecmp(attri_name, attribute_name_map[i]))
+		if(0 == strcasecmp(attri_name, field_name_map[i]))
 		{
 			return i;
 		}
@@ -2493,64 +2493,64 @@ struct ipaddr *tunnel_to_stream_addr(const char *Ip, int addr_type)
 		inet_pton(AF_INET6,Ip,&(v6_addr->saddr));
 		ip_addr->v6=v6_addr;
 	}
-	log_debug(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    attribute_name = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
+	log_debug(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I]    field_name = ip, clientIp1=%s, addr_type = %d", Ip, addr_type);
 
 	return ip_addr;
 }
 
-static struct ipaddr * get_ip_from_json(cJSON *attributeValue, const char *attributeName, int *protocol, char *buff)
+static struct ipaddr * get_ip_from_json(cJSON *fieldValue, const char *fieldName, int *protocol, char *buff)
 {
 	cJSON* item = NULL;
 	int addr_type=0;
 	const char *Ip=NULL;
 	unsigned int Port=0;
 
-	if(attributeName==NULL)
+	if(fieldName==NULL)
 	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "The attribute_type is of type iP, but the attribute_name is empty, resulting in IP type parsing failure.");
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "The field_type is of type iP, but the field_name is empty, resulting in IP type parsing failure.");
 		return NULL;
 	}
 
-	item = cJSON_GetObjectItem(attributeValue,"ip");
+	item = cJSON_GetObjectItem(fieldValue,"ip");
 	if(item && item->type==cJSON_String) Ip = item->valuestring;
-	item = cJSON_GetObjectItem(attributeValue,"port");
+	item = cJSON_GetObjectItem(fieldValue,"port");
 	if(item && item->type==cJSON_String) Port =atoi(item->valuestring);
-	item = cJSON_GetObjectItem(attributeValue,"protocol");
+	item = cJSON_GetObjectItem(fieldValue,"protocol");
 	if(item && item->type==cJSON_Number) *protocol = item->valueint;
-	item=cJSON_GetObjectItem(attributeValue,"addr_type");
+	item=cJSON_GetObjectItem(fieldValue,"addr_type");
 	if(item && item->type==cJSON_Number) addr_type = item->valueint;
 
-	if(strcasecmp(attributeName, "ATTR_IP_PROTOCOL") == 0)
+	if(strcasecmp(fieldName, "IP_PROTOCOL") == 0)
 	{
 		log_info(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "[I] %s, protocol=%d", buff, *protocol);
 		return NULL;
 	}
 
 	struct ipaddr *ip_addr = NULL;
-	if(strcasecmp(attributeName, "ATTR_SOURCE_IP") == 0 || strcasecmp(attributeName, "ATTR_INTERNAL_IP") == 0 ||
-	   strcasecmp(attributeName, "ATTR_TUNNEL") == 0)
+	if(strcasecmp(fieldName, "SOURCE_IP") == 0 || strcasecmp(fieldName, "INTERNAL_IP") == 0 ||
+	   strcasecmp(fieldName, "TUNNEL") == 0)
 	{
 		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, buff, protocol);
 	}
 
-	if(strcasecmp(attributeName, "ATTR_DESTINATION_IP") == 0 || strcasecmp(attributeName, "ATTR_EXTERNAL_IP") == 0)
+	if(strcasecmp(fieldName, "DESTINATION_IP") == 0 || strcasecmp(fieldName, "EXTERNAL_IP") == 0)
 	{
 		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, buff, protocol);
 	}
 	return ip_addr;
 }
 
-static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff)
+static char* get_port_from_json(cJSON *fieldValue, int *protocol, char *buff)
 {
 	cJSON* item = NULL;
 	char *string=NULL;
 
-	item = cJSON_GetObjectItem(attributeValue,"port");
+	item = cJSON_GetObjectItem(fieldValue,"port");
 	if(item && item->type==cJSON_String)
 	{
 		string = item->valuestring;
 	}
-	item = cJSON_GetObjectItem(attributeValue,"protocol");
+	item = cJSON_GetObjectItem(fieldValue,"protocol");
 	if(item && item->type==cJSON_Number)
 	{
 		*protocol = item->valueint;
@@ -2560,10 +2560,10 @@ static char* get_port_from_json(cJSON *attributeValue, int *protocol, char *buff
 	return string;
 }
 
-static inline int match_attributeType_in_numeric(const char *attribute_type, int table_id)
+static inline int match_fieldType_in_numeric(const char *field_type, int table_id)
 {
-	if(0 == strcasecmp(attribute_type, "numeric") || 0 == strcasecmp(attribute_type, "flag") ||
-	   0 == strcasecmp(attribute_type, "boolean") || table_id == TSG_OBJ_IP_PROTOCOL)
+	if(0 == strcasecmp(field_type, "numeric") || 0 == strcasecmp(field_type, "flag") ||
+	   0 == strcasecmp(field_type, "boolean") || table_id == TSG_OBJ_IP_PROTOCOL)
 	{
 		return 1;
 	}
@@ -2573,26 +2573,26 @@ static inline int match_attributeType_in_numeric(const char *attribute_type, int
 	}
 }
 
-static int get_attribute_from_json(struct request_object_list *request_object, cJSON* subchild)
+static int get_field_from_json(struct request_object_list *request_object, cJSON* subchild)
 {
 	int xret = -1;
-	const char *attribute_type=NULL;
+	const char *field_type=NULL;
 	char buff[VERIFY_STRING_MAX*2], *p = NULL;
-	cJSON* item = NULL, *attributeValue=NULL, *tunnelType_item=NULL;
+	cJSON* item = NULL, *fieldValue=NULL, *tunnelType_item=NULL;
 
 	p = buff;
-	item = cJSON_GetObjectItem(subchild, "attribute_value_type");
+	item = cJSON_GetObjectItem(subchild, "field_value_type");
 	if(item && item->type==cJSON_String)
 	{
-		attribute_type = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), "attribute_type = %s", attribute_type);
+		field_type = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), "field_type = %s", field_type);
 	}
 
-	item = cJSON_GetObjectItem(subchild, "attribute_name");
+	item = cJSON_GetObjectItem(subchild, "field_name");
 	if(item && item->type==cJSON_String)
 	{
-		request_object->attribute_name = item->valuestring;
-		p += snprintf(p, sizeof(buff) - (p - buff), ", attribute_name = %s",request_object->attribute_name);
+		request_object->field_name = item->valuestring;
+		p += snprintf(p, sizeof(buff) - (p - buff), ", field_name = %s",request_object->field_name);
 
 		request_object->table_id = protoco_field_type_str2idx(item->valuestring, buff, &p);
 		if(request_object->table_id == __TSG_OBJ_MAX)
@@ -2601,42 +2601,42 @@ static int get_attribute_from_json(struct request_object_list *request_object, c
 			return xret;
 		}
 	}
-	request_object->attributes=cJSON_Duplicate(subchild, 1);
+	request_object->fields=cJSON_Duplicate(subchild, 1);
 
-	attributeValue = cJSON_GetObjectItem(subchild, "attribute_value");
-	if(attributeValue == NULL || attributeValue->type!=cJSON_Object)
+	fieldValue = cJSON_GetObjectItem(subchild, "field_value");
+	if(fieldValue == NULL || fieldValue->type!=cJSON_Object)
 	{
 		goto finish;
 	}
 
-	tunnelType_item = cJSON_GetObjectItem(attributeValue,"tunnel_type");
+	tunnelType_item = cJSON_GetObjectItem(fieldValue,"tunnel_type");
 	if(tunnelType_item && tunnelType_item->type==cJSON_String)
 	{
 		request_object->tunnel_type=tunnelType_item->valuestring;
 		p += snprintf(p, sizeof(buff) - (p - buff), ", tunnel_type=%s",request_object->tunnel_type);
 	}
 
-	if(0 == strcasecmp(attribute_type, "ip"))
+	if(0 == strcasecmp(field_type, "ip"))
 	{
-		request_object->ip_addr = get_ip_from_json(attributeValue, request_object->attribute_name, &(request_object->numeric), buff);
+		request_object->ip_addr = get_ip_from_json(fieldValue, request_object->field_name, &(request_object->numeric), buff);
 		goto end;
 	}
-	if(0 == strcasecmp(attribute_type, "port"))
+	if(0 == strcasecmp(field_type, "port"))
 	{
-		request_object->string = get_port_from_json(attributeValue, &(request_object->numeric), buff);
+		request_object->string = get_port_from_json(fieldValue, &(request_object->numeric), buff);
 		goto end;
 	}
 
-	item = cJSON_GetObjectItem(attributeValue,"district");
+	item = cJSON_GetObjectItem(fieldValue,"district");
 	if(item!=NULL)
 	{
 		request_object->district_value = item->valuestring;
 		p += snprintf(p, sizeof(buff) - (p - buff), ", district = %s", request_object->district_value);
 	}
 
-	if(match_attributeType_in_numeric(attribute_type, request_object->table_id))
+	if(match_fieldType_in_numeric(field_type, request_object->table_id))
 	{
-		item = cJSON_GetObjectItem(attributeValue, "numeric");
+		item = cJSON_GetObjectItem(fieldValue, "numeric");
 		if(item && item->type==cJSON_Number)
 		{
 			request_object->numeric = item->valueint;
@@ -2645,7 +2645,7 @@ static int get_attribute_from_json(struct request_object_list *request_object, c
 	}
 	else
 	{
-		item = cJSON_GetObjectItem(attributeValue, "string");
+		item = cJSON_GetObjectItem(fieldValue, "string");
 		if(item!=NULL)
 		{
 			request_object->string = item->valuestring;
@@ -2685,16 +2685,16 @@ enum verify_type get_verify_type(cJSON* http_respone)
 static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body)
 {
 	int cur_id=0, i=0, is_valid[MAX_REGEX_EXPRESS_NUM]={0};
-	cJSON *regexstr_obj[MAX_REGEX_EXPRESS_NUM],*attributes=NULL;
+	cJSON *regexstr_obj[MAX_REGEX_EXPRESS_NUM],*fields=NULL;
 	cJSON *item = NULL, *subchild = NULL;
 
-	attributes = cJSON_GetObjectItem(verifylist_array_item, "verify_regex");
-	if(attributes==NULL || attributes->type != cJSON_Array)
+	fields = cJSON_GetObjectItem(verifylist_array_item, "verify_regex");
+	if(fields==NULL || fields->type != cJSON_Array)
 	{
 		return -1;
 	}
 
-	for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+	for (subchild = fields->child; subchild != NULL; subchild = subchild->next)
 	{
 		if(cur_id > MAX_REGEX_EXPRESS_NUM)
 		{
@@ -2730,14 +2730,14 @@ static int get_query_result_regex(cJSON *verifylist_array_item, cJSON *http_body
 	return 1;
 }
 
-static void get_count_form_attributeName(struct policy_scan_ctx *ctx, cJSON *subchild)
+static void get_count_form_fieldName(struct policy_scan_ctx *ctx, cJSON *subchild)
 {
 	cJSON *item = NULL;
 
-	item = cJSON_GetObjectItem(subchild, "attribute_name");
+	item = cJSON_GetObjectItem(subchild, "field_name");
 	if(item && item->type==cJSON_String)
 	{
-		if(0 == strcasecmp(item->valuestring, "ATTR_TUNNEL"))
+		if(0 == strcasecmp(item->valuestring, "TUNNEL"))
 		{
 			ctx->tunnel_attr_count++;
 		}
@@ -2750,7 +2750,7 @@ UT_icd ut_object_id_icd = {sizeof(struct request_object_list), NULL, NULL, NULL}
 int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int vsys_id, int thread_id)
 {
 	int hit_cnt = 0, xret =0;
-	cJSON *item = NULL, *subchild = NULL, *attributes=NULL;
+	cJSON *item = NULL, *subchild = NULL, *fields=NULL;
 	struct request_object_list *request_object=NULL;
 	struct verify_policy_query *verify_policy = NULL;
 
@@ -2772,34 +2772,34 @@ int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int 
 	item = cJSON_GetObjectItem(verifylist_array_item,"verify_session");
 	if(item == NULL || item->type!=cJSON_Object)
 	{
-		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "get verify_session attribute failed:%s", item->valuestring);
+		log_fatal(g_verify_proxy->logger, MODULE_VERIFY_POLICY, "get verify_session fields failed:%s", item->valuestring);
 		goto free;
 	}
 
-	attributes = cJSON_GetObjectItem(item,"attributes");
-	if(attributes && attributes->type==cJSON_Array)
+	fields = cJSON_GetObjectItem(item,"fields");
+	if(fields && fields->type==cJSON_Array)
 	{
 		struct policy_scan_ctx *ctx = policy_scan_ctx_new(thread_id, verify_policy->vsys_id, verify_policy->compile_table_id);
 
-		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+		for (subchild = fields->child; subchild != NULL; subchild = subchild->next)
 		{
-			get_count_form_attributeName(ctx, subchild);
+			get_count_form_fieldName(ctx, subchild);
 		}
 
 		utarray_new(verify_policy->ut_array_by_object, &ut_object_id_icd);
 
-		for (subchild = attributes->child; subchild != NULL; subchild = subchild->next)
+		for (subchild = fields->child; subchild != NULL; subchild = subchild->next)
 		{
 			struct request_object_list request_object;
 			memset(&request_object, 0, sizeof(request_object));
 
-			xret = get_attribute_from_json(&request_object, subchild);
+			xret = get_field_from_json(&request_object, subchild);
 			if (xret < 0)
 			{
 				goto free;
 			}
 			hit_cnt = policy_verify_scan(verify_policy->vsys_id, verify_policy->compile_table_id, &request_object, ctx);
-			if(match_ip_attribute_name(request_object.attribute_name) >= 0)
+			if(match_ip_field_name(request_object.field_name) >= 0)
 			{
 				ipaddr_free(request_object.ip_addr);
 			}
@@ -2810,12 +2810,12 @@ int get_query_result_policy(cJSON *verifylist_array_item, cJSON *http_body, int 
 
 		cJSON *verfifySession = cJSON_CreateObject();
 		cJSON_AddItemToObject(http_body, "verify_session", verfifySession);
-		cJSON *attributes=cJSON_CreateArray();
-		cJSON_AddItemToObject(verfifySession, "attributes", attributes);
+		cJSON *fields=cJSON_CreateArray();
+		cJSON_AddItemToObject(verfifySession, "fields", fields);
 
 		while ((request_object=(struct request_object_list *)utarray_next(verify_policy->ut_array_by_object, request_object)) != NULL)
 		{
-			http_get_scan_status(request_object, verify_policy->compile_table_id, attributes, ctx);
+			http_get_scan_status(request_object, verify_policy->compile_table_id, fields, ctx);
 		}
 		policy_scan_ctx_free(ctx);
 		utarray_free(verify_policy->ut_array_by_object);
@@ -3074,7 +3074,7 @@ int verify_policy_table_init(struct verify_policy * verify, const char* profile_
 		{
 			goto error_out;
 		}
-		ret = maat_plugin_table_ex_init(PROFILE_ATTRIBUTE_DICT, vsys_id, attribute_dict_new_cb, attribute_dict_free_cb, attribute_dict_dup_cb);
+		ret = maat_plugin_table_ex_init(PROFILE_FIELD_DICT, vsys_id, field_dict_new_cb, field_dict_free_cb, field_dict_dup_cb);
 		if(ret<0)
 		{
 			goto error_out;

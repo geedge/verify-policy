@@ -236,7 +236,6 @@ TEST(VerifyPolicy, CheckRegexExpression)
 	FREE(&hit_policy_query);
 }
 
-
 int g_global_enable = 0;
 void verify_policy_print_result(char *hit_policy_query, char *hit_policy_result, int enable) 
 {  

@@ -7,11 +7,11 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.0.1",
                                     "port":"8080",
                                     "addr_type": 4
@@ -30,29 +30,29 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.1.1",
                                     "port":"8080",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_INTERNAL_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "INTERNAL_IP",
+                                "field_value": {
                                     "ip": "192.168.1.2",
                                     "port": "80",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "string",
-                                "attribute_name": "ATTR_SERVER_FQDN",
-                                "attribute_value": {
+                                "field_value_type": "string",
+                                "field_name": "SERVER_FQDN",
+                                "field_value": {
                                     "string": "www.126.com"
                                 }
                             }
@@ -70,11 +70,11 @@
                     "type": "security",
                     "vsys_id": 1,
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.4",
                                     "port":80,
                                     "tunnel_type":"gtp",
@@ -94,11 +94,11 @@
                 {
                     "type": "security",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
@@ -117,20 +117,20 @@
                 {
                     "type": "security",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
@@ -149,36 +149,36 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.0.2",
                                     "port": "80",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_DESTINATION_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "DESTINATION_IP",
+                                "field_value": {
                                     "ip": "192.168.0.3",
                                     "port": "80",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "string",
-                                "attribute_name": "ATTR_SERVER_FQDN",
-                                "attribute_value": {
+                                "field_value_type": "string",
+                                "field_name": "SERVER_FQDN",
+                                "field_value": {
                                     "string": "www.baidu.com"
                                 }
                             },
                             {
-                                "attribute_value_type": "string",
-                                "attribute_name": "ATTR_SSL_SAN",
-                                "attribute_value": {
+                                "field_value_type": "string",
+                                "field_name": "SSL_SAN",
+                                "field_value": {
                                     "string": "www.baidu.com"
                                 }
                             }
@@ -195,37 +195,37 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "IP_PROTOCOL",
+                                "field_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.5",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.1.1",
                                     "port":"8080",
                                     "addr_type": 4
@@ -244,28 +244,28 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "IP_PROTOCOL",
+                                "field_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.4",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_TUNNEL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "TUNNEL",
+                                "field_value": {
                                     "ip": "192.168.0.6",
                                     "tunnel_type":"gtp",
                                     "addr_type": 4
@@ -284,64 +284,64 @@
                 {
                     "type": "proxy_manipulation",
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.55.4",
                                     "port": "80",
                                     "addr_type": 4
                                 }
                             },
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "IP_PROTOCOL",
+                                "field_value": {
                                     "addr_type": 4,
                                     "protocol": 6
                                 }
                             },
                             {
-                                "attribute_value_type": "port",
-                                "attribute_name": "ATTR_SOURCE_PORT",
-                                "attribute_value": {
+                                "field_value_type": "port",
+                                "field_name": "SOURCE_PORT",
+                                "field_value": {
                                     "port": "80"
                                 }
                             },
                             {
-                                "attribute_value_type": "numeric",
-                                "attribute_name": "ATTR_APP_ID",
-                                "attribute_value": {
+                                "field_value_type": "numeric",
+                                "field_name": "APP_ID",
+                                "field_value": {
                                     "numeric": 67
                                 }
                             },
                             {
-                                "attribute_value_type": "string",
-                                "attribute_name": "ATTR_HTTP_REQ_HDR",
-                                "attribute_value": {
+                                "field_value_type": "string",
+                                "field_name": "HTTP_REQ_HDR",
+                                "field_value": {
                                     "district":"User-Agent",
                                     "string":"test"
                                 }
                             },
                             {
-                                "attribute_value_type": "string",
-                                "attribute_name": "ATTR_TUNNEL_LEVEL",
-                                "attribute_value": {
+                                "field_value_type": "string",
+                                "field_name": "TUNNEL_LEVEL",
+                                "field_value": {
                                     "numeric": 60
                                 }
                             },
                             {
-                                "attribute_value_type": "flag",
-                                "attribute_name": "ATTR_FLAG",
-                                "attribute_value": {
+                                "field_value_type": "flag",
+                                "field_name": "FLAG",
+                                "field_value": {
                                     "numeric": 15
                                 }
                             },
                             {
-                                "attribute_value_type": "boolean",
-                                "attribute_name": "ATTR_SSL_ECH",
-                                "attribute_value": {
+                                "field_value_type": "boolean",
+                                "field_name": "SSL_ECH",
+                                "field_value": {
                                     "numeric": 1
                                 }
                             }
@@ -359,11 +359,11 @@
                     "type": "proxy_manipulation",
                     "vsys": 1,
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "192.168.2.1",
                                     "port":"8080",
                                     "addr_type": 4
@@ -383,11 +383,11 @@
                     "type": "proxy_manipulation",
                     "vsys": 1,
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "numeric",
-                                "attribute_name": "ATTR_IP_PROTOCOL",
-                                "attribute_value": {
+                                "field_value_type": "numeric",
+                                "field_name": "IP_PROTOCOL",
+                                "field_value": {
                                     "addr_type": 4,
                                     "numeric": 1
                                 }
@@ -406,11 +406,11 @@
                     "type": "proxy_manipulation",
                     "vsys": 1,
                     "verify_session": {
-                        "attributes": [
+                        "fields": [
                             {
-                                "attribute_value_type": "ip",
-                                "attribute_name": "ATTR_SOURCE_IP",
-                                "attribute_value": {
+                                "field_value_type": "ip",
+                                "field_name": "SOURCE_IP",
+                                "field_value": {
                                     "ip": "10.1.1.1",
                                     "port":"8080",
                                     "addr_type": 4

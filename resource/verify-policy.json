@@ -12,7 +12,7 @@
 			"is_valid": "yes",
             "and_conditions": [
                 {
-                    "attribute_name": "ATTR_HTTP_URL",
+                    "field_name": "HTTP_URL",
                     "objects": [
                         {
                             "items": [
@@ -40,7 +40,7 @@
             "is_valid": "yes",
             "and_conditions": [
                 {
-                    "attribute_name": "ATTR_SOURCE_IP",
+                    "field_name": "SOURCE_IP",
                     "objects": [
                         {
                             "object_name": "IPv4TCPSoureVeiryPolicy01",
@@ -59,14 +59,14 @@
                     ]
                 },
                 {
-                    "attribute_name": "ATTR_APP_ID",
+                    "field_name": "APP_ID",
                     "negate_option": false,
                     "object_uuids": [
                         "00000201-0000-0000-0000-000000000000"
                     ]
                 },
                 {
-                    "attribute_name": "ATTR_HTTP_REQ_HDR",
+                    "field_name": "HTTP_REQ_HDR",
                     "objects": [
                         {
                             "items": [
@@ -83,14 +83,14 @@
                     ]
                 },
                 {
-                    "attribute_name": "ATTR_IP_PROTOCOL",
+                    "field_name": "IP_PROTOCOL",
                     "negate_option": false,
                     "object_uuids": [
                         "00000000-0000-0000-0000-000000000006"
                     ]
                 },
                 {
-					"attribute_name": "ATTR_SOURCE_PORT",
+					"field_name": "SOURCE_PORT",
 					"objects": [
 						{
 							"object_name": "IPv4TCPPortVeiryPolicy01",
@@ -108,14 +108,14 @@
 					]
 				},
                 {
-                    "attribute_name": "ATTR_TUNNEL_LEVEL",
+                    "field_name": "TUNNEL_LEVEL",
                     "negate_option": false,
                     "object_uuids": [
                         "00000000-0000-0000-0000-000000000050"
                     ]
                 },        
                 {
-					"attribute_name": "ATTR_FLAG",
+					"field_name": "FLAG",
 					"objects": [
 						{
 							"object_name": "FlagVeiryPolicy01",
@@ -134,7 +134,7 @@
 					]
 				},
                 {
-                    "attribute_name": "ATTR_SSL_ECH",
+                    "field_name": "SSL_ECH",
                     "negate_option": false,
                     "object_uuids": [
                         "00000000-0000-0000-0000-000000000002"
@@ -152,7 +152,7 @@
 			"is_valid": "yes",
 			"and_conditions": [
 				{
-					"attribute_name": "ATTR_SOURCE_IP",
+					"field_name": "SOURCE_IP",
                     "negate_option": false,
 					"object_uuids": [
                         "00000070-0000-0000-0000-000000000000"
@@ -170,7 +170,7 @@
 			"is_valid": "yes",
             "and_conditions": [
 				{
-                    "attribute_name": "ATTR_SOURCE_IP",
+                    "field_name": "SOURCE_IP",
                     "objects": [
                         {
                             "object_name": "IPv4TCPSoureVeiryPolicy02",
@@ -189,7 +189,7 @@
                     ]
                 },
 				{
-                    "attribute_name": "ATTR_DESTINATION_IP",
+                    "field_name": "DESTINATION_IP",
                     "objects": [
                         {
                             "object_name": "IPv4TCPDestinationVeiryPolicy01",
@@ -208,7 +208,7 @@
                     ]
                 },
 				{
-                    "attribute_name": "ATTR_SERVER_FQDN",
+                    "field_name": "SERVER_FQDN",
                     "objects": [
                         {
                             "items": [
@@ -225,7 +225,7 @@
                     ]
                 },
 				{
-                    "attribute_name": "ATTR_SSL_SAN",
+                    "field_name": "SSL_SAN",
                     "objects": [
                         {
                             "items": [
