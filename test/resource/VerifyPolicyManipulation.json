@@ -50,19 +50,19 @@
                     ]
 				},
 				{
-                    "object_name": "IPv4TCPSoureEntry.12",
-					"field_name": "INTERNAL_IP",
-                    "negate_option": false,
-					"object_uuids": [
-                        "00000012-0000-0000-0000-000000000000"
-                    ]
-				},
-				{
                     "object_name": "FQDNEntry.1",
 					"field_name": "SERVER_FQDN",
                     "negate_option": false,
 					"object_uuids": [
                         "00000001-0000-0000-0000-000000000000"
+                    ]
+				},
+                {
+                    "object_name": "ZONE.1",
+					"field_name": "SOURCE_ZONE",
+                    "negate_option": false,
+					"object_uuids": [
+                        "00000000-0000-0000-0000-000000000008"
                     ]
 				}
 			]

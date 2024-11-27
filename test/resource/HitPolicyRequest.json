@@ -41,12 +41,10 @@
                                 }
                             },
                             {
-                                "field_value_type": "ip",
-                                "field_name": "INTERNAL_IP",
+                                "field_value_type": "string",
+                                "field_name": "SOURCE_ZONE",
                                 "field_value": {
-                                    "ip": "192.168.1.2",
-                                    "port": "80",
-                                    "addr_type": 4
+                                    "string": "internal"
                                 }
                             },
                             {

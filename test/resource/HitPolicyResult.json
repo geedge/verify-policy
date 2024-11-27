@@ -60,16 +60,16 @@
                                 "condition_index": 0
                             },
                             {
-                                "tag_uuid": "00000012-0000-0000-0000-000000000000",
-                                "field_name": "INTERNAL_IP",
+                                "object_uuid": "00000000-0000-0000-0000-000000000008",
+                                "field_name": "SOURCE_ZONE",
                                 "negate_option": 0,
-                                "condition_index": 1
+                                "condition_index": 2
                             },
                             {
                                 "tag_uuid": "00000001-0000-0000-0000-000000000000",
                                 "field_name": "SERVER_FQDN",
                                 "negate_option": 0,
-                                "condition_index": 2
+                                "condition_index": 1
                             }
                         ]
                     }
@@ -92,21 +92,15 @@
                             ]
                         },
                         {
-                            "field_value_type": "ip",
-                            "field_name": "INTERNAL_IP",
+                            "field_value_type": "string",
+                            "field_name": "SOURCE_ZONE",
                             "field_value": {
-                                "ip": "192.168.1.2",
-                                "port": "80",
-                                "addr_type": 4
+                                "string": "internal"
                             },
                             "hit_paths": [
                                 {
-                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
-                                    "tag_uuid": "00000012-0000-0000-0000-000000000000"
-                                },
-                                {
-                                    "entry_uuid": "00000002-0000-0000-0000-000000000000",
-                                    "tag_uuid": "00000013-0000-0000-0000-000000000000"
+                                    "item_uuid": "00000000-0000-0000-0000-000000000000",
+                                    "superior_object_uuid": "00000000-0000-0000-0000-000000000008"
                                 }
                             ]
                         },

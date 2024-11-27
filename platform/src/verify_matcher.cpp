@@ -67,13 +67,11 @@ const char * table_name[__TSG_OBJ_MAX] =
 	[TSG_OBJ_FLAG]="FLAG",
 	[TSG_OBJ_GTP_IMEI]="GTP_IMEI",
 	[TSG_OBJ_DST_SERVER_FQDN]="SERVER_FQDN",
-	[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP",
-	[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP",
 	[TSG_OBJ_SOURCE_PORT]="SOURCE_PORT",
 	[TSG_OBJ_DESTINATION_PORT]="DESTINATION_PORT",
-	[TSG_OBJ_INTERNAL_PORT]="INTERNAL_PORT",
-	[TSG_OBJ_EXTERNAL_PORT]="EXTERNAL_PORT",
 	[TSG_OBJ_IP_PROTOCOL]="IP_PROTOCOL",
+	[TSG_OBJ_SOURCE_ZONE] = "SOURCE_ZONE",
+	[TSG_OBJ_DESTINATION_ZONE] = "DESTINATION_ZONE",
 	[TSG_OBJ_SSL_ECH]="SSL_ECH",
 	[TSG_OBJ_SSL_ESNI]="SSL_ESNI",
 	[TSG_OBJ_SSL_NO_SNI]="SSL_NO_SNI",
@@ -288,6 +286,8 @@ struct verify_policy_rt * g_policy_rt;
 #define PROTOCOL_ICMP_OBJECT_UUID   "00000000-0000-0000-0000-000000000005"
 #define PROTOCOL_TCP_OBJECT_UUID	"00000000-0000-0000-0000-000000000006"
 #define PROTOCOL_UDP_OBJECT_UUID	"00000000-0000-0000-0000-000000000007"
+#define INTERNAL_ZONE_OBJECT_UUID	"00000000-0000-0000-0000-000000000008"
+#define EXTERNAL_ZONE_OBJECT_UUID	"00000000-0000-0000-0000-000000000009"
 
 UT_icd ut_ulonglong_id_icd = {sizeof(struct library_hit_path), NULL, NULL, NULL};
 
@@ -1266,7 +1266,7 @@ void http_get_scan_status(struct request_object_list *request_object, int compil
 				{
 					continue;
 				}
-				
+
 				histObj=cJSON_CreateObject();
 				cJSON_AddItemToArray(hitPaths, histObj);
 				cJSON_AddUuidToObject(histObj, "item_uuid", ctx->hit_path[i].item_uuid);
@@ -1287,8 +1287,6 @@ int get_ip_addr_table_name(struct library_scan_path *ip_ctx, int Nth_scan, int t
 	const char * table_name[__TSG_OBJ_MAX] = {0};
 	table_name[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP";
 	table_name[TSG_OBJ_DESTINATION_ADDR] = "DESTINATION_IP";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP";
 
 	struct library_hit_path *ip_entry=NULL;
 	while ((ip_entry=(struct library_hit_path *)utarray_next(ip_ctx->ut_array_by_context, ip_entry)) != NULL)
@@ -1311,8 +1309,6 @@ const char *get_library_virtual_table_name(int table_id)
 	const char * table_name[__TSG_OBJ_MAX] = {0};
 	table_name[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP";
 	table_name[TSG_OBJ_DESTINATION_ADDR] = "DESTINATION_IP";
-	table_name[TSG_OBJ_INTERNAL_ADDR]="INTERNAL_IP";
-	table_name[TSG_OBJ_EXTERNAL_ADDR]="EXTERNAL_IP";
 	table_name[TSG_OBJ_SSL_CN]="SERVER_FQDN";
 	table_name[TSG_OBJ_SSL_SAN]="SERVER_FQDN";
 	table_name[TSG_OBJ_DNS_QNAME]="SERVER_FQDN";
@@ -1592,11 +1588,11 @@ int ip_entry_scan(struct request_object_list *request, struct policy_scan_ctx *c
 	memset(hit_path, 0, sizeof(struct maat_hit_path)*HIT_PATH_SIZE);
 
 	int ret1=0, ret2=0;
-	if(request->table_id == TSG_OBJ_SOURCE_ADDR || request->table_id == TSG_OBJ_INTERNAL_ADDR)
+	if(request->table_id == TSG_OBJ_SOURCE_ADDR)
 	{
 		ret1 = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], "IP_ADDR_ENTRY", &sip, (void **)&source_ip_entry, MAX_EX_DATA_LEN);
 	}
-	if(request->table_id == TSG_OBJ_DESTINATION_ADDR || request->table_id == TSG_OBJ_EXTERNAL_ADDR)
+	if(request->table_id == TSG_OBJ_DESTINATION_ADDR)
 	{
 		ret2 = maat_ip_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], "IP_ADDR_ENTRY", &dip, (void **)&destination_ip_entry, MAX_EX_DATA_LEN);
 	}
@@ -2018,6 +2014,38 @@ static int protocol_scan(struct request_object_list *request, struct policy_scan
 	return hit_cnt_protocol;
 }
 
+const char *get_object_uuid_by_zone(char * zone)
+{
+	if (strcasecmp(zone, "internal") == 0)
+	{
+		return INTERNAL_ZONE_OBJECT_UUID;
+	}
+	else
+	{
+		return EXTERNAL_ZONE_OBJECT_UUID;
+	}
+}
+
+static int zone_scan(struct request_object_list *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
+{
+	int n_read=0;
+	int scan_ret=0, hit_cnt_zone=0;
+
+	const char *object_uuid=get_object_uuid_by_zone(request->string);
+	if(object_uuid != NULL)
+	{
+		scan_ret = scan_object(ctx, vsys_id, hit_cnt, (char *)object_uuid, "TSG_OBJ_ZONE", request->field_name, 1);
+		if(scan_ret > 0)
+		{
+			hit_cnt_zone+=scan_ret;
+		}
+		n_read=maat_state_get_hit_paths(ctx->scan_mid, ctx->hit_path, HIT_PATH_SIZE);
+		request->merge_nth_scan[0] = maat_state_get_scan_count(ctx->scan_mid);
+		ctx->n_read=n_read;
+	}
+	return hit_cnt_zone;
+}
+
 static int ip_addr_scan(struct request_object_list *request, struct policy_scan_ctx *ctx, int vsys_id, int hit_cnt)
 {
 	int n_read=0;
@@ -2026,7 +2054,7 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV4)
 	{
-		if(0 == strcasecmp(request->field_name, "SOURCE_IP") || 0 == strcasecmp(request->field_name, "INTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "SOURCE_IP"))
 		{
 			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v4->saddr, request->ip_addr->v4->source,
 			 						      ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
@@ -2041,7 +2069,7 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->field_name, "DESTINATION_IP") || 0 == strcasecmp(request->field_name, "EXTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "DESTINATION_IP"))
 		{
 			scan_ret = maat_scan_ipv4_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v4->daddr, request->ip_addr->v4->dest,
 			 						       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
@@ -2065,7 +2093,7 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 	}
 	if (request->ip_addr->addrtype == ADDR_TYPE_IPV6)
 	{
-		if(0 == strcasecmp(request->field_name, "SOURCE_IP") || 0 == strcasecmp(request->field_name, "INTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "SOURCE_IP"))
 		{
 			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v6->saddr,request->ip_addr->v6->source,
 									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
@@ -2080,7 +2108,7 @@ static int ip_addr_scan(struct request_object_list *request, struct policy_scan_
 				hit_cnt_ip+=n_hit_result;
 			}
 		}
-		if(0 == strcasecmp(request->field_name, "DESTINATION_IP") || 0 == strcasecmp(request->field_name, "EXTERNAL_IP"))
+		if(0 == strcasecmp(request->field_name, "DESTINATION_IP"))
 		{
 			scan_ret = maat_scan_ipv6_port(g_policy_rt->feather[vsys_id], "TSG_OBJ_IP_ADDR", request->field_name, request->ip_addr->v6->daddr, request->ip_addr->v6->dest,
 									       ctx->result+hit_cnt+hit_cnt_ip, MAX_SCAN_RESULT-hit_cnt-hit_cnt_ip, &n_hit_result, ctx->scan_mid);
@@ -2160,8 +2188,6 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_obje
 	{
 		case TSG_OBJ_SOURCE_ADDR:
 		case TSG_OBJ_DESTINATION_ADDR:
-		case TSG_OBJ_INTERNAL_ADDR:
-		case TSG_OBJ_EXTERNAL_ADDR:
 			if(request_object->ip_addr == NULL)
 			{
 				goto decide;
@@ -2186,9 +2212,15 @@ size_t policy_verify_scan(int vsys_id, int compile_table_id, struct request_obje
 			goto decide;
 		case TSG_OBJ_SOURCE_PORT:
 		case TSG_OBJ_DESTINATION_PORT:
-		case TSG_OBJ_INTERNAL_PORT:
-		case TSG_OBJ_EXTERNAL_PORT:
 			scan_ret = port_scan(request_object, ctx, vsys_id, hit_cnt);
+			if(scan_ret > 0)
+			{
+				hit_cnt+=scan_ret;
+			}
+			goto decide;
+		case TSG_OBJ_SOURCE_ZONE:
+		case TSG_OBJ_DESTINATION_ZONE:
+			scan_ret = zone_scan(request_object, ctx, vsys_id, hit_cnt);
 			if(scan_ret > 0)
 			{
 				hit_cnt+=scan_ret;
@@ -2465,7 +2497,7 @@ int protoco_field_type_str2idx(const char *action_str, char *buff, char **p)
 int match_ip_field_name(char *attri_name)
 {
 	size_t i = 0;
-	const char *field_name_map[] ={"SOURCE_IP", "DESTINATION_IP", "TUNNEL", "INTERNAL_IP", "EXTERNAL_IP"};
+	const char *field_name_map[] ={"SOURCE_IP", "DESTINATION_IP", "TUNNEL"};
 	for(i = 0; i < sizeof(field_name_map)/sizeof(field_name_map[0]); i++)
 	{
 		if(0 == strcasecmp(attri_name, field_name_map[i]))
@@ -2527,13 +2559,12 @@ static struct ipaddr * get_ip_from_json(cJSON *fieldValue, const char *fieldName
 	}
 
 	struct ipaddr *ip_addr = NULL;
-	if(strcasecmp(fieldName, "SOURCE_IP") == 0 || strcasecmp(fieldName, "INTERNAL_IP") == 0 ||
-	   strcasecmp(fieldName, "TUNNEL") == 0)
+	if(strcasecmp(fieldName, "SOURCE_IP") == 0 ||  strcasecmp(fieldName, "TUNNEL") == 0)
 	{
 		ip_addr = ip_to_stream_addr(Ip, Port, "0.0.0.0", 0, addr_type, buff, protocol);
 	}
 
-	if(strcasecmp(fieldName, "DESTINATION_IP") == 0 || strcasecmp(fieldName, "EXTERNAL_IP") == 0)
+	if(strcasecmp(fieldName, "DESTINATION_IP") == 0)
 	{
 		ip_addr = ip_to_stream_addr("0.0.0.0", 0, Ip, Port, addr_type, buff, protocol);
 	}
