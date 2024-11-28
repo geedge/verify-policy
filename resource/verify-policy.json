@@ -208,7 +208,7 @@
                     ]
                 },
 				{
-                    "field_name": "SERVER_FQDN",
+                    "field_name": "DESTINATION_FQDN",
                     "objects": [
                         {
                             "items": [

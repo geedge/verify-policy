@@ -49,7 +49,7 @@
                             },
                             {
                                 "field_value_type": "string",
-                                "field_name": "SERVER_FQDN",
+                                "field_name": "DESTINATION_FQDN",
                                 "field_value": {
                                     "string": "www.126.com"
                                 }
@@ -168,7 +168,7 @@
                             },
                             {
                                 "field_value_type": "string",
-                                "field_name": "SERVER_FQDN",
+                                "field_name": "DESTINATION_FQDN",
                                 "field_value": {
                                     "string": "www.baidu.com"
                                 }

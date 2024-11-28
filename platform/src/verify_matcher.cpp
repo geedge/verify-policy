@@ -66,7 +66,7 @@ const char * table_name[__TSG_OBJ_MAX] =
 	[TSG_OBJ_TUNNEL]="TUNNEL",
 	[TSG_OBJ_FLAG]="FLAG",
 	[TSG_OBJ_GTP_IMEI]="GTP_IMEI",
-	[TSG_OBJ_DST_SERVER_FQDN]="SERVER_FQDN",
+	[TSG_OBJ_DST_SERVER_FQDN]="DESTINATION_FQDN",
 	[TSG_OBJ_SOURCE_PORT]="SOURCE_PORT",
 	[TSG_OBJ_DESTINATION_PORT]="DESTINATION_PORT",
 	[TSG_OBJ_IP_PROTOCOL]="IP_PROTOCOL",
@@ -1003,6 +1003,31 @@ static inline int multiple_hit_actions(enum policy_action __action)
 	}
 }
 
+enum policy_action get_enforce_security_policy(int vsys_id, int compile_table_id, uuid_t *rule_uuid, size_t n_rule_uuid, struct rule_data_ctx *enforce_rules, size_t *n_enforce)
+{
+	uuid_t sotred_rule_uuid[n_rule_uuid];
+	enum policy_action prior_action = PG_ACTION_NONE;
+
+    size_t n_sorted_rule=maat_state_sort_rules(g_policy_rt->feather[vsys_id], get_plugin_table_name((enum policy_rule_type)compile_table_id), rule_uuid, sotred_rule_uuid, n_rule_uuid);
+    if(n_sorted_rule==0)
+    {
+        return prior_action;
+    }
+
+	struct rule_data_ctx *hit_rules=NULL;
+	char result_uuid_str[UUID_STR_LEN]={0};
+	uuid_unparse(sotred_rule_uuid[0], result_uuid_str);
+	hit_rules =(struct rule_data_ctx *)maat_plugin_table_get_ex_data(g_policy_rt->feather[vsys_id], get_plugin_table_name((enum policy_rule_type)compile_table_id), (const char *)result_uuid_str, strlen(result_uuid_str));
+	if(!hit_rules)
+	{
+		return prior_action;
+	}
+	*n_enforce=1;
+	memcpy(enforce_rules, hit_rules, sizeof(struct rule_data_ctx));
+	compile_free(hit_rules);
+	return (enum policy_action)enforce_rules->action;
+}
+
 static enum policy_action decide_policy_action(int vsys_id, int compile_table_id, uuid_t *results, size_t n_hit,
 											struct rule_data_ctx ** enforce_rules, size_t * n_enforce, struct rule_data_ctx **hit_rules)
 {
@@ -1030,6 +1055,16 @@ static enum policy_action decide_policy_action(int vsys_id, int compile_table_id
 		compile_free(rule_ctx);
 	}
 	*hit_rules=hit_rules_ex;
+
+	if(compile_table_id == TSG_TABLE_SECURITY)
+	{
+		if(*n_enforce==0)
+		{
+			*enforce_rules=ALLOC(struct rule_data_ctx, 1);
+		}
+		prior_action = get_enforce_security_policy(vsys_id, compile_table_id, results, n_hit, enforce_rules[0], n_enforce);
+		return prior_action;
+	}
 
 	const struct rule_data_ctx * prior_rule = hit_rules_ex;
 	struct rule_data_ctx monit_rule[n_hit];
@@ -1061,17 +1096,7 @@ static enum policy_action decide_policy_action(int vsys_id, int compile_table_id
 		}
 	}
 
-	if(compile_table_id == TSG_TABLE_SECURITY && prior_action == PX_ACTION_SHUNT)
-	{
-		if(*n_enforce==0)
-		{
-			*enforce_rules=ALLOC(struct rule_data_ctx, 1);
-		}
-		*enforce_rules[0]=*prior_rule;
-		*n_enforce=1;
-		return PX_ACTION_SHUNT;
-	}
-	if(compile_table_id != TSG_TABLE_SECURITY && prior_action == PG_ACTION_WHITELIST)
+	if(prior_action == PG_ACTION_WHITELIST)
 	{
 		if(*n_enforce==0)
 		{
@@ -1309,11 +1334,11 @@ const char *get_library_virtual_table_name(int table_id)
 	const char * table_name[__TSG_OBJ_MAX] = {0};
 	table_name[TSG_OBJ_SOURCE_ADDR] = "SOURCE_IP";
 	table_name[TSG_OBJ_DESTINATION_ADDR] = "DESTINATION_IP";
-	table_name[TSG_OBJ_SSL_CN]="SERVER_FQDN";
-	table_name[TSG_OBJ_SSL_SAN]="SERVER_FQDN";
-	table_name[TSG_OBJ_DNS_QNAME]="SERVER_FQDN";
-	table_name[TSG_OBJ_DOH_QNAME]="SERVER_FQDN";
-	table_name[TSG_OBJ_DST_SERVER_FQDN]="SERVER_FQDN";
+	table_name[TSG_OBJ_SSL_CN]="DESTINATION_FQDN";
+	table_name[TSG_OBJ_SSL_SAN]="DESTINATION_FQDN";
+	table_name[TSG_OBJ_DNS_QNAME]="DESTINATION_FQDN";
+	table_name[TSG_OBJ_DOH_QNAME]="DESTINATION_FQDN";
+	table_name[TSG_OBJ_DST_SERVER_FQDN]="DESTINATION_FQDN";
 	return table_name[table_id];
 }
 

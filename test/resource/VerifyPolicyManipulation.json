@@ -51,7 +51,7 @@
 				},
 				{
                     "object_name": "FQDNEntry.1",
-					"field_name": "SERVER_FQDN",
+					"field_name": "DESTINATION_FQDN",
                     "negate_option": false,
 					"object_uuids": [
                         "00000001-0000-0000-0000-000000000000"
@@ -115,7 +115,7 @@
                     ]
                 },
 				{
-                    "field_name": "SERVER_FQDN",
+                    "field_name": "DESTINATION_FQDN",
                     "objects": [
                         {
 							"object_name":"ServerFqdnVeiryPolicy01",
@@ -181,7 +181,7 @@
 				},
 				{
                     "object_name": "ServerFqdnVeiryPolicy01",
-					"field_name": "SERVER_FQDN",
+					"field_name": "DESTINATION_FQDN",
                     "negate_option": false,
 					"object_uuids": [
                         "00005003-0000-0000-0000-000000000000"
@@ -612,7 +612,7 @@
         {
             "table_name": "FIELD_DICT",
             "table_content": [
-                {"uuid":"4fff0ed4-f02b-17ee-3f74-b66310c5d1e2","is_valid":1,"field_name":"SERVER_FQDN","available_object_type":"fqdn","object_table_name":"TSG_OBJ_FQDN"},
+                {"uuid":"4fff0ed4-f02b-17ee-3f74-b66310c5d1e2","is_valid":1,"field_name":"DESTINATION_FQDN","available_object_type":"fqdn","object_table_name":"TSG_OBJ_FQDN"},
 	            {"uuid":"4fff0ed4-f02b-17ee-3f74-b66310c5d1e2","is_valid":1,"field_name":"SSL_SAN","available_object_type":"fqdn","object_table_name":"TSG_OBJ_FQDN"},
                 {"uuid":"ca317931-96f8-1979-ea7c-2bb791858df6","is_valid":1,"field_name":"HTTP_REQ_HDR","available_object_type":"keyword","object_table_name":"tsg_obj_keyword"}	
             ]
